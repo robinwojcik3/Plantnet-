@@ -1,102 +1,149 @@
-/* ---------------- CONFIG ---------------- */
-const API_KEY  = "2b10vfT6MvFC2lcAzqG1ZMKO";
+/* ================================================================
+   CONFIGURATION GÉNÉRALE
+   ================================================================ */
+const API_KEY  = "2b10vfT6MvFC2lcAzqG1ZMKO";          // clé Pl@ntNet
 const PROJECT  = "all";
 const ENDPOINT = `https://my-api.plantnet.org/v2/identify/${PROJECT}?api-key=${API_KEY}`;
-const MAX_RESULTS = 5;
-/* ---------------------------------------- */
+const MAX_RESULTS = 5;                                // nb lignes tableau/fiches
 
-/* -- chargement synchronisé des deux JSON -- */
-let taxref={}, ecology={};
-const ready = Promise.all([
-  fetch("taxref.json").then(r=>r.json()).then(j=>taxref=j),
-  fetch("ecology.json").then(r=>r.json()).then(j=>ecology=j)
-]).catch(err=>{
-  alert("Échec chargement données locales : "+err);
-});
-
-/* ------------- helpers ------------------ */
-const cdRef  = n=>taxref[n.toLowerCase()];
-const ecolOf = n=>ecology[n.toLowerCase()]||"—";
-const slug   = n=>n.toLowerCase().replace(/\s+/g,"-");
-
-const infoFlora = n=>`https://www.infoflora.ch/fr/flore/${slug(n)}.html`;
-const inpnCarte = c=>`https://inpn.mnhn.fr/espece/cd_nom/${c}/tab/carte`;
-const inpnStat  = c=>`https://inpn.mnhn.fr/espece/cd_nom/${c}/tab/statut`;
-const aura      = c=>`https://atlas.biodiversite-auvergne-rhone-alpes.fr/espece/${c}`;
-const openObs   = c=>`https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=lsid%3A${c}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&qc=&radius=239.6&lat=44.57641801313443&lon=4.9718137085437775#tab_mapView`;
-
-/* proxies fragments */
-const proxyCarte = c=>`/.netlify/functions/inpn-proxy?cd=${c}&type=carte`;
-const proxyStat  = c=>`/.netlify/functions/inpn-proxy?cd=${c}&type=statut`;
-
-/* ------------- appel PlantNet ----------- */
-async function identify(file){
-  /* on attend que taxref + ecology soient chargées */
-  await ready;
-
-  const fd=new FormData();
-  fd.append("images",file,"photo.jpg");
-  fd.append("organs","auto");
-
-  const r=await fetch(ENDPOINT,{method:"POST",body:fd});
-  if(!r.ok){alert("Erreur API");return;}
-
-  const res=(await r.json()).results.slice(0,MAX_RESULTS);
-  document.body.classList.remove("home");        // retire fond
-  buildTable(res); buildCards(res);
+/* ================================================================
+   FONCTION DE NORMALISATION (minuscules + pas d’accents + espaces simples)
+   ================================================================ */
+function norm(txt){
+  return txt
+    .normalize("NFD")                 // décomposition accents
+    .replace(/[\u0300-\u036f]/g,"")   // retrait diacritiques
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g," ");             // espaces multiples -> 1
 }
 
-/* ------------- tableau ------------------ */
-function buildTable(items){
-  const wrap=document.getElementById("results"); wrap.innerHTML="";
-  const head=["Nom latin","Score (%)","InfoFlora","Écologie","INPN carte","INPN statut","Biodiv'AURA","OpenObs"];
-  const L=(u,l)=>u?`<a href="${u}" target="_blank" rel="noopener">${l}</a>`:"—";
+/* ================================================================
+   CHARGEMENT DES JSON LOCAUX (taxref + ecology) AVANT IDENTIFICATION
+   ================================================================ */
+let taxref   = {};      // { nom latin normalisé -> CD_REF }
+let ecology  = {};      // { nom latin normalisé -> description écologie }
 
-  const rows=items.map(({score,species})=>{
-    const sci=species.scientificNameWithoutAuthor;
-    const cd = cdRef(sci); const pct=Math.round(score*100);
-    const eco=ecolOf(sci);
+const ready = Promise.all([
+  /* TAXREF ------------------------------------------------------ */
+  fetch("taxref.json").then(r => r.json()).then(j => {
+    Object.entries(j).forEach(([k,v]) => taxref[norm(k)] = v);
+  }),
+  /* ECOLOGY ----------------------------------------------------- */
+  fetch("ecology.json").then(r => r.json()).then(j => {
+    // le JSON est déjà normalisé, mais on re-normalise par sécurité
+    Object.entries(j).forEach(([k,v]) => ecology[norm(k)] = v);
+  })
+]).catch(err => {
+  alert("Erreur chargement des fichiers locaux : " + err);
+});
+
+/* ================================================================
+   HELPERS URLS
+   ================================================================ */
+const cdRef      = n => taxref[norm(n)];            // CD_REF ou undefined
+const ecolOf     = n => ecology[norm(n)] || "—";    // description ou tiret
+const slug       = n => norm(n).replace(/ /g,"-");
+
+const infoFlora  = n => `https://www.infoflora.ch/fr/flore/${slug(n)}.html`;
+const inpnCarte  = c => `https://inpn.mnhn.fr/espece/cd_nom/${c}/tab/carte`;
+const inpnStatut = c => `https://inpn.mnhn.fr/espece/cd_nom/${c}/tab/statut`;
+const aura       = c => `https://atlas.biodiversite-auvergne-rhone-alpes.fr/espece/${c}`;
+const openObs    = c => `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=lsid%3A${c}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&qc=&radius=239.6&lat=44.57641801313443&lon=4.9718137085437775#tab_mapView`;
+
+/* proxies Netlify Functions (fragments INPN) */
+const proxyCarte  = c => `/.netlify/functions/inpn-proxy?cd=${c}&type=carte`;
+const proxyStatut = c => `/.netlify/functions/inpn-proxy?cd=${c}&type=statut`;
+
+/* ================================================================
+   FONCTION PRINCIPALE : IDENTIFICATION Pl@ntNet
+   ================================================================ */
+async function identify(file){
+  /* On attend que taxref + ecology soient chargés */
+  await ready;
+
+  /* Requête API Pl@ntNet */
+  const fd = new FormData();
+  fd.append("images", file, "photo.jpg");
+  fd.append("organs", "auto");
+
+  const res = await fetch(ENDPOINT, { method:"POST", body:fd });
+  if(!res.ok){ alert("Erreur API Pl@ntNet"); return; }
+
+  const results = (await res.json()).results.slice(0, MAX_RESULTS);
+
+  /* Retire le bandeau de fond */
+  document.body.classList.remove("home");
+
+  /* Affichage */
+  buildTable(results);
+  buildCards(results);
+}
+
+/* ================================================================
+   CONSTRUCTION DU TABLEAU DE RÉSULTATS
+   ================================================================ */
+function buildTable(items){
+  const wrap = document.getElementById("results");
+  wrap.innerHTML = "";
+
+  const headers = ["Nom latin","Score (%)","InfoFlora","Écologie","INPN carte","INPN statut","Biodiv'AURA","OpenObs"];
+  const link = (url, label) => url ? `<a href="${url}" target="_blank" rel="noopener">${label}</a>` : "—";
+
+  const rows = items.map(({score,species}) => {
+    const sci  = species.scientificNameWithoutAuthor;
+    const pct  = Math.round(score * 100);
+    const cd   = cdRef(sci);
+    const eco  = ecolOf(sci);
     return `<tr>
       <td>${sci}</td>
       <td style="text-align:center">${pct}</td>
-      <td>${L(infoFlora(sci),"fiche")}</td>
+      <td>${link(infoFlora(sci),"fiche")}</td>
       <td>${eco.slice(0,120)}${eco.length>120?"…":""}</td>
-      <td>${L(cd&&inpnCarte(cd),"carte")}</td>
-      <td>${L(cd&&inpnStat(cd),"statut")}</td>
-      <td>${L(cd&&aura(cd),"atlas")}</td>
-      <td>${L(cd&&openObs(cd),"carte")}</td>
+      <td>${link(cd && inpnCarte(cd),"carte")}</td>
+      <td>${link(cd && inpnStatut(cd),"statut")}</td>
+      <td>${link(cd && aura(cd),"atlas")}</td>
+      <td>${link(cd && openObs(cd),"carte")}</td>
     </tr>`;
   }).join("");
 
-  wrap.innerHTML=`<table>
-    <thead><tr>${head.map(t=>`<th>${t}</th>`).join("")}</tr></thead>
-    <tbody>${rows}</tbody>
-  </table>`;
+  wrap.innerHTML = `
+    <table>
+      <thead><tr>${headers.map(h=>`<th>${h}</th>`).join("")}</tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
 }
 
-/* ------------- fiches accordéon -------- */
+/* ================================================================
+   CONSTRUCTION DES FICHES ACCORDÉON
+   ================================================================ */
 function buildCards(items){
-  const zone=document.getElementById("cards"); zone.innerHTML="";
-  items.forEach(({score,species})=>{
-    const sci=species.scientificNameWithoutAuthor;
-    const cd = cdRef(sci); if(!cd)return;
-    const pct=Math.round(score*100);
-    const details=document.createElement("details");
-    details.innerHTML=`
+  const zone = document.getElementById("cards");
+  zone.innerHTML = "";
+
+  items.forEach(({score,species}) => {
+    const sci = species.scientificNameWithoutAuthor;
+    const cd  = cdRef(sci); if(!cd) return;     // skip si pas de cd_ref
+    const pct = Math.round(score * 100);
+
+    const details = document.createElement("details");
+    details.innerHTML = `
       <summary>${sci} — ${pct}%</summary>
       <p style="padding:0 12px 8px;font-style:italic">${ecolOf(sci)}</p>
       <div class="iframe-grid">
-        <iframe src="${proxyCarte(cd)}"></iframe>
-        <iframe src="${proxyStat(cd)}"></iframe>
-        <iframe src="${aura(cd)}"></iframe>
-        <iframe src="${openObs(cd)}"></iframe>
+        <iframe src="${proxyCarte(cd)}"  title="Carte INPN"></iframe>
+        <iframe src="${proxyStatut(cd)}" title="Statut INPN"></iframe>
+        <iframe src="${aura(cd)}"        title="Biodiv'AURA"></iframe>
+        <iframe src="${openObs(cd)}"     title="OpenObs"></iframe>
       </div>`;
     zone.appendChild(details);
   });
 }
 
-/* ------------- input listener ---------- */
+/* ================================================================
+   LISTENER SUR L’INPUT FILE
+   ================================================================ */
 document.getElementById("file")
-  .addEventListener("change",e=>{
+  .addEventListener("change", e => {
     if(e.target.files[0]) identify(e.target.files[0]);
   });
