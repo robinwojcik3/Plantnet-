@@ -1,28 +1,45 @@
-const CACHE = "plantid-v2";   // incrémentez à chaque release
+/* ================================================================
+   Service-Worker – PlantID PWA
+   ================================================================ */
+const CACHE  = "plantid-v10";       // ← incrémentez à chaque déploiement
 const ASSETS = [
   "./",
   "./index.html",
   "./app.js",
   "./manifest.json",
   "./taxref.json",
+  "./ecology.json",                // ← nouvelle base écologie
   "icons/icon-192.png",
-  "icons/icon-512.png"
+  "icons/icon-512.png",
+  "assets/Bandeau.jpg"             // ← image de fond (facultatif hors-ligne)
 ];
 
-self.addEventListener("install", e => {
-  self.skipWaiting();                               // ⚠️ 1
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+/* ---------------- phase INSTALL ---------------- */
+self.addEventListener("install", event => {
+  self.skipWaiting();                              // prend la place de suite
+  event.waitUntil(
+    caches.open(CACHE).then(cache => cache.addAll(ASSETS))
+  );
 });
 
-self.addEventListener("activate", e => {            // ⚠️ 2
-  e.waitUntil(
+/* ---------------- phase ACTIVATE --------------- */
+self.addEventListener("activate", event => {
+  event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+      Promise.all(
+        keys
+          .filter(k => k !== CACHE)               // supprime anciens caches
+          .map(k => caches.delete(k))
+      )
     )
   );
-  self.clients.claim();                             // ⚠️ 3
+  self.clients.claim();                           // contrôle immédiat
 });
 
-self.addEventListener("fetch", e => {
-  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+/* ---------------- interceptions FETCH ---------- */
+self.addEventListener("fetch", event => {
+  event.respondWith(
+    caches.match(event.request)
+      .then(resp => resp || fetch(event.request))
+  );
 });
