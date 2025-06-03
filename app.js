@@ -1,30 +1,26 @@
-/* ------------------------------------------------------------------ */
-/* CONFIGURATION                                                      */
-/* ------------------------------------------------------------------ */
-const API_KEY  = "2b10vfT6MvFC2lcAzqG1ZMKO";        // clé Pl@ntNet
+/* -------------------------------------------------- CONFIGURATION -- */
+const API_KEY  = "2b10vfT6MvFC2lcAzqG1ZMKO";
 const PROJECT  = "all";
 const ENDPOINT = `https://my-api.plantnet.org/v2/identify/${PROJECT}?api-key=${API_KEY}`;
-const MAX_RESULTS = 5;                              // nombre de lignes affichées
+const MAX_RESULTS = 5;
 /* ------------------------------------------------------------------ */
 
-/* ---- lecture du fichier taxref.json (nom latin → CD_REF) --------- */
+/* ----------- lecture taxref.json (latin → CD_REF) ------------------ */
 let taxref = {};
-fetch("taxref.json")
-  .then(r => r.json())
-  .then(j => { taxref = j; });
+fetch("taxref.json").then(r => r.json()).then(j => { taxref = j; });
 
-/* ---- helpers URL -------------------------------------------------- */
-const cdRefOf       = sci => taxref[sci.toLowerCase()];
-const inpnCarteUrl  = cd  => `https://inpn.mnhn.fr/espece/cd_nom/${cd}/tab/carte`;
-const inpnStatutUrl = cd  => `https://inpn.mnhn.fr/espece/cd_nom/${cd}/tab/statut`;
-const auraUrl       = cd  => `https://atlas.biodiversite-auvergne-rhone-alpes.fr/espece/${cd}`;
-const openObsUrl    = cd  => (
+/* ----------------------------- helpers URL ------------------------- */
+const cdRefOf       = s => taxref[s.toLowerCase()];
+const inpnCarteUrl  = c => `https://inpn.mnhn.fr/espece/cd_nom/${c}/tab/carte`;
+const inpnStatutUrl = c => `https://inpn.mnhn.fr/espece/cd_nom/${c}/tab/statut`;
+const auraUrl       = c => `https://atlas.biodiversite-auvergne-rhone-alpes.fr/espece/${c}`;
+const openObsUrl    = c => (
   `https://openobs.mnhn.fr/openobs-hub/occurrences/search?` +
-  `q=lsid%3A${cd}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&` +
-  `qc=&radius=239.6&lat=44.57641801313443&lon=4.9718137085437775#tab_mapView`
+  `q=lsid%3A${c}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)` +
+  `&qc=&radius=239.6&lat=44.57641801313443&lon=4.9718137085437775#tab_mapView`
 );
 
-/* ---- appel Pl@ntNet ---------------------------------------------- */
+/* --------------------------- appel PlantNet ------------------------ */
 async function identify(file) {
   const fd = new FormData();
   fd.append("images", file, "photo.jpg");
@@ -37,91 +33,48 @@ async function identify(file) {
   showResults(data.results.slice(0, MAX_RESULTS));
 }
 
-/* ---- affichage des résultats sous forme de tableau --------------- */
+/* -------------------- affichage tableau résultat ------------------ */
 function showResults(items) {
-  const container = document.getElementById("results");
-  container.innerHTML = "";                                   // reset
+  const target = document.getElementById("results");
+  target.innerHTML = "";
 
-  /* table + en-tête */
   const table = document.createElement("table");
-  table.style.borderCollapse = "collapse";
-  table.style.width = "100%";
+  table.innerHTML =
+    `<tr>
+       <th>Nom latin</th>
+       <th>Score&nbsp;(%)</th>
+       <th>INPN carte</th>
+       <th>INPN statut</th>
+       <th>Biodiv'AURA</th>
+       <th>OpenObs</th>
+     </tr>`;
 
-  const header = document.createElement("tr");
-  ["Nom latin", "Score (%)", "INPN carte", "INPN statut", "Biodiv'AURA", "OpenObs"]
-    .forEach(text => {
-      const th = document.createElement("th");
-      th.textContent = text;
-      th.style.border = "1px solid #ccc";
-      th.style.padding = "4px 6px";
-      header.appendChild(th);
-    });
-  table.appendChild(header);
-
-  /* lignes */
   items.forEach(({ score, species }) => {
-    const sci  = species.scientificNameWithoutAuthor;
-    const pct  = Math.round(score * 100);
-    const cd   = cdRefOf(sci);
+    const sci = species.scientificNameWithoutAuthor;
+    const cd  = cdRefOf(sci);
+    const pct = Math.round(score * 100);
 
-    const tr = document.createElement("tr");
-
-    // Nom latin
-    addCell(tr, sci);
-
-    // Score
-    addCell(tr, pct, "center");
-
-    // INPN carte
-    addLinkCell(tr, cd ? inpnCarteUrl(cd)  : null,  "carte");
-
-    // INPN statut
-    addLinkCell(tr, cd ? inpnStatutUrl(cd) : null,  "statut");
-
-    // Biodiv'AURA
-    addLinkCell(tr, cd ? auraUrl(cd)       : null,  "atlas");
-
-    // OpenObs
-    addLinkCell(tr, cd ? openObsUrl(cd)    : null,  "carte");
-
-    table.appendChild(tr);
+    const row = document.createElement("tr");
+    row.innerHTML =
+      `<td>${sci}</td>
+       <td style="text-align:center">${pct}</td>
+       <td>${linkOrDash(cd && inpnCarteUrl(cd),  "carte")}</td>
+       <td>${linkOrDash(cd && inpnStatutUrl(cd), "statut")}</td>
+       <td>${linkOrDash(cd && auraUrl(cd),       "atlas")}</td>
+       <td>${linkOrDash(cd && openObsUrl(cd),    "carte")}</td>`;
+    table.appendChild(row);
   });
 
-  container.appendChild(table);
+  target.appendChild(table);
 }
 
-/* utilitaires cellules ------------------------------------------------*/
-function addCell(tr, text, align = "left") {
-  const td = document.createElement("td");
-  td.textContent   = text;
-  td.style.border  = "1px solid #ccc";
-  td.style.padding = "4px 6px";
-  td.style.textAlign = align;
-  tr.appendChild(td);
+/* --------------------------- utilitaire lien ---------------------- */
+function linkOrDash(url, label) {
+  return url
+    ? `<a href="${url}" target="_blank" rel="noopener">${label}</a>`
+    : "—";
 }
 
-function addLinkCell(tr, url, label) {
-  const td = document.createElement("td");
-  td.style.border  = "1px solid #ccc";
-  td.style.padding = "4px 6px";
-  td.style.textAlign = "center";
-
-  if (url) {
-    const a   = document.createElement("a");
-    a.href    = url;
-    a.target  = "_blank";
-    a.rel     = "noopener";
-    a.textContent = label;
-    td.appendChild(a);
-  } else {
-    td.textContent = "—";
-  }
-  tr.appendChild(td);
-}
-
-/* ---- écouteur fichier --------------------------------------------- */
-document
-  .getElementById("file")
-  .addEventListener("change", e => {
-    if (e.target.files[0]) identify(e.target.files[0]);
-  });
+/* ------------------------------ écouteur -------------------------- */
+document.getElementById("file")
+  .addEventListener("change", e => e.target.files[0] && identify(e.target.files[0]));
