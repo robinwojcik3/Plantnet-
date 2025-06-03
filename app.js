@@ -5,16 +5,18 @@ const ENDPOINT = `https://my-api.plantnet.org/v2/identify/${PROJECT}?api-key=${A
 const MAX_RESULTS = 5;
 /* ---------------------------------------- */
 
-/* -------- chargement des deux JSON ------ */
+/* -- chargement synchronisé des deux JSON -- */
 let taxref={}, ecology={};
-Promise.all([
+const ready = Promise.all([
   fetch("taxref.json").then(r=>r.json()).then(j=>taxref=j),
   fetch("ecology.json").then(r=>r.json()).then(j=>ecology=j)
-]);
+]).catch(err=>{
+  alert("Échec chargement données locales : "+err);
+});
 
-/* ------------ helpers ------------------- */
+/* ------------- helpers ------------------ */
 const cdRef  = n=>taxref[n.toLowerCase()];
-const ecolOf = n=>ecology[n.toLowerCase()] || "—";
+const ecolOf = n=>ecology[n.toLowerCase()]||"—";
 const slug   = n=>n.toLowerCase().replace(/\s+/g,"-");
 
 const infoFlora = n=>`https://www.infoflora.ch/fr/flore/${slug(n)}.html`;
@@ -23,24 +25,28 @@ const inpnStat  = c=>`https://inpn.mnhn.fr/espece/cd_nom/${c}/tab/statut`;
 const aura      = c=>`https://atlas.biodiversite-auvergne-rhone-alpes.fr/espece/${c}`;
 const openObs   = c=>`https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=lsid%3A${c}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&qc=&radius=239.6&lat=44.57641801313443&lon=4.9718137085437775#tab_mapView`;
 
-/* proxies */
+/* proxies fragments */
 const proxyCarte = c=>`/.netlify/functions/inpn-proxy?cd=${c}&type=carte`;
 const proxyStat  = c=>`/.netlify/functions/inpn-proxy?cd=${c}&type=statut`;
 
-/* ------------ PlantNet ------------------ */
+/* ------------- appel PlantNet ----------- */
 async function identify(file){
+  /* on attend que taxref + ecology soient chargées */
+  await ready;
+
   const fd=new FormData();
   fd.append("images",file,"photo.jpg");
   fd.append("organs","auto");
+
   const r=await fetch(ENDPOINT,{method:"POST",body:fd});
   if(!r.ok){alert("Erreur API");return;}
 
   const res=(await r.json()).results.slice(0,MAX_RESULTS);
-  document.body.classList.remove("home");   // retire fond
+  document.body.classList.remove("home");        // retire fond
   buildTable(res); buildCards(res);
 }
 
-/* --------------- tableau ---------------- */
+/* ------------- tableau ------------------ */
 function buildTable(items){
   const wrap=document.getElementById("results"); wrap.innerHTML="";
   const head=["Nom latin","Score (%)","InfoFlora","Écologie","INPN carte","INPN statut","Biodiv'AURA","OpenObs"];
@@ -49,11 +55,12 @@ function buildTable(items){
   const rows=items.map(({score,species})=>{
     const sci=species.scientificNameWithoutAuthor;
     const cd = cdRef(sci); const pct=Math.round(score*100);
+    const eco=ecolOf(sci);
     return `<tr>
       <td>${sci}</td>
       <td style="text-align:center">${pct}</td>
       <td>${L(infoFlora(sci),"fiche")}</td>
-      <td>${ecolOf(sci).slice(0,120)}…</td>
+      <td>${eco.slice(0,120)}${eco.length>120?"…":""}</td>
       <td>${L(cd&&inpnCarte(cd),"carte")}</td>
       <td>${L(cd&&inpnStat(cd),"statut")}</td>
       <td>${L(cd&&aura(cd),"atlas")}</td>
@@ -67,7 +74,7 @@ function buildTable(items){
   </table>`;
 }
 
-/* --------------- fiches ----------------- */
+/* ------------- fiches accordéon -------- */
 function buildCards(items){
   const zone=document.getElementById("cards"); zone.innerHTML="";
   items.forEach(({score,species})=>{
@@ -88,6 +95,8 @@ function buildCards(items){
   });
 }
 
-/* -------------- listener --------------- */
+/* ------------- input listener ---------- */
 document.getElementById("file")
-  .addEventListener("change",e=>e.target.files[0]&&identify(e.target.files[0]));
+  .addEventListener("change",e=>{
+    if(e.target.files[0]) identify(e.target.files[0]);
+  });
