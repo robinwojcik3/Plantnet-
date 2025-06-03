@@ -10,10 +10,10 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon-192.png">
 
-  <!-- Logique métier -->
+  <!-- Logique -->
   <script defer src="app.js"></script>
 
-  <!-- Style global -->
+  <!-- Style -->
   <style>
     :root{
       --primary:#388e3c;
@@ -24,13 +24,13 @@
     }
     *{box-sizing:border-box;}
 
-    /* ----- bandeau uniquement avant résultats ----- */
+    /* --------- bandeau avant résultats ------------ */
     body.home::before{
       content:"";
-      position:fixed; inset:0;
+      position:fixed;inset:0;
       background:url("assets/Bandeau.jpg") center/cover no-repeat fixed;
       z-index:-1;
-      opacity:.30;                      /* lisibilité du texte */
+      opacity:.30;
     }
 
     body{
@@ -42,74 +42,58 @@
       max-width:1100px;
     }
     h1{margin:0 0 0.8rem;font-size:1.6rem;color:var(--primary)}
-    input[type=file]{margin:1rem 0}
 
-    /* ----- tableau des résultats ----- */
+    /* --------- CERCLE de téléchargement ----------- */
+    /* input caché */
+    #file{display:none;}
+
+    /* cercle vert visible uniquement en .home */
+    body.home .upload-btn{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      width:180px;height:180px;margin:2rem auto;
+      border-radius:50%;
+      background:var(--primary);
+      color:#fff;
+      font-weight:600;
+      font-size:1.1rem;
+      cursor:pointer;
+      box-shadow:0 4px 12px rgba(0,0,0,.25);
+      user-select:none;
+      transition:transform .15s;
+    }
+    body.home .upload-btn:hover{transform:scale(1.05);}
+    body:not(.home) .upload-btn{display:none;}   /* cercle masqué après chargement */
+
+    /* tableau, accordéons, iframes (inchangés) */
     table{
-      width:100%;
-      border-collapse:collapse;
-      background:var(--card);
-      border:1px solid var(--border);
-      border-radius:6px;
-      box-shadow:0 2px 6px rgba(0,0,0,.05);
+      width:100%;border-collapse:collapse;background:var(--card);
+      border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.05);
       margin-bottom:1.2rem;
     }
-    th,td{
-      padding:8px 10px;
-      border-bottom:1px solid var(--border);
-    }
-    th{
-      background:#fff;                 /* entête lisible */
-      color:#000;
-      font-weight:600;
-      text-align:left;
-    }
+    th,td{padding:8px 10px;border-bottom:1px solid var(--border)}
+    th{background:#fff;color:#000;font-weight:600;text-align:left}
     tr:last-child td{border-bottom:none}
-    td a{
-      color:var(--primary);
-      text-decoration:none;
-    }
+    td a{color:var(--primary);text-decoration:none}
     td a:hover{text-decoration:underline}
 
-    /* ----- accordéons fiches ----- */
     details{
-      margin-bottom:1rem;
-      background:var(--card);
-      border:1px solid var(--border);
-      border-radius:6px;
-      box-shadow:0 2px 6px rgba(0,0,0,.05);
+      margin-bottom:1rem;background:var(--card);border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.05);
     }
-    summary{
-      padding:10px 12px;
-      cursor:pointer;
-      font-weight:500;
-      color:var(--primary);
-      list-style:none;
-    }
-    summary::-webkit-details-marker{display:none;}
-    summary::after{
-      content:"▸";
-      float:right;
-      transition:transform .2s;
-    }
+    summary{padding:10px 12px;cursor:pointer;font-weight:500;color:var(--primary);list-style:none}
+    summary::after{content:"▸";float:right;transition:transform .2s;}
     details[open] summary::after{transform:rotate(90deg);}
+    summary::-webkit-details-marker{display:none;}
     summary:hover{background:rgba(0,0,0,.04);}
 
-    /* ----- grille des iframes ----- */
     .iframe-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
-      gap:12px;
-      padding:12px;
+      display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+      gap:12px;padding:12px;
     }
-    iframe{
-      width:100%;
-      height:280px;
-      border:none;
-      border-radius:4px;
-    }
+    iframe{width:100%;height:280px;border:none;border-radius:4px}
 
-    /* ----- Dark-mode automatique ----- */
+    /* dark mode auto */
     @media (prefers-color-scheme:dark){
       :root{--bg:#181a1b;--card:#262b2f;--border:#333;--text:#ececec}
       table,details{border-color:#333}
@@ -118,17 +102,15 @@
   </style>
 </head>
 
-<!-- classe home : retirée par app.js quand les résultats s’affichent -->
 <body class="home">
   <h1>Identification Pl@ntNet</h1>
 
-  <!-- chargement photo -->
+  <!-- input caché + cercle vert (label) -->
   <input type="file" id="file" accept="image/*" capture="environment">
+  <label for="file" class="upload-btn">Prendre<br>une&nbsp;photo</label>
 
-  <!-- tableau réinjecté par app.js -->
+  <!-- tableau et fiches remplis par app.js -->
   <div id="results"></div>
-
-  <!-- fiches accordéon réinjectées -->
   <div id="cards"></div>
 </body>
 </html>
