@@ -34,22 +34,23 @@
     /* input caché */
     #file{display:none;}
 
-    /* Cercle vert (affiché uniquement en page d’accueil) */
+    /* Cercle vert (affiché seulement sur la page d’accueil) */
     body.home .upload-btn{
       display:flex;flex-direction:column;align-items:center;justify-content:center;
-      width:220px;height:220px;margin:9rem auto;   /* ↓ décalé d'environ 5 cm */
+      width:260px;height:260px;                /* ← plus grand */
+      margin:14rem auto;                       /* ← beaucoup plus bas */
       border-radius:50%;background:var(--primary);color:#fff;
-      font-weight:600;font-size:1.15rem;cursor:pointer;
+      font-weight:600;font-size:1.25rem;cursor:pointer;
       box-shadow:0 4px 14px rgba(0,0,0,.25);user-select:none;
       transition:transform .15s;
     }
     body.home .upload-btn:hover{transform:scale(1.08);}
-    body:not(.home) .upload-btn{display:none;}
+    body:not(.home) .upload-btn{display:none;}   /* masqué après résultats */
 
-    /* icône */
-    .upload-btn span{font-size:3rem;line-height:1;margin-bottom:0.4rem;}
+    /* icône fleur */
+    .upload-btn span{font-size:3.2rem;line-height:1;margin-bottom:0.6rem;}
 
-    /* tableau, accordéons, iframes (inchangés) */
+    /* Tableau, accordéons, iframes (inchangés) -------------------- */
     table{width:100%;border-collapse:collapse;background:var(--card);
       border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.05);margin-bottom:1.2rem;}
     th,td{padding:8px 10px;border-bottom:1px solid var(--border)}
@@ -71,7 +72,7 @@
     @media (prefers-color-scheme:dark){
       :root{--bg:#181a1b;--card:#262b2f;--border:#333;--text:#ececec}
       table,details{border-color:#333}
-      th{background:#262b2f;color:#ececec;}
+      th{background:#262b2f;color:#ececec}
     }
   </style>
 </head>
@@ -79,12 +80,14 @@
 <body class="home">
   <h1>Identification Pl@ntNet</h1>
 
+  <!-- input caché + cercle vert label -->
   <input type="file" id="file" accept="image/*" capture="environment">
   <label for="file" class="upload-btn">
     <span>🌿</span>
     Prendre<br>une&nbsp;photo
   </label>
 
+  <!-- conteneurs remplis par app.js -->
   <div id="results"></div>
   <div id="cards"></div>
 </body>
