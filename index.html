@@ -24,76 +24,60 @@
     }
     *{box-sizing:border-box;}
 
-    /* --------- bandeau avant résultats ------------ */
+    /* Bandeau avant résultats */
     body.home::before{
       content:"";
       position:fixed;inset:0;
       background:url("assets/Bandeau.jpg") center/cover no-repeat fixed;
-      z-index:-1;
-      opacity:.30;
+      z-index:-1;opacity:.30;
     }
 
     body{
-      background:var(--bg);
-      color:var(--text);
+      background:var(--bg);color:var(--text);
       font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-      margin:0 auto;
-      padding:1.2rem;
-      max-width:1100px;
+      margin:0 auto;padding:1.2rem;max-width:1100px;
     }
     h1{margin:0 0 0.8rem;font-size:1.6rem;color:var(--primary)}
 
-    /* --------- CERCLE de téléchargement ----------- */
-    /* input caché */
+    /* Input caché */
     #file{display:none;}
 
-    /* cercle vert visible uniquement en .home */
+    /* Cercle vert visible seulement en page d’accueil (.home) */
     body.home .upload-btn{
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      width:180px;height:180px;margin:2rem auto;
-      border-radius:50%;
-      background:var(--primary);
-      color:#fff;
-      font-weight:600;
-      font-size:1.1rem;
-      cursor:pointer;
-      box-shadow:0 4px 12px rgba(0,0,0,.25);
-      user-select:none;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      width:220px;height:220px;margin:3rem auto;          /* ↑ diamètre & placement */
+      border-radius:50%;background:var(--primary);color:#fff;
+      font-weight:600;font-size:1.15rem;cursor:pointer;
+      box-shadow:0 4px 14px rgba(0,0,0,.25);user-select:none;
       transition:transform .15s;
     }
-    body.home .upload-btn:hover{transform:scale(1.05);}
-    body:not(.home) .upload-btn{display:none;}   /* cercle masqué après chargement */
+    body.home .upload-btn:hover{transform:scale(1.08);}
+    body:not(.home) .upload-btn{display:none;}            /* masqué après résultats */
 
-    /* tableau, accordéons, iframes (inchangés) */
-    table{
-      width:100%;border-collapse:collapse;background:var(--card);
+    /* Petite icône fleur/feuille */
+    .upload-btn span{font-size:3rem;line-height:1;margin-bottom:0.4rem;}
+
+    /* Tableau (inchangé) */
+    table{width:100%;border-collapse:collapse;background:var(--card);
       border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.05);
-      margin-bottom:1.2rem;
-    }
+      margin-bottom:1.2rem;}
     th,td{padding:8px 10px;border-bottom:1px solid var(--border)}
     th{background:#fff;color:#000;font-weight:600;text-align:left}
     tr:last-child td{border-bottom:none}
     td a{color:var(--primary);text-decoration:none}
     td a:hover{text-decoration:underline}
 
-    details{
-      margin-bottom:1rem;background:var(--card);border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.05);
-    }
-    summary{padding:10px 12px;cursor:pointer;font-weight:500;color:var(--primary);list-style:none}
+    /* Accordéons et iframes (inchangés) */
+    details{margin-bottom:1rem;background:var(--card);border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.05);}
+    summary{padding:10px 12px;cursor:pointer;font-weight:500;color:var(--primary);list-style:none;}
     summary::after{content:"▸";float:right;transition:transform .2s;}
     details[open] summary::after{transform:rotate(90deg);}
     summary::-webkit-details-marker{display:none;}
     summary:hover{background:rgba(0,0,0,.04);}
+    .iframe-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;padding:12px;}
+    iframe{width:100%;height:280px;border:none;border-radius:4px;}
 
-    .iframe-grid{
-      display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
-      gap:12px;padding:12px;
-    }
-    iframe{width:100%;height:280px;border:none;border-radius:4px}
-
-    /* dark mode auto */
+    /* Dark mode auto */
     @media (prefers-color-scheme:dark){
       :root{--bg:#181a1b;--card:#262b2f;--border:#333;--text:#ececec}
       table,details{border-color:#333}
@@ -105,11 +89,14 @@
 <body class="home">
   <h1>Identification Pl@ntNet</h1>
 
-  <!-- input caché + cercle vert (label) -->
+  <!-- input caché + label cercle vert -->
   <input type="file" id="file" accept="image/*" capture="environment">
-  <label for="file" class="upload-btn">Prendre<br>une&nbsp;photo</label>
+  <label for="file" class="upload-btn">
+    <span>🌿</span>
+    Prendre<br>une&nbsp;photo
+  </label>
 
-  <!-- tableau et fiches remplis par app.js -->
+  <!-- Conteneurs remplis par app.js -->
   <div id="results"></div>
   <div id="cards"></div>
 </body>
