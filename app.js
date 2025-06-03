@@ -18,6 +18,11 @@ const cdRefOf       = sci => taxref[sci.toLowerCase()];
 const inpnCarteUrl  = cd  => `https://inpn.mnhn.fr/espece/cd_nom/${cd}/tab/carte`;
 const inpnStatutUrl = cd  => `https://inpn.mnhn.fr/espece/cd_nom/${cd}/tab/statut`;
 const auraUrl       = cd  => `https://atlas.biodiversite-auvergne-rhone-alpes.fr/espece/${cd}`;
+const openObsUrl    = cd  => (
+  `https://openobs.mnhn.fr/openobs-hub/occurrences/search?` +
+  `q=lsid%3A${cd}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&` +
+  `qc=&radius=239.6&lat=44.57641801313443&lon=4.9718137085437775#tab_mapView`
+);
 
 /* ---- appel Pl@ntNet ---------------------------------------------- */
 async function identify(file) {
@@ -43,7 +48,7 @@ function showResults(items) {
   table.style.width = "100%";
 
   const header = document.createElement("tr");
-  ["Nom latin", "Score (%)", "INPN carte", "INPN statut", "Biodiv'AURA"]
+  ["Nom latin", "Score (%)", "INPN carte", "INPN statut", "Biodiv'AURA", "OpenObs"]
     .forEach(text => {
       const th = document.createElement("th");
       th.textContent = text;
@@ -75,6 +80,9 @@ function showResults(items) {
 
     // Biodiv'AURA
     addLinkCell(tr, cd ? auraUrl(cd)       : null,  "atlas");
+
+    // OpenObs
+    addLinkCell(tr, cd ? openObsUrl(cd)    : null,  "carte");
 
     table.appendChild(tr);
   });
