@@ -1,22 +1,61 @@
-<!doctype html><html lang="fr">
+<!doctype html>
+<html lang="fr">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+
   <title>PlantID Web</title>
+
+  <!-- PWA -->
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon-192.png">
+
+  <!-- Code métier -->
   <script defer src="app.js"></script>
+
+  <!-- Style minimal -->
   <style>
-    body{font-family:sans-serif;max-width:600px;margin:auto;padding:1rem}
-    h1{font-size:1.4rem;margin-bottom:.5rem}
-    li{margin:.4rem 0}
-    input{margin:.8rem 0}
+    body{
+      font-family:sans-serif;
+      max-width:800px;
+      margin:auto;
+      padding:1rem;
+    }
+    h1{
+      font-size:1.4rem;
+      margin-bottom:0.5rem;
+    }
+    input{
+      margin:0.8rem 0;
+    }
+    table{
+      border-collapse:collapse;
+      width:100%;
+      margin-top:0.5rem;
+    }
+    th,td{
+      border:1px solid #ccc;
+      padding:4px 6px;
+    }
+    th{
+      background:#f1f1f1;
+      text-align:left;
+    }
+    td a{
+      color:#0073e6;
+      text-decoration:none;
+    }
   </style>
 </head>
+
 <body>
   <h1>Identification Pl@ntNet</h1>
 
+  <!-- Sélection / prise de photo -->
   <input type="file" id="file" accept="image/*" capture="environment">
-  <ul id="results"></ul>
 
-</body></html>
+  <!-- Zone d’affichage des résultats (tableau injecté par app.js) -->
+  <div id="results"></div>
+
+</body>
+</html>
