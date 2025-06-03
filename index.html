@@ -6,30 +6,22 @@
 
   <title>PlantID Web</title>
 
-  <!-- PWA -->
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon-192.png">
-
-  <!-- Logique -->
   <script defer src="app.js"></script>
 
-  <!-- Style -->
   <style>
     :root{
-      --primary:#388e3c;
-      --bg:#f6f9fb;
-      --card:#ffffff;
-      --border:#e0e0e0;
-      --text:#202124;
+      --primary:#388e3c; --bg:#f6f9fb; --card:#ffffff;
+      --border:#e0e0e0; --text:#202124;
     }
     *{box-sizing:border-box;}
 
     /* Bandeau avant résultats */
     body.home::before{
-      content:"";
-      position:fixed;inset:0;
+      content:"";position:fixed;inset:0;
       background:url("assets/Bandeau.jpg") center/cover no-repeat fixed;
-      z-index:-1;opacity:.30;
+      opacity:.30;z-index:-1;
     }
 
     body{
@@ -39,49 +31,47 @@
     }
     h1{margin:0 0 0.8rem;font-size:1.6rem;color:var(--primary)}
 
-    /* Input caché */
+    /* input caché */
     #file{display:none;}
 
-    /* Cercle vert visible seulement en page d’accueil (.home) */
+    /* Cercle vert (affiché uniquement en page d’accueil) */
     body.home .upload-btn{
       display:flex;flex-direction:column;align-items:center;justify-content:center;
-      width:220px;height:220px;margin:3rem auto;          /* ↑ diamètre & placement */
+      width:220px;height:220px;margin:9rem auto;   /* ↓ décalé d'environ 5 cm */
       border-radius:50%;background:var(--primary);color:#fff;
       font-weight:600;font-size:1.15rem;cursor:pointer;
       box-shadow:0 4px 14px rgba(0,0,0,.25);user-select:none;
       transition:transform .15s;
     }
     body.home .upload-btn:hover{transform:scale(1.08);}
-    body:not(.home) .upload-btn{display:none;}            /* masqué après résultats */
+    body:not(.home) .upload-btn{display:none;}
 
-    /* Petite icône fleur/feuille */
+    /* icône */
     .upload-btn span{font-size:3rem;line-height:1;margin-bottom:0.4rem;}
 
-    /* Tableau (inchangé) */
+    /* tableau, accordéons, iframes (inchangés) */
     table{width:100%;border-collapse:collapse;background:var(--card);
-      border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.05);
-      margin-bottom:1.2rem;}
+      border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.05);margin-bottom:1.2rem;}
     th,td{padding:8px 10px;border-bottom:1px solid var(--border)}
     th{background:#fff;color:#000;font-weight:600;text-align:left}
     tr:last-child td{border-bottom:none}
     td a{color:var(--primary);text-decoration:none}
     td a:hover{text-decoration:underline}
 
-    /* Accordéons et iframes (inchangés) */
     details{margin-bottom:1rem;background:var(--card);border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.05);}
     summary{padding:10px 12px;cursor:pointer;font-weight:500;color:var(--primary);list-style:none;}
     summary::after{content:"▸";float:right;transition:transform .2s;}
     details[open] summary::after{transform:rotate(90deg);}
     summary::-webkit-details-marker{display:none;}
     summary:hover{background:rgba(0,0,0,.04);}
+
     .iframe-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;padding:12px;}
     iframe{width:100%;height:280px;border:none;border-radius:4px;}
 
-    /* Dark mode auto */
     @media (prefers-color-scheme:dark){
       :root{--bg:#181a1b;--card:#262b2f;--border:#333;--text:#ececec}
       table,details{border-color:#333}
-      th{background:#262b2f;color:#ececec}
+      th{background:#262b2f;color:#ececec;}
     }
   </style>
 </head>
@@ -89,14 +79,12 @@
 <body class="home">
   <h1>Identification Pl@ntNet</h1>
 
-  <!-- input caché + label cercle vert -->
   <input type="file" id="file" accept="image/*" capture="environment">
   <label for="file" class="upload-btn">
     <span>🌿</span>
     Prendre<br>une&nbsp;photo
   </label>
 
-  <!-- Conteneurs remplis par app.js -->
   <div id="results"></div>
   <div id="cards"></div>
 </body>
