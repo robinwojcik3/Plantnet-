@@ -1,8 +1,9 @@
+ (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
 diff --git a/app.js b/app.js
-index a00273bc45f318117d075865b2cd59544ebded79..0e32a04af7ce159b936b7dd34a377eba96263047 100644
+index a00273bc45f318117d075865b2cd59544ebded79..a227755114bd537d5b7f7ee1f4748af8cb2d2a52 100644
 --- a/app.js
 +++ b/app.js
-@@ -58,50 +58,64 @@ const proxyStatut = c => `/.netlify/functions/inpn-proxy?cd=${c}&type=statut`;
+@@ -58,50 +58,67 @@ const proxyStatut = c => `/.netlify/functions/inpn-proxy?cd=${c}&type=statut`;
  /* ================================================================
     FONCTION PRINCIPALE : IDENTIFICATION Pl@ntNet
     ================================================================ */
@@ -36,10 +37,13 @@ index a00273bc45f318117d075865b2cd59544ebded79..0e32a04af7ce159b936b7dd34a377eba
 +  const a = document.createElement('a');
 +  a.href = url;
 +  a.download = file.name || 'photo.jpg';
++  a.style.display = 'none';
 +  document.body.appendChild(a);
 +  a.click();
-+  a.remove();
-+  URL.revokeObjectURL(url);
++  setTimeout(() => {
++    URL.revokeObjectURL(url);
++    a.remove();
++  });
 +}
 +
  /* ================================================================
@@ -68,10 +72,10 @@ index a00273bc45f318117d075865b2cd59544ebded79..0e32a04af7ce159b936b7dd34a377eba
        <td>${link(cd && openObs(cd),"carte")}</td>
      </tr>`;
 diff --git a/app.js b/app.js
-index a00273bc45f318117d075865b2cd59544ebded79..0e32a04af7ce159b936b7dd34a377eba96263047 100644
+index a00273bc45f318117d075865b2cd59544ebded79..a227755114bd537d5b7f7ee1f4748af8cb2d2a52 100644
 --- a/app.js
 +++ b/app.js
-@@ -123,27 +137,45 @@ function buildCards(items){
+@@ -123,27 +140,45 @@ function buildCards(items){
  
    items.forEach(({score,species}) => {
      const sci = species.scientificNameWithoutAuthor;
@@ -118,3 +122,6 @@ index a00273bc45f318117d075865b2cd59544ebded79..0e32a04af7ce159b936b7dd34a377eba
 +    updateIcon();
 +  });
 +}
+ 
+EOF
+)
