@@ -1,149 +1,120 @@
-/* ================================================================
-   CONFIGURATION GÉNÉRALE
-   ================================================================ */
-const API_KEY  = "2b10vfT6MvFC2lcAzqG1ZMKO";          // clé Pl@ntNet
-const PROJECT  = "all";
-const ENDPOINT = `https://my-api.plantnet.org/v2/identify/${PROJECT}?api-key=${API_KEY}`;
-const MAX_RESULTS = 5;                                // nb lignes tableau/fiches
-
-/* ================================================================
-   FONCTION DE NORMALISATION (minuscules + pas d’accents + espaces simples)
-   ================================================================ */
-function norm(txt){
-  return txt
-    .normalize("NFD")                 // décomposition accents
-    .replace(/[\u0300-\u036f]/g,"")   // retrait diacritiques
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g," ");             // espaces multiples -> 1
-}
-
-/* ================================================================
-   CHARGEMENT DES JSON LOCAUX (taxref + ecology) AVANT IDENTIFICATION
-   ================================================================ */
-let taxref   = {};      // { nom latin normalisé -> CD_REF }
-let ecology  = {};      // { nom latin normalisé -> description écologie }
-
-const ready = Promise.all([
-  /* TAXREF ------------------------------------------------------ */
-  fetch("taxref.json").then(r => r.json()).then(j => {
-    Object.entries(j).forEach(([k,v]) => taxref[norm(k)] = v);
-  }),
-  /* ECOLOGY ----------------------------------------------------- */
-  fetch("ecology.json").then(r => r.json()).then(j => {
-    // le JSON est déjà normalisé, mais on re-normalise par sécurité
-    Object.entries(j).forEach(([k,v]) => ecology[norm(k)] = v);
-  })
-]).catch(err => {
-  alert("Erreur chargement des fichiers locaux : " + err);
-});
-
-/* ================================================================
-   HELPERS URLS
-   ================================================================ */
-const cdRef      = n => taxref[norm(n)];            // CD_REF ou undefined
-const ecolOf     = n => ecology[norm(n)] || "—";    // description ou tiret
-const slug       = n => norm(n).replace(/ /g,"-");
-
-const infoFlora  = n => `https://www.infoflora.ch/fr/flore/${slug(n)}.html`;
-const inpnCarte  = c => `https://inpn.mnhn.fr/espece/cd_nom/${c}/tab/carte`;
-const inpnStatut = c => `https://inpn.mnhn.fr/espece/cd_nom/${c}/tab/statut`;
-const aura       = c => `https://atlas.biodiversite-auvergne-rhone-alpes.fr/espece/${c}`;
-const openObs    = c => `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=lsid%3A${c}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&qc=&radius=239.6&lat=44.57641801313443&lon=4.9718137085437775#tab_mapView`;
-
-/* proxies Netlify Functions (fragments INPN) */
-const proxyCarte  = c => `/.netlify/functions/inpn-proxy?cd=${c}&type=carte`;
-const proxyStatut = c => `/.netlify/functions/inpn-proxy?cd=${c}&type=statut`;
-
-/* ================================================================
-   FONCTION PRINCIPALE : IDENTIFICATION Pl@ntNet
-   ================================================================ */
-async function identify(file){
-  /* On attend que taxref + ecology soient chargés */
-  await ready;
-
-  /* Requête API Pl@ntNet */
-  const fd = new FormData();
-  fd.append("images", file, "photo.jpg");
-  fd.append("organs", "auto");
-
-  const res = await fetch(ENDPOINT, { method:"POST", body:fd });
-  if(!res.ok){ alert("Erreur API Pl@ntNet"); return; }
-
-  const results = (await res.json()).results.slice(0, MAX_RESULTS);
-
-  /* Retire le bandeau de fond */
-  document.body.classList.remove("home");
-
-  /* Affichage */
-  buildTable(results);
-  buildCards(results);
-}
-
-/* ================================================================
-   CONSTRUCTION DU TABLEAU DE RÉSULTATS
-   ================================================================ */
-function buildTable(items){
-  const wrap = document.getElementById("results");
-  wrap.innerHTML = "";
-
-  const headers = ["Nom latin","Score (%)","InfoFlora","Écologie","INPN carte","INPN statut","Biodiv'AURA","OpenObs"];
-  const link = (url, label) => url ? `<a href="${url}" target="_blank" rel="noopener">${label}</a>` : "—";
-
-  const rows = items.map(({score,species}) => {
-    const sci  = species.scientificNameWithoutAuthor;
-    const pct  = Math.round(score * 100);
-    const cd   = cdRef(sci);
-    const eco  = ecolOf(sci);
-    return `<tr>
-      <td>${sci}</td>
-      <td style="text-align:center">${pct}</td>
-      <td>${link(infoFlora(sci),"fiche")}</td>
-      <td>${eco.slice(0,120)}${eco.length>120?"…":""}</td>
-      <td>${link(cd && inpnCarte(cd),"carte")}</td>
-      <td>${link(cd && inpnStatut(cd),"statut")}</td>
-      <td>${link(cd && aura(cd),"atlas")}</td>
-      <td>${link(cd && openObs(cd),"carte")}</td>
-    </tr>`;
-  }).join("");
-
-  wrap.innerHTML = `
-    <table>
-      <thead><tr>${headers.map(h=>`<th>${h}</th>`).join("")}</tr></thead>
-      <tbody>${rows}</tbody>
-    </table>`;
-}
-
-/* ================================================================
-   CONSTRUCTION DES FICHES ACCORDÉON
-   ================================================================ */
-function buildCards(items){
-  const zone = document.getElementById("cards");
-  zone.innerHTML = "";
-
-  items.forEach(({score,species}) => {
-    const sci = species.scientificNameWithoutAuthor;
-    const cd  = cdRef(sci); if(!cd) return;     // skip si pas de cd_ref
-    const pct = Math.round(score * 100);
-
-    const details = document.createElement("details");
-    details.innerHTML = `
-      <summary>${sci} — ${pct}%</summary>
-      <p style="padding:0 12px 8px;font-style:italic">${ecolOf(sci)}</p>
-      <div class="iframe-grid">
-        <iframe src="${proxyCarte(cd)}"  title="Carte INPN"></iframe>
-        <iframe src="${proxyStatut(cd)}" title="Statut INPN"></iframe>
-        <iframe src="${aura(cd)}"        title="Biodiv'AURA"></iframe>
-        <iframe src="${openObs(cd)}"     title="OpenObs"></iframe>
-      </div>`;
-    zone.appendChild(details);
-  });
-}
-
-/* ================================================================
-   LISTENER SUR L’INPUT FILE
-   ================================================================ */
-document.getElementById("file")
-  .addEventListener("change", e => {
-    if(e.target.files[0]) identify(e.target.files[0]);
-  });
+diff --git a/app.js b/app.js
+index a00273bc45f318117d075865b2cd59544ebded79..0e32a04af7ce159b936b7dd34a377eba96263047 100644
+--- a/app.js
++++ b/app.js
+@@ -58,50 +58,64 @@ const proxyStatut = c => `/.netlify/functions/inpn-proxy?cd=${c}&type=statut`;
+ /* ================================================================
+    FONCTION PRINCIPALE : IDENTIFICATION Pl@ntNet
+    ================================================================ */
+ async function identify(file){
+   /* On attend que taxref + ecology soient chargés */
+   await ready;
+ 
+   /* Requête API Pl@ntNet */
+   const fd = new FormData();
+   fd.append("images", file, "photo.jpg");
+   fd.append("organs", "auto");
+ 
+   const res = await fetch(ENDPOINT, { method:"POST", body:fd });
+   if(!res.ok){ alert("Erreur API Pl@ntNet"); return; }
+ 
+   const results = (await res.json()).results.slice(0, MAX_RESULTS);
+ 
+   /* Retire le bandeau de fond */
+   document.body.classList.remove("home");
+ 
+   /* Affichage */
+   buildTable(results);
+   buildCards(results);
+ }
+ 
++/* ================================================================
++   SAUVEGARDE LOCALE DE LA PHOTO
++   ================================================================ */
++function savePhoto(file){
++  const url = URL.createObjectURL(file);
++  const a = document.createElement('a');
++  a.href = url;
++  a.download = file.name || 'photo.jpg';
++  document.body.appendChild(a);
++  a.click();
++  a.remove();
++  URL.revokeObjectURL(url);
++}
++
+ /* ================================================================
+    CONSTRUCTION DU TABLEAU DE RÉSULTATS
+    ================================================================ */
+ function buildTable(items){
+   const wrap = document.getElementById("results");
+   wrap.innerHTML = "";
+ 
+   const headers = ["Nom latin","Score (%)","InfoFlora","Écologie","INPN carte","INPN statut","Biodiv'AURA","OpenObs"];
+   const link = (url, label) => url ? `<a href="${url}" target="_blank" rel="noopener">${label}</a>` : "—";
+ 
+   const rows = items.map(({score,species}) => {
+     const sci  = species.scientificNameWithoutAuthor;
+     const pct  = Math.round(score * 100);
+     const cd   = cdRef(sci);
+     const eco  = ecolOf(sci);
+     return `<tr>
+       <td>${sci}</td>
+       <td style="text-align:center">${pct}</td>
+       <td>${link(infoFlora(sci),"fiche")}</td>
+       <td>${eco.slice(0,120)}${eco.length>120?"…":""}</td>
+       <td>${link(cd && inpnCarte(cd),"carte")}</td>
+       <td>${link(cd && inpnStatut(cd),"statut")}</td>
+       <td>${link(cd && aura(cd),"atlas")}</td>
+       <td>${link(cd && openObs(cd),"carte")}</td>
+     </tr>`;
+diff --git a/app.js b/app.js
+index a00273bc45f318117d075865b2cd59544ebded79..0e32a04af7ce159b936b7dd34a377eba96263047 100644
+--- a/app.js
++++ b/app.js
+@@ -123,27 +137,45 @@ function buildCards(items){
+ 
+   items.forEach(({score,species}) => {
+     const sci = species.scientificNameWithoutAuthor;
+     const cd  = cdRef(sci); if(!cd) return;     // skip si pas de cd_ref
+     const pct = Math.round(score * 100);
+ 
+     const details = document.createElement("details");
+     details.innerHTML = `
+       <summary>${sci} — ${pct}%</summary>
+       <p style="padding:0 12px 8px;font-style:italic">${ecolOf(sci)}</p>
+       <div class="iframe-grid">
+         <iframe src="${proxyCarte(cd)}"  title="Carte INPN"></iframe>
+         <iframe src="${proxyStatut(cd)}" title="Statut INPN"></iframe>
+         <iframe src="${aura(cd)}"        title="Biodiv'AURA"></iframe>
+         <iframe src="${openObs(cd)}"     title="OpenObs"></iframe>
+       </div>`;
+     zone.appendChild(details);
+   });
+ }
+ 
+ /* ================================================================
+    LISTENER SUR L’INPUT FILE
+    ================================================================ */
+ document.getElementById("file")
+   .addEventListener("change", e => {
+-    if(e.target.files[0]) identify(e.target.files[0]);
++    const f = e.target.files[0];
++    if(!f) return;
++    savePhoto(f);
++    identify(f);
+   });
++
++const toggleBtn = document.getElementById('toggle-mode');
++if(toggleBtn){
++  const updateIcon = () => {
++    toggleBtn.textContent = document.body.classList.contains('phone') ? '💻' : '📱';
++  };
++  toggleBtn.addEventListener('click', () => {
++    document.body.classList.toggle('phone');
++    updateIcon();
++  });
++  window.addEventListener('load', () => {
++    if(window.innerWidth <= 600) document.body.classList.add('phone');
++    updateIcon();
++  });
++}
