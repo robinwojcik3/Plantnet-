@@ -1,8 +1,9 @@
+ (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
 diff --git a/index.html b/index.html
-index 051bfde8c1e4674d9a5af97f681330ef0a81b298..41f32e5a705ec987a8705b57f3023707b9dbb429 100644
+index 051bfde8c1e4674d9a5af97f681330ef0a81b298..250c47f9b61adef630ff9dc332e6efa6f0b436c0 100644
 --- a/index.html
 +++ b/index.html
-@@ -1,114 +1,104 @@
+@@ -1,114 +1,111 @@
 -diff --git a/index.html b/index.html
 -index 694294113e9fd9edcb2edd2b2fe76b032bd2109c..c9b38999095f9eaab02b20817e040d9dcb77bef5 100644
 ---- a/index.html
@@ -138,9 +139,16 @@ index 051bfde8c1e4674d9a5af97f681330ef0a81b298..41f32e5a705ec987a8705b57f3023707
 +
 +    /* Bandeau avant résultats */
 +    body.home::before{
-+      content:"";position:fixed;inset:0;
-+      background:url("assets/Bandeau.jpg") center/cover no-repeat fixed;
-+      opacity:.30;z-index:-1;
++      content:"";
++      position:fixed;
++      inset:0;
++      background-image:url("assets/Bandeau.jpg");
++      background-position:center;
++      background-size:cover;
++      background-repeat:no-repeat;
++      background-attachment:fixed;
++      opacity:.30;
++      z-index:-1;
 +    }
 +
 +    body{
@@ -221,3 +229,6 @@ index 051bfde8c1e4674d9a5af97f681330ef0a81b298..41f32e5a705ec987a8705b57f3023707
 +  <button id="toggle-mode" type="button" aria-label="Basculer le mode">📱</button>
 +</body>
 +</html>
+ 
+EOF
+)
