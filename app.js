@@ -8,42 +8,6 @@ const MAX_RESULTS = 5;
 const MAX_MULTI_IMAGES = 5;
 
 /* ================================================================
-   GESTION DE LA GÉOLOCALISATION
-   ================================================================ */
-// Coordonnées par défaut (Grenoble, France) si la géolocalisation échoue ou est refusée.
-let userLocation = { latitude: 45.188529, longitude: 5.724524 };
-
-/**
- * Demande la géolocalisation de l'utilisateur.
- * REMARQUE : Pour des raisons de sécurité et de respect de la vie privée, tous les navigateurs
- * modernes EXIGENT que l'utilisateur donne son autorisation pour partager sa position.
- * Cette demande d'autorisation n'est faite qu'une seule fois ; le navigateur mémorise ensuite le choix.
- * Il est techniquement impossible d'obtenir la position GPS sans cette permission initiale.
- */
-function requestUserLocation() {
-  if ("geolocation" in navigator) {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        userLocation = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude
-        };
-        console.log("Géolocalisation de l'utilisateur obtenue :", userLocation);
-      },
-      (error) => {
-        console.warn(`ERREUR de géolocalisation (${error.code}): ${error.message}. Utilisation des coordonnées par défaut.`);
-      }
-    );
-  } else {
-    console.warn("La géolocalisation n'est pas supportée par ce navigateur. Utilisation des coordonnées par défaut.");
-  }
-}
-
-// Lancer la demande de géolocalisation au chargement de l'application.
-requestUserLocation();
-
-
-/* ================================================================
    INITIALISATION IndexedDB POUR SAUVEGARDE LOCALE DES PHOTOS
    ================================================================ */
 let db = null;
@@ -202,19 +166,61 @@ const ecolOf     = n => ecology[norm(n)] || "—";
 const slug       = n => norm(n).replace(/ /g,"-");
 
 const infoFlora  = n => `https://www.infoflora.ch/fr/flore/${slug(n)}.html`;
-// const inpnCarte  = c => `https://inpn.mnhn.fr/espece/cd_nom/${c}/tab/carte`; // Supprimé
 const inpnStatut = c => `https://inpn.mnhn.fr/espece/cd_nom/${c}/tab/statut`;
 const aura       = c => `https://atlas.biodiversite-auvergne-rhone-alpes.fr/espece/${c}`;
-// MODIFICATION: L'URL OpenObs utilise maintenant userLocation et un radius fixe.
-const openObs    = c => {
-    const lat = userLocation.latitude;
-    const lon = userLocation.longitude;
-    return `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=lsid%3A${c}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&qc=&radius=120.6&lat=${lat}&lon=${lon}#tab_mapView`;
-};
-
-
-// const proxyCarte  = c => `/.netlify/functions/inpn-proxy?cd=${c}&type=carte`; // Supprimé
 const proxyStatut = c => `/.netlify/functions/inpn-proxy?cd=${c}&type=statut`;
+
+// La fonction de création de l'URL OpenObs est maintenant privée car elle est appelée par handleOpenObsClick.
+function buildOpenObsUrl(cd_ref, location) {
+    // Utiliser la localisation passée en argument, ou des coordonnées par défaut.
+    const lat = location ? location.latitude : 45.188529;
+    const lon = location ? location.longitude : 5.724524;
+    return `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=lsid%3A${cd_ref}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&qc=&radius=120.6&lat=${lat}&lon=${lon}#tab_mapView`;
+}
+
+// Fonction pour obtenir la géolocalisation de l'utilisateur. Retourne une Promise.
+function getLiveUserLocation() {
+    return new Promise((resolve, reject) => {
+        if (!("geolocation" in navigator)) {
+            reject(new Error("La géolocalisation n'est pas supportée par votre navigateur."));
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                resolve({
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude
+                });
+            },
+            (error) => {
+                reject(error);
+            }
+        );
+    });
+}
+
+// Handler pour le clic sur le lien OpenObs. Doit être global pour être appelé par `onclick`.
+window.handleOpenObsClick = async function(event, cd_ref) {
+    event.preventDefault(); // Empêche le lien de suivre href="#"
+    const targetLink = event.currentTarget;
+    targetLink.textContent = 'Localisation...'; // Indique à l'utilisateur qu'une action est en cours
+
+    try {
+        // Demande la localisation en temps réel (déclenche la demande de permission si nécessaire)
+        const location = await getLiveUserLocation();
+        console.log("Géolocalisation obtenue pour OpenObs:", location);
+        const url = buildOpenObsUrl(cd_ref, location);
+        window.open(url, '_blank', 'noopener,noreferrer');
+        targetLink.textContent = 'carte'; // Réinitialise le texte du lien
+    } catch (error) {
+        console.error("Échec de l'obtention de la géolocalisation pour OpenObs:", error.message);
+        alert("Impossible d'obtenir la localisation. Ouverture de la carte avec une position par défaut.");
+        const defaultUrl = buildOpenObsUrl(cd_ref, null); // Appel avec null pour utiliser les coordonnées par défaut
+        window.open(defaultUrl, '_blank', 'noopener,noreferrer');
+        targetLink.textContent = 'carte'; // Réinitialise le texte du lien
+    }
+}
+
 
 /* ================================================================
    APPEL À L'API PlantNet (générique pour résultats)
@@ -325,7 +331,6 @@ function buildTable(items){
   if (!wrap) return;
   wrap.innerHTML = ""; 
 
-  // MODIFICATION: Suppression de "INPN carte" de l'en-tête
   const headers = ["Nom latin","Score (%)","InfoFlora","Écologie","INPN statut","Biodiv'AURA","OpenObs"];
   const link = (url, label) => url ? `<a href="${url}" target="_blank" rel="noopener">${label}</a>` : "—";
 
@@ -338,16 +343,26 @@ function buildTable(items){
       <td>${sci}</td>
       <td style="text-align:center">${score}</td>
       <td>${link(infoFlora(sci),"fiche")}</td>
-      <td>${eco}</td>
+      <td class="ecology-column">${eco}</td>
       <td>${link(cd && inpnStatut(cd),"statut")}</td>
       <td>${link(cd && aura(cd),"atlas")}</td>
-      <td>${link(cd && openObs(cd),"carte")}</td>
+      <td>${cd ? `<a href="#" onclick="handleOpenObsClick(event, '${cd}')">carte</a>` : "—"}</td>
     </tr>`;
   }).join("");
 
   wrap.innerHTML = `
     <table>
-      <thead><tr>${headers.map(h=>`<th>${h}</th>`).join("")}</tr></thead>
+      <thead>
+        <tr>
+          <th>Nom latin</th>
+          <th>Score (%)</th>
+          <th>InfoFlora</th>
+          <th class="ecology-column">Écologie</th>
+          <th>INPN statut</th>
+          <th>Biodiv'AURA</th>
+          <th>OpenObs</th>
+        </tr>
+      </thead>
       <tbody>${rows}</tbody>
     </table>`;
 }
@@ -369,12 +384,14 @@ function buildCards(items){
     const details = document.createElement("details");
     let iframeHTML = '';
     if (cd) {
-        // MODIFICATION: Suppression de l'iframe pour proxyCarte
+        // L'iframe OpenObs utilisera l'URL avec les coordonnées par défaut.
+        // Le lien "carte" dans le tableau est celui qui proposera la localisation dynamique.
+        const openObsDefaultUrl = buildOpenObsUrl(cd, null);
         iframeHTML = `
         <div class="iframe-grid">
             <iframe loading="lazy" src="${proxyStatut(cd)}" title="Statut INPN"></iframe>
             <iframe loading="lazy" src="${aura(cd)}"        title="Biodiv'AURA"></iframe>
-            <iframe loading="lazy" src="${openObs(cd)}"     title="OpenObs"></iframe>
+            <iframe loading="lazy" src="${openObsDefaultUrl}" title="OpenObs"></iframe>
         </div>`;
     }
 
@@ -391,14 +408,14 @@ function buildCards(items){
    ================================================================ */
 function handleSingleFileSelect(file, sourceType) { 
   if (!file) return;
-  console.log(`Image unique sélectionnée depuis ${sourceType || 'source inconnue'}:`, file.name, "Type:", file.type, "Taille:", file.size);
+  console.log(`Image unique sélectionnée depuis ${sourceType || 'source inconnue'}:`, file.name);
 
   savePhotoToDB(file).catch(err => {
-      console.error(`La sauvegarde locale (IndexedDB) de la photo depuis ${sourceType || 'source inconnue'} a échoué:`, err);
+      console.error(`La sauvegarde locale (IndexedDB) de la photo a échoué:`, err);
   });
 
   if (sourceType === 'capture') {
-      downloadPhotoForDeviceGallery(file, file.name || `plantouille_capture_${Date.now()}.${file.type.split('/')[1] || 'jpg'}`);
+      downloadPhotoForDeviceGallery(file, file.name || `plantouille_capture_${Date.now()}.jpg`);
   }
 
   const reader = new FileReader();
