@@ -35,7 +35,8 @@ const ready = Promise.all([
     Object.entries(j).forEach(([k,v]) => ecology[norm(k)] = v);
   })
 ]).catch(err => {
-  alert("Erreur chargement des fichiers locaux : " + err);
+  console.error("Erreur chargement des fichiers locaux : " + err);
+  // Ne pas bloquer l'application si les fichiers locaux ne sont pas disponibles
 });
 
 /* ================================================================
@@ -68,31 +69,58 @@ function showOrganModal(file) {
 function hideOrganModal() {
   document.getElementById("organModal").classList.remove("active");
   pendingFile = null;
+  // Reset l'input file pour permettre de re-sélectionner le même fichier
+  document.getElementById("file").value = "";
+}
+
+function showLoader() {
+  document.getElementById("loader").classList.add("active");
+}
+
+function hideLoader() {
+  document.getElementById("loader").classList.remove("active");
 }
 
 /* ================================================================
    FONCTION PRINCIPALE : IDENTIFICATION Pl@ntNet
    ================================================================ */
 async function identify(file, organ){
-  /* On attend que taxref + ecology soient chargés */
-  await ready;
+  try {
+    /* Afficher le loader */
+    showLoader();
+    
+    /* On attend que taxref + ecology soient chargés */
+    await ready;
 
-  /* Requête API Pl@ntNet */
-  const fd = new FormData();
-  fd.append("images", file, "photo.jpg");
-  fd.append("organs", organ);  // Utilise l'organe sélectionné au lieu de "auto"
+    /* Requête API Pl@ntNet */
+    const fd = new FormData();
+    fd.append("images", file, "photo.jpg");
+    fd.append("organs", organ);  // Utilise l'organe sélectionné
 
-  const res = await fetch(ENDPOINT, { method:"POST", body:fd });
-  if(!res.ok){ alert("Erreur API Pl@ntNet"); return; }
+    const res = await fetch(ENDPOINT, { method:"POST", body:fd });
+    
+    if(!res.ok){ 
+      throw new Error(`Erreur API Pl@ntNet: ${res.status}`);
+    }
 
-  const results = (await res.json()).results.slice(0, MAX_RESULTS);
+    const data = await res.json();
+    const results = data.results.slice(0, MAX_RESULTS);
 
-  /* Retire le bandeau de fond */
-  document.body.classList.remove("home");
+    /* Cache le loader */
+    hideLoader();
 
-  /* Affichage */
-  buildTable(results);
-  buildCards(results);
+    /* Retire le bandeau de fond */
+    document.body.classList.remove("home");
+
+    /* Affichage */
+    buildTable(results);
+    buildCards(results);
+    
+  } catch(error) {
+    hideLoader();
+    console.error("Erreur identification:", error);
+    alert("Erreur lors de l'identification. Veuillez réessayer.");
+  }
 }
 
 /* ================================================================
@@ -138,7 +166,8 @@ function buildCards(items){
 
   items.forEach(({score,species}) => {
     const sci = species.scientificNameWithoutAuthor;
-    const cd  = cdRef(sci); if(!cd) return;     // skip si pas de cd_ref
+    const cd  = cdRef(sci); 
+    if(!cd) return;     // skip si pas de cd_ref
     const pct = Math.round(score * 100);
 
     const details = document.createElement("details");
@@ -156,34 +185,55 @@ function buildCards(items){
 }
 
 /* ================================================================
-   LISTENERS
+   INITIALISATION ET LISTENERS
    ================================================================ */
 document.addEventListener("DOMContentLoaded", () => {
   /* Listener sur l'input file */
-  document.getElementById("file").addEventListener("change", e => {
-    if(e.target.files[0]) {
+  const fileInput = document.getElementById("file");
+  fileInput.addEventListener("change", e => {
+    if(e.target.files && e.target.files[0]) {
       showOrganModal(e.target.files[0]);
     }
   });
 
   /* Listeners sur les boutons d'organe */
-  document.querySelectorAll(".organ-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
+  const organButtons = document.querySelectorAll(".organ-btn");
+  organButtons.forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
       const organ = btn.getAttribute("data-organ");
-      if(pendingFile) {
+      if(pendingFile && organ) {
         hideOrganModal();
         identify(pendingFile, organ);
       }
     });
   });
 
-  /* Listener sur le bouton annuler */
-  document.getElementById("cancelOrgan").addEventListener("click", hideOrganModal);
+  /* Listener sur le bouton retour */
+  const backBtn = document.getElementById("backBtn");
+  if(backBtn) {
+    backBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      hideOrganModal();
+    });
+  }
   
-  /* Fermeture du modal si on clique en dehors */
-  document.getElementById("organModal").addEventListener("click", e => {
-    if(e.target.id === "organModal") {
+  /* Fermeture du modal si on clique sur le fond */
+  const organModal = document.getElementById("organModal");
+  organModal.addEventListener("click", (e) => {
+    if(e.target === organModal) {
       hideOrganModal();
     }
   });
+
+  /* Empêcher la propagation des clics dans le contenu du modal */
+  const organContent = document.querySelector(".organ-content");
+  if(organContent) {
+    organContent.addEventListener("click", (e) => {
+      e.stopPropagation();
+    });
+  }
 });
