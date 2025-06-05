@@ -5,7 +5,7 @@ const API_KEY  = "2b10vfT6MvFC2lcAzqG1ZMKO";
 const PROJECT  = "all";
 const ENDPOINT = `https://my-api.plantnet.org/v2/identify/${PROJECT}?api-key=${API_KEY}`;
 const MAX_RESULTS = 5;
-const MAX_MULTI_IMAGES = 5; // Limite pour l'identification multi-images
+const MAX_MULTI_IMAGES = 5;
 
 /* ================================================================
    FONCTION DE NORMALISATION
@@ -95,7 +95,7 @@ async function identifySingleImage(fileBlob, organ) {
     return;
   }
   try {
-    await ready; // Assure que taxref et ecology sont chargés
+    await ready; 
   } catch (err) {
      alert("Erreur critique lors du chargement des données. Veuillez réessayer.");
      return;
@@ -107,7 +107,7 @@ async function identifySingleImage(fileBlob, organ) {
 
   const results = await callPlantNetAPI(fd);
   if (results) {
-    document.body.classList.remove("home"); // S'applique à organ.html
+    document.body.classList.remove("home"); 
     buildTable(results);
     buildCards(results);
     console.log("Affichage des résultats (1 image) terminé.");
@@ -118,12 +118,12 @@ async function identifySingleImage(fileBlob, organ) {
    IDENTIFICATION (multi-images) - appelée depuis index.html
    ================================================================ */
 async function identifyMultipleImages(filesArray, organsArray) {
-  console.log("identifyMultipleImages appelée avec:", filesArray.length, "images et organes.");
+  console.log("identifyMultipleImages appelée avec:", filesArray.length, "images et organes correspondants:", organsArray);
   if (filesArray.length === 0 || filesArray.length !== organsArray.length) {
     alert("Erreur: Le nombre d'images et d'organes ne correspond pas ou est nul.");
     return;
   }
-  try {
+   try {
     await ready;
   } catch (err) {
      alert("Erreur critique lors du chargement des données. Veuillez réessayer.");
@@ -132,7 +132,6 @@ async function identifyMultipleImages(filesArray, organsArray) {
 
   const fd = new FormData();
   filesArray.forEach((file, index) => {
-    // Utiliser le nom original du fichier si disponible, sinon un nom générique
     const fileName = file.name || `photo_${index}.jpg`;
     fd.append("images", file, fileName);
   });
@@ -142,14 +141,12 @@ async function identifyMultipleImages(filesArray, organsArray) {
 
   const results = await callPlantNetAPI(fd);
   if (results) {
-    // Stocker les résultats pour affichage sur organ.html
     sessionStorage.setItem("identificationResults", JSON.stringify(results));
-    sessionStorage.removeItem("photoData"); // Effacer données single image
-    sessionStorage.removeItem("speciesQueryName"); // Effacer données recherche par nom
+    sessionStorage.removeItem("photoData"); 
+    sessionStorage.removeItem("speciesQueryName"); 
     location.href = "organ.html";
   }
 }
-
 
 /* ================================================================
    CONSTRUCTION DU TABLEAU ET DES FICHES DE RÉSULTATS
@@ -194,15 +191,15 @@ function buildCards(items){
   items.forEach(item => {
     const sci = item.species.scientificNameWithoutAuthor;
     const cd  = cdRef(sci); 
-    const isNameSearchResult = item.score === 1.00 && items.length === 1; // Heuristique pour recherche par nom
+    const isNameSearchResult = item.score === 1.00 && items.length === 1;
 
-    if(!cd && !isNameSearchResult) return; // Skip si pas de cd_ref pour résultats API
+    if(!cd && !isNameSearchResult) return; 
     
     const pct = item.score !== undefined ? Math.round(item.score * 100) : "Info";
 
     const details = document.createElement("details");
     let iframeHTML = '';
-    if (cd) { // Afficher les iframes seulement si cd_ref est disponible
+    if (cd) {
         iframeHTML = `
         <div class="iframe-grid">
             <iframe loading="lazy" src="${proxyCarte(cd)}"  title="Carte INPN"></iframe>
@@ -231,7 +228,7 @@ function handleSingleFileSelect(file) {
     sessionStorage.setItem("photoData", reader.result);
     console.log("Image unique sauvegardée; redirection vers organ.html.");
     sessionStorage.removeItem("speciesQueryName"); 
-    sessionStorage.removeItem("identificationResults"); // Effacer résultats multi-images potentiels
+    sessionStorage.removeItem("identificationResults");
     location.href = "organ.html";
   };
   reader.onerror = () => {
@@ -246,7 +243,7 @@ function handleSingleFileSelect(file) {
    ================================================================ */
 
 // --- Logique pour INDEX.HTML ---
-if (document.getElementById("file-capture")) { // On est probablement sur index.html
+if (document.getElementById("file-capture")) { 
   
   const fileCaptureInput = document.getElementById("file-capture");
   const fileGalleryInput = document.getElementById("file-gallery");
@@ -256,7 +253,7 @@ if (document.getElementById("file-capture")) { // On est probablement sur index.
   const multiImageListArea = document.getElementById("multi-image-list-area");
   const multiImageIdentifyButton = document.getElementById("multi-image-identify-button");
 
-  let selectedMultiFilesData = []; // [{file: File, organ: 'leaf', previewUrl: 'data:...'}, ...]
+  let selectedMultiFilesData = []; // Structure: [{file: FileObject, organ: 'leaf'}, ...]
 
   if (fileCaptureInput) {
     fileCaptureInput.addEventListener("change", e => {
@@ -282,7 +279,7 @@ if (document.getElementById("file-capture")) { // On est probablement sur index.
         let foundSpeciesName = null;
         const originalTaxrefKeys = Object.keys(JSON.parse(await (await fetch("taxref.json")).text()));
         foundSpeciesName = originalTaxrefKeys.find(key => norm(key) === normalizedQuery) || 
-                           (taxref[normalizedQuery] ? normalizedQuery : null); // Utilise la clé normalisée si le nom original n'est pas retrouvé mais que la clé normalisée existe
+                           (taxref[normalizedQuery] ? normalizedQuery : null);
 
         if (foundSpeciesName && cdRef(foundSpeciesName)) {
             sessionStorage.setItem("speciesQueryName", foundSpeciesName);
@@ -305,50 +302,103 @@ if (document.getElementById("file-capture")) { // On est probablement sur index.
     });
   }
 
-  // Logique pour l'upload multi-images
+  // --- Logique pour la section multi-images sur index.html ---
+  function renderMultiImageList() {
+    multiImageListArea.innerHTML = ''; 
+    if (selectedMultiFilesData.length === 0) {
+        multiImageIdentifyButton.style.display = 'none';
+        // Ne pas réinitialiser multiFileInput.value ici, car cela empêcherait la séléction des mêmes fichiers
+        // si l'utilisateur annule et recommence sans recharger la page.
+        return;
+    }
+
+    selectedMultiFilesData.forEach((item, index) => {
+        const listItemDiv = document.createElement('div');
+        listItemDiv.className = 'image-organ-item';
+
+        const fileInfoSpan = document.createElement('span');
+        fileInfoSpan.className = 'file-info';
+        
+        const fileIndexSpan = document.createElement('span');
+        fileIndexSpan.className = 'file-index';
+        fileIndexSpan.textContent = `Image ${index + 1}:`;
+        fileInfoSpan.appendChild(fileIndexSpan);
+
+        const fileNameSpan = document.createElement('span');
+        fileNameSpan.textContent = ` ${item.file.name.length > 20 ? item.file.name.substring(0, 17) + '...' : item.file.name}`;
+        fileInfoSpan.appendChild(fileNameSpan);
+        
+        const organSelect = document.createElement('select');
+        organSelect.dataset.index = index; // Lier le select à l'item de données
+        ['leaf', 'flower', 'fruit', 'bark'].forEach(organValue => {
+            const option = document.createElement('option');
+            option.value = organValue;
+            option.textContent = organValue.charAt(0).toUpperCase() + organValue.slice(1);
+            organSelect.appendChild(option);
+        });
+        organSelect.value = item.organ || 'leaf'; // Appliquer la valeur stockée ou 'leaf' par défaut
+        organSelect.addEventListener('change', (e) => {
+            const itemIndex = parseInt(e.target.dataset.index, 10);
+            selectedMultiFilesData[itemIndex].organ = e.target.value; // Mettre à jour l'organe dans notre tableau
+            console.log(`Organe pour image ${itemIndex + 1} changé en: ${selectedMultiFilesData[itemIndex].organ}`);
+        });
+        
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = '✖';
+        deleteButton.className = 'delete-file-btn';
+        deleteButton.type = 'button';
+        deleteButton.dataset.index = index;
+        deleteButton.addEventListener('click', handleDeleteMultiFile);
+
+        listItemDiv.appendChild(fileInfoSpan);
+        listItemDiv.appendChild(organSelect);
+        listItemDiv.appendChild(deleteButton);
+        multiImageListArea.appendChild(listItemDiv);
+    });
+    multiImageIdentifyButton.style.display = 'block';
+  }
+
+  function handleDeleteMultiFile(event) {
+    const indexToRemove = parseInt(event.currentTarget.dataset.index, 10);
+    selectedMultiFilesData.splice(indexToRemove, 1);
+    // Si c'est le dernier fichier, il faut aussi vider l'input file pour permettre de re-sélectionner le même fichier
+    if (selectedMultiFilesData.length === 0) {
+        multiFileInput.value = ''; // Réinitialiser l'input file
+    }
+    renderMultiImageList();
+  }
+
   if (multiFileInput && multiImageListArea && multiImageIdentifyButton) {
     multiFileInput.addEventListener("change", event => {
-      multiImageListArea.innerHTML = ''; // Nettoyer la zone
-      selectedMultiFilesData = [];
-      const files = Array.from(event.target.files).slice(0, MAX_MULTI_IMAGES);
-
-      if (files.length === 0) {
-          multiImageIdentifyButton.style.display = 'none';
-          return;
+      const files = Array.from(event.target.files);
+      // Concaténer avec les fichiers déjà sélectionnés, en respectant la limite
+      const totalFilesAfterAdd = selectedMultiFilesData.length + files.length;
+      
+      let filesToAdd = [];
+      if (totalFilesAfterAdd > MAX_MULTI_IMAGES) {
+          const remainingSlots = MAX_MULTI_IMAGES - selectedMultiFilesData.length;
+          if (remainingSlots > 0) {
+              filesToAdd = files.slice(0, remainingSlots);
+              alert(`Vous ne pouvez ajouter que ${remainingSlots} image(s) de plus. ${files.length - remainingSlots} image(s) n'ont pas été ajoutée(s).`);
+          } else {
+              alert(`Vous avez déjà atteint la limite de ${MAX_MULTI_IMAGES} images.`);
+          }
+      } else {
+          filesToAdd = files;
       }
 
-      files.forEach((file, index) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const itemDiv = document.createElement('div');
-            itemDiv.className = 'image-organ-item';
-            
-            const imgPreview = document.createElement('img');
-            imgPreview.src = e.target.result;
-            imgPreview.className = 'preview';
-            itemDiv.appendChild(imgPreview);
-
-            const fileNameSpan = document.createElement('span');
-            fileNameSpan.className = 'file-name';
-            fileNameSpan.textContent = file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name;
-            itemDiv.appendChild(fileNameSpan);
-
-            const organSelect = document.createElement('select');
-            organSelect.id = `organ-select-${index}`;
-            ['leaf', 'flower', 'fruit', 'bark'].forEach(organValue => {
-                const option = document.createElement('option');
-                option.value = organValue;
-                option.textContent = organValue.charAt(0).toUpperCase() + organValue.slice(1);
-                organSelect.appendChild(option);
-            });
-            itemDiv.appendChild(organSelect);
-            multiImageListArea.appendChild(itemDiv);
-
-            selectedMultiFilesData.push({ file: file, organSelectElement: organSelect, previewUrl: e.target.result });
+      filesToAdd.forEach(file => {
+        // Vérifier si le fichier n'est pas déjà dans la liste (basé sur le nom et la taille pour une simple vérification)
+        const isAlreadySelected = selectedMultiFilesData.some(item => item.file.name === file.name && item.file.size === file.size);
+        if (!isAlreadySelected && selectedMultiFilesData.length < MAX_MULTI_IMAGES) {
+            selectedMultiFilesData.push({ file: file, organ: 'leaf' }); // 'leaf' par défaut
+        } else if (isAlreadySelected) {
+            console.log(`Fichier "${file.name}" déjà sélectionné.`);
         }
-        reader.readAsDataURL(file);
       });
-      multiImageIdentifyButton.style.display = 'block';
+      renderMultiImageList();
+      // Ne pas réinitialiser multiFileInput.value ici pour permettre d'ajouter d'autres fichiers plus tard
+      // sauf si l'utilisateur le fait manuellement ou qu'on fournit un bouton "vider la sélection"
     });
 
     multiImageIdentifyButton.addEventListener("click", async () => {
@@ -356,15 +406,11 @@ if (document.getElementById("file-capture")) { // On est probablement sur index.
         alert("Veuillez sélectionner au moins une image.");
         return;
       }
-      if (selectedMultiFilesData.length > MAX_MULTI_IMAGES) {
-        alert(`Vous ne pouvez sélectionner que ${MAX_MULTI_IMAGES} images au maximum.`);
-        return;
-      }
-
-      const filesToSend = selectedMultiFilesData.map(item => item.file);
-      const organsToSend = selectedMultiFilesData.map(item => item.organSelectElement.value);
+      // La validation de MAX_MULTI_IMAGES est déjà gérée à l'ajout
       
-      // Valider que tous les organes sont sélectionnés (ils auront une valeur par défaut)
+      const filesToSend = selectedMultiFilesData.map(item => item.file);
+      const organsToSend = selectedMultiFilesData.map(item => item.organ); // L'organe est mis à jour via le 'change' listener du select
+      
       await identifyMultipleImages(filesToSend, organsToSend);
     });
   }
@@ -373,15 +419,13 @@ if (document.getElementById("file-capture")) { // On est probablement sur index.
 
 // --- Logique pour ORGAN.HTML ---
 const organBoxOnPage = document.getElementById("organ-choice"); 
-// Ce test est plus fiable pour savoir si on est sur organ.html que `if(organBox)` 
-// car organBox est initialisé plus haut et pourrait être null si le script s'exécute avant que le DOM soit prêt pour index.html
 
-if (typeof organBoxOnPage !== 'undefined' && organBoxOnPage !== null) { // Logique spécifique à organ.html
+if (typeof organBoxOnPage !== 'undefined' && organBoxOnPage !== null) { 
   
   const displaySpeciesNameResults = async (speciesName) => {
     console.log("Affichage des résultats pour la recherche par nom:", speciesName);
     const previewEl = document.getElementById("preview");
-    const organChoiceEl = document.getElementById("organ-choice"); // Récupérer à nouveau au cas où
+    const organChoiceEl = document.getElementById("organ-choice");
     if (previewEl) previewEl.style.display = 'none';
     if (organChoiceEl) organChoiceEl.style.display = 'none';
     
@@ -419,14 +463,13 @@ if (typeof organBoxOnPage !== 'undefined' && organBoxOnPage !== null) { // Logiq
   const displayIdentificationResults = (results) => {
     const previewEl = document.getElementById("preview");
     const organChoiceEl = document.getElementById("organ-choice");
-    if (previewEl) previewEl.style.display = 'none'; // Cacher la prévisualisation single-image
-    if (organChoiceEl) organChoiceEl.style.display = 'none'; // Cacher la sélection d'organe single-image
+    if (previewEl) previewEl.style.display = 'none';
+    if (organChoiceEl) organChoiceEl.style.display = 'none';
     
     document.body.classList.remove("home");
     buildTable(results);
     buildCards(results);
   };
-
 
   const speciesQueryName = sessionStorage.getItem("speciesQueryName");
   const storedImage = sessionStorage.getItem("photoData");
@@ -437,17 +480,22 @@ if (typeof organBoxOnPage !== 'undefined' && organBoxOnPage !== null) { // Logiq
     displaySpeciesNameResults(speciesQueryName);
   } else if (multiImageResults) {
     sessionStorage.removeItem("identificationResults");
-    const parsedResults = JSON.parse(multiImageResults);
-    displayIdentificationResults(parsedResults);
+    try {
+        const parsedResults = JSON.parse(multiImageResults);
+        displayIdentificationResults(parsedResults);
+    } catch (e) {
+        console.error("Erreur parsing des résultats d'identification multiple:", e);
+        alert("Impossible d'afficher les résultats de l'identification multiple.");
+        location.href = "index.html";
+    }
   } else if (storedImage) {
-    // Logique pour identification d'image unique (existante)
     const previewElement = document.getElementById("preview");
     if(previewElement) {
         previewElement.src = storedImage;
-        previewElement.style.display = 'block'; // Assurer la visibilité
+        previewElement.style.display = 'block';
     }
     const organChoiceEl = document.getElementById("organ-choice");
-    if (organChoiceEl) organChoiceEl.style.display = 'block'; // Assurer la visibilité
+    if (organChoiceEl) organChoiceEl.style.display = 'block';
 
     const toBlob = dataURL => {
       try {
@@ -475,10 +523,10 @@ if (typeof organBoxOnPage !== 'undefined' && organBoxOnPage !== null) { // Logiq
         return;
       }
       const selectedOrgan = event.currentTarget.dataset.organ;
-      await identifySingleImage(imageBlob, selectedOrgan); // Appel de la fonction pour image unique
+      await identifySingleImage(imageBlob, selectedOrgan);
     };
     
-    const currentOrganBox = document.getElementById("organ-choice"); // Utiliser une variable locale
+    const currentOrganBox = document.getElementById("organ-choice"); 
     if(currentOrganBox) {
         currentOrganBox.querySelectorAll("button").forEach(button => {
           button.addEventListener("click", handleOrganChoice);
@@ -486,7 +534,7 @@ if (typeof organBoxOnPage !== 'undefined' && organBoxOnPage !== null) { // Logiq
         console.log("Écouteurs d'événements attachés aux boutons d'organe pour identification d'image unique.");
     }
   } else {
-    console.warn("Organ.html: Aucune donnée à afficher (pas de recherche par nom, pas de résultats multi-images, pas d'image unique). Redirection.");
+    console.warn("Organ.html: Aucune donnée à afficher. Redirection vers index.html.");
     location.href = "index.html";
   }
 }
