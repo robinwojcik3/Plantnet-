@@ -179,7 +179,6 @@ if(organBox){
     organBox.querySelectorAll("button").forEach(btn =>
       btn.addEventListener("click", () => {
         identify(toBlob(data), btn.dataset.organ);
-        sessionStorage.removeItem("photoData");
       })
     );
   }
