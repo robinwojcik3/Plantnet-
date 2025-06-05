@@ -47,15 +47,27 @@
       padding:1.2rem;
       max-width:1100px;
     }
-    h1{margin:0 0 1.5rem;font-size:1.8rem;color:var(--primary)} /* Slightly larger title */
+    h1{margin:0 0 1.5rem;font-size:1.8rem;color:var(--primary)}
 
     .option-container {
       margin-bottom: 1.5rem;
-      width: 80vw;
-      max-width: 300px;
+      padding: 1rem;
+      background-color: rgba(255, 255, 255, 0.8); /* Légère transparence pour lisibilité */
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      width: 90vw;
+      max-width: 450px; /* Augmenté pour plus d'espace */
+    }
+    
+    .option-container h2 {
+        font-size: 1.2rem;
+        color: var(--primary);
+        margin-top: 0;
+        margin-bottom: 0.8rem;
     }
 
-    .upload-btn, .search-species-container button {
+
+    .upload-btn, .action-button { /* Classe générique pour les boutons d'action */
       display:block;
       width:100%;
       padding: 10px 15px;
@@ -69,126 +81,102 @@
       text-align: center;
       transition: background-color .15s, transform .15s;
     }
-    .upload-btn:hover, .search-species-container button:hover {
-      background-color: #2e7d32; /* Darker shade of primary */
+    .upload-btn:hover, .action-button:hover {
+      background-color: #2e7d32;
       transform: scale(1.03);
     }
-    .upload-btn img { /* For logo if used within button */
-        width: 100%;
-        max-width: 200px; /* Adjust as needed */
-        height: auto;
-        display: block;
-        margin: 0 auto 0.5rem auto; /* Center image and add space below */
-    }
     
-    .upload-btn.logo-btn img { /* Specific for the main logo button */
-        max-width: 260px; 
-        margin-bottom: 0;
-    }
-    .upload-btn.logo-btn span {
-        display: block;
-        margin-top: 0.5rem;
-        font-size: 0.9rem;
-        color: var(--text); /* Text color for span under logo */
-    }
-     body.home .upload-btn.logo-btn {
+    .upload-btn.logo-btn { 
         background-color: transparent;
         border: none;
         padding: 0;
     }
-    body.home .upload-btn.logo-btn:hover img {
+    .upload-btn.logo-btn img {
+        width: 100%;
+        max-width: 220px; 
+        height: auto;
+        display: block;
+        margin: 0 auto 0.5rem auto;
+    }
+    .upload-btn.logo-btn span {
+        display: block;
+        margin-top: 0.3rem;
+        font-size: 0.9rem;
+        color: var(--text); 
+    }
+     body.home .upload-btn.logo-btn:hover img {
         transform:scale(1.05);
     }
-    body:not(.home) .upload-btn { /* Hide all upload buttons if not on home for results page */
-        display:none;
-    }
 
-
-    .search-species-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 100%;
-    }
     .search-species-container input[type="search"] {
-      width: 100%;
+      width: calc(100% - 22px); /* Ajuster pour padding/border */
       padding: 10px;
       margin-bottom: 0.5rem;
       border: 1px solid var(--border);
       border-radius: 6px;
       font-size: 1rem;
     }
+    
+    /* Styles pour la section multi-images */
+    #multi-image-list .image-organ-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.5rem;
+        padding: 0.5rem;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        background-color: var(--card);
+    }
+    #multi-image-list .image-organ-item img.preview {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        margin-right: 10px;
+        border-radius: 4px;
+    }
+    #multi-image-list .image-organ-item .file-name {
+        flex-grow: 1;
+        font-size: 0.9rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        margin-right: 10px;
+    }
+    #multi-image-list .image-organ-item select {
+        padding: 5px;
+        border-radius: 4px;
+        border: 1px solid var(--border);
+        background-color: white; /* Assurer lisibilité en dark mode */
+        color: var(--text);
+    }
 
-    /* Styles for results page (organ.html) - mostly copied from index.html for consistency */
+
+    /* Styles généraux pour les pages de résultats (organ.html) */
     body:not(.home) h1 { font-size:1.6rem; color:var(--primary); margin-bottom: 1rem;}
-
-    table{
-      width:100%;
-      border-collapse:collapse;
-      background:var(--card);
-      border:1px solid var(--border);
-      border-radius:6px;
-      box-shadow:0 2px 6px rgba(0,0,0,.05);
-      margin-bottom:1.2rem;
-    }
-    th,td{
-      padding:8px 10px;
-      border-bottom:1px solid var(--border);
-    }
-    th{
-      background:#fff;
-      color:#000;
-      font-weight:600;
-      text-align:left;
-    }
+    table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.05);margin-bottom:1.2rem;}
+    th,td{padding:8px 10px;border-bottom:1px solid var(--border);}
+    th{background:#fff;color:#000;font-weight:600;text-align:left}
     tr:last-child td{border-bottom:none}
-    td a{
-      color:var(--primary);
-      text-decoration:none;
-    }
+    td a{color:var(--primary);text-decoration:none}
     td a:hover{text-decoration:underline}
-
-    details{
-      margin-bottom:1rem;
-      background:var(--card);
-      border:1px solid var(--border);
-      border-radius:6px;
-      box-shadow:0 2px 6px rgba(0,0,0,.05);
-    }
-    summary{
-      padding:10px 12px;
-      cursor:pointer;
-      font-weight:500;
-      color:var(--primary);
-      list-style:none;
-    }
+    details{margin-bottom:1rem;background:var(--card);border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.05);}
+    summary{padding:10px 12px;cursor:pointer;font-weight:500;color:var(--primary);list-style:none;}
     summary::-webkit-details-marker{display:none;}
-    summary::after{
-      content:"▸";
-      float:right;
-      transition:transform .2s;
-    }
+    summary::after{content:"▸";float:right;transition:transform .2s;}
     details[open] summary::after{transform:rotate(90deg);}
     summary:hover{background:rgba(0,0,0,.04);}
-
-    .iframe-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
-      gap:12px;
-      padding:12px;
-    }
-    iframe{
-      width:100%;
-      height:280px;
-      border:none;
-      border-radius:4px;
-    }
+    .iframe-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;padding:12px;}
+    iframe{width:100%;height:280px;border:none;border-radius:4px;}
 
     @media (prefers-color-scheme:dark){
       :root{--bg:#181a1b;--card:#262b2f;--border:#333;--text:#ececec}
       table,details{border-color:#333}
       th{background:#262b2f;color:#ececec}
       body.home .upload-btn.logo-btn span { color: var(--text); }
+      .option-container { background-color: rgba(38, 43, 47, 0.8); } /* Fond plus sombre pour conteneurs */
+      #multi-image-list .image-organ-item { background-color: var(--card); border-color: var(--border); }
+      #multi-image-list .image-organ-item select { background-color: #333; color: var(--text); border-color: #555;}
+      .search-species-container input[type="search"] { background-color: #333; color: var(--text); border-color: #555; }
     }
   </style>
 </head>
@@ -197,6 +185,7 @@
   <h1>Plantouille express</h1>
 
   <div class="option-container">
+    <h2>Identification rapide (1 photo)</h2>
     <input type="file" id="file-capture" accept="image/*" capture="environment" style="display:none;">
     <label for="file-capture" class="upload-btn logo-btn">
       <img src="logo acceuil.svg" alt="Prendre une photo pour identification">
@@ -205,15 +194,26 @@
   </div>
 
   <div class="option-container">
+     <h2>Identification depuis galerie (1 photo)</h2>
     <input type="file" id="file-gallery" accept="image/*" style="display:none;">
     <label for="file-gallery" class="upload-btn">
-      Choisir depuis la galerie
+      Choisir une image de la galerie
     </label>
+  </div>
+  
+  <div class="option-container">
+    <h2>Identification avancée (multi-images, max 5)</h2>
+    <input type="file" id="multi-file-input" accept="image/*" multiple style="display:none;">
+    <label for="multi-file-input" class="upload-btn">Ajouter des images (max 5)</label>
+    <div id="multi-image-list-area" style="margin-top: 1rem; text-align: left;">
+      </div>
+    <button type="button" id="multi-image-identify-button" class="action-button" style="margin-top: 1rem; display: none;">Identifier ces images</button>
   </div>
 
   <div class="option-container search-species-container">
+    <h2>Recherche par nom</h2>
     <input type="search" id="species-search-input" placeholder="Nom de l'espèce...">
-    <button type="button" id="species-search-button">Rechercher par nom</button>
+    <button type="button" id="species-search-button" class="action-button">Rechercher par nom</button>
   </div>
 
 </body>
