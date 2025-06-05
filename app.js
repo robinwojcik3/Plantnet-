@@ -5,6 +5,7 @@ const API_KEY  = "2b10vfT6MvFC2lcAzqG1ZMKO";
 const PROJECT  = "all";
 const ENDPOINT = `https://my-api.plantnet.org/v2/identify/${PROJECT}?api-key=${API_KEY}`;
 const MAX_RESULTS = 5;
+const MAX_MULTI_IMAGES = 5; // Limite pour l'identification multi-images
 
 /* ================================================================
    FONCTION DE NORMALISATION
@@ -29,14 +30,14 @@ const ready = Promise.all([
   fetch("taxref.json").then(r => r.json()).then(j => {
     Object.entries(j).forEach(([k,v]) => taxref[norm(k)] = v);
     console.log("Taxref.json chargé et normalisé.");
-  }),
+  }).catch(err => console.error("Erreur chargement taxref.json:", err)),
   fetch("ecology.json").then(r => r.json()).then(j => {
     Object.entries(j).forEach(([k,v]) => ecology[norm(k)] = v);
     console.log("Ecology.json chargé et normalisé.");
-  })
+  }).catch(err => console.error("Erreur chargement ecology.json:", err))
 ]).catch(err => {
-  alert("Erreur chargement des fichiers locaux : " + err);
-  console.error("Erreur chargement des fichiers locaux:", err);
+  alert("Erreur chargement des fichiers de données locaux : " + err.message);
+  console.error("Erreur globale chargement des fichiers locaux:", err);
 });
 
 /* ================================================================
@@ -56,31 +57,13 @@ const proxyCarte  = c => `/.netlify/functions/inpn-proxy?cd=${c}&type=carte`;
 const proxyStatut = c => `/.netlify/functions/inpn-proxy?cd=${c}&type=statut`;
 
 /* ================================================================
-   IDENTIFICATION Pl@ntNet (pour images)
+   APPEL À L'API PlantNet (générique pour résultats)
    ================================================================ */
-async function identify(file, organ){
-  console.log("Fonction identify appelée avec organe:", organ, "et fichier:", file ? "Oui" : "Non");
-  if (!file) {
-    console.error("Aucun fichier fourni à identify.");
-    alert("Erreur: Aucune image à identifier.");
-    return;
-  }
+async function callPlantNetAPI(formData) {
+  console.log("Appel à l'API PlantNet...");
   try {
-    await ready; // Assure que taxref et ecology sont chargés
-  } catch (err) {
-    console.error("Erreur lors de l'attente du chargement des données locales (ready):", err);
-    alert("Erreur critique lors du chargement des données. Veuillez réessayer.");
-    return;
-  }
-
-  const fd = new FormData();
-  fd.append("images", file, "photo.jpg");
-  fd.append("organs", organ); 
-
-  console.log(`Envoi de la requête à l'API PlantNet pour l'organe: ${organ}`);
-  try {
-    const res = await fetch(ENDPOINT, { method:"POST", body:fd });
-    if(!res.ok){
+    const res = await fetch(ENDPOINT, { method: "POST", body: formData });
+    if (!res.ok) {
       const errorBody = await res.json().catch(() => res.text());
       console.error("Erreur API Pl@ntNet:", res.status, errorBody);
       let alertMessage = `Erreur API Pl@ntNet (${res.status})`;
@@ -90,18 +73,83 @@ async function identify(file, organ){
         alertMessage += `: ${errorBody}`;
       }
       alert(alertMessage);
-      return;
+      return null;
     }
     const responseData = await res.json();
-    const results = responseData.results.slice(0, MAX_RESULTS);
-    document.body.classList.remove("home");
-    buildTable(results);
-    buildCards(results);
+    console.log("Réponse API Pl@ntNet reçue:", responseData);
+    return responseData.results.slice(0, MAX_RESULTS);
   } catch (error) {
     console.error("Erreur lors de l'appel à l'API PlantNet ou du traitement des résultats:", error);
     alert("Une erreur est survenue lors de l'identification: " + error.message);
+    return null;
   }
 }
+
+/* ================================================================
+   IDENTIFICATION (1 image) - appelée depuis organ.html
+   ================================================================ */
+async function identifySingleImage(fileBlob, organ) {
+  console.log("identifySingleImage appelée avec organe:", organ);
+  if (!fileBlob) {
+    alert("Erreur: Aucune image à identifier.");
+    return;
+  }
+  try {
+    await ready; // Assure que taxref et ecology sont chargés
+  } catch (err) {
+     alert("Erreur critique lors du chargement des données. Veuillez réessayer.");
+     return;
+  }
+
+  const fd = new FormData();
+  fd.append("images", fileBlob, "photo.jpg");
+  fd.append("organs", organ);
+
+  const results = await callPlantNetAPI(fd);
+  if (results) {
+    document.body.classList.remove("home"); // S'applique à organ.html
+    buildTable(results);
+    buildCards(results);
+    console.log("Affichage des résultats (1 image) terminé.");
+  }
+}
+
+/* ================================================================
+   IDENTIFICATION (multi-images) - appelée depuis index.html
+   ================================================================ */
+async function identifyMultipleImages(filesArray, organsArray) {
+  console.log("identifyMultipleImages appelée avec:", filesArray.length, "images et organes.");
+  if (filesArray.length === 0 || filesArray.length !== organsArray.length) {
+    alert("Erreur: Le nombre d'images et d'organes ne correspond pas ou est nul.");
+    return;
+  }
+  try {
+    await ready;
+  } catch (err) {
+     alert("Erreur critique lors du chargement des données. Veuillez réessayer.");
+     return;
+  }
+
+  const fd = new FormData();
+  filesArray.forEach((file, index) => {
+    // Utiliser le nom original du fichier si disponible, sinon un nom générique
+    const fileName = file.name || `photo_${index}.jpg`;
+    fd.append("images", file, fileName);
+  });
+  organsArray.forEach(organ => {
+    fd.append("organs", organ);
+  });
+
+  const results = await callPlantNetAPI(fd);
+  if (results) {
+    // Stocker les résultats pour affichage sur organ.html
+    sessionStorage.setItem("identificationResults", JSON.stringify(results));
+    sessionStorage.removeItem("photoData"); // Effacer données single image
+    sessionStorage.removeItem("speciesQueryName"); // Effacer données recherche par nom
+    location.href = "organ.html";
+  }
+}
+
 
 /* ================================================================
    CONSTRUCTION DU TABLEAU ET DES FICHES DE RÉSULTATS
@@ -114,11 +162,11 @@ function buildTable(items){
   const headers = ["Nom latin","Score (%)","InfoFlora","Écologie","INPN carte","INPN statut","Biodiv'AURA","OpenObs"];
   const link = (url, label) => url ? `<a href="${url}" target="_blank" rel="noopener">${label}</a>` : "—";
 
-  const rows = items.map(item => { // 'item' peut venir de l'API ou d'une recherche locale
+  const rows = items.map(item => {
     const score = item.score !== undefined ? Math.round(item.score * 100) : "N/A";
     const sci  = item.species.scientificNameWithoutAuthor;
-    const cd   = cdRef(sci); // cdRef utilise norm(sci) implicitement
-    const eco  = ecolOf(sci);  // ecolOf utilise norm(sci) implicitement
+    const cd   = cdRef(sci);
+    const eco  = ecolOf(sci);
     return `<tr>
       <td>${sci}</td>
       <td style="text-align:center">${score}</td>
@@ -146,39 +194,44 @@ function buildCards(items){
   items.forEach(item => {
     const sci = item.species.scientificNameWithoutAuthor;
     const cd  = cdRef(sci); 
-    if(!cd && item.score === undefined) { // Cas d'une recherche par nom sans CD_REF mais on veut afficher le nom
-        // Option: afficher une carte simplifiée ou un message
-    } else if (!cd) { // Cas d'un résultat API sans CD_REF correspondant localement
-        return; 
-    }
+    const isNameSearchResult = item.score === 1.00 && items.length === 1; // Heuristique pour recherche par nom
+
+    if(!cd && !isNameSearchResult) return; // Skip si pas de cd_ref pour résultats API
+    
     const pct = item.score !== undefined ? Math.round(item.score * 100) : "Info";
 
     const details = document.createElement("details");
+    let iframeHTML = '';
+    if (cd) { // Afficher les iframes seulement si cd_ref est disponible
+        iframeHTML = `
+        <div class="iframe-grid">
+            <iframe loading="lazy" src="${proxyCarte(cd)}"  title="Carte INPN"></iframe>
+            <iframe loading="lazy" src="${proxyStatut(cd)}" title="Statut INPN"></iframe>
+            <iframe loading="lazy" src="${aura(cd)}"        title="Biodiv'AURA"></iframe>
+            <iframe loading="lazy" src="${openObs(cd)}"     title="OpenObs"></iframe>
+        </div>`;
+    }
+
     details.innerHTML = `
-      <summary>${sci} — ${pct}${item.score !== undefined ? '%' : ''}</summary>
+      <summary>${sci} — ${pct}${item.score !== undefined && !isNameSearchResult ? '%' : ''}</summary>
       <p style="padding:0 12px 8px;font-style:italic">${ecolOf(sci)}</p>
-      <div class="iframe-grid">
-        <iframe loading="lazy" src="${proxyCarte(cd)}"  title="Carte INPN"></iframe>
-        <iframe loading="lazy" src="${proxyStatut(cd)}" title="Statut INPN"></iframe>
-        <iframe loading="lazy" src="${aura(cd)}"        title="Biodiv'AURA"></iframe>
-        <iframe loading="lazy" src="${openObs(cd)}"     title="OpenObs"></iframe>
-      </div>`;
+      ${iframeHTML}`;
     zone.appendChild(details);
   });
 }
 
 /* ================================================================
-   LOGIQUE COMMUNE DE TRAITEMENT DE FICHIER IMAGE
+   LOGIQUE COMMUNE DE TRAITEMENT DE FICHIER IMAGE (pour single image flow)
    ================================================================ */
-function handleFileSelect(file) {
+function handleSingleFileSelect(file) {
   if (!file) return;
-  console.log("Image sélectionnée:", file.name);
+  console.log("Image unique sélectionnée:", file.name);
   const reader = new FileReader();
   reader.onload = () => {
     sessionStorage.setItem("photoData", reader.result);
-    console.log("Image sauvegardée dans sessionStorage; redirection vers organ.html.");
-    // Effacer une éventuelle recherche par nom précédente
+    console.log("Image unique sauvegardée; redirection vers organ.html.");
     sessionStorage.removeItem("speciesQueryName"); 
+    sessionStorage.removeItem("identificationResults"); // Effacer résultats multi-images potentiels
     location.href = "organ.html";
   };
   reader.onerror = () => {
@@ -193,21 +246,29 @@ function handleFileSelect(file) {
    ================================================================ */
 
 // --- Logique pour INDEX.HTML ---
-const fileCaptureInput = document.getElementById("file-capture");
-const fileGalleryInput = document.getElementById("file-gallery");
-const speciesSearchInput = document.getElementById("species-search-input");
-const speciesSearchButton = document.getElementById("species-search-button");
-const organBox = document.getElementById("organ-choice"); // Pourra être null sur index.html
-
-if (fileCaptureInput && fileGalleryInput && speciesSearchButton) { // Assure qu'on est sur index.html
+if (document.getElementById("file-capture")) { // On est probablement sur index.html
   
-  fileCaptureInput.addEventListener("change", e => {
-    handleFileSelect(e.target.files[0]);
-  });
+  const fileCaptureInput = document.getElementById("file-capture");
+  const fileGalleryInput = document.getElementById("file-gallery");
+  const speciesSearchInput = document.getElementById("species-search-input");
+  const speciesSearchButton = document.getElementById("species-search-button");
+  const multiFileInput = document.getElementById("multi-file-input");
+  const multiImageListArea = document.getElementById("multi-image-list-area");
+  const multiImageIdentifyButton = document.getElementById("multi-image-identify-button");
 
-  fileGalleryInput.addEventListener("change", e => {
-    handleFileSelect(e.target.files[0]);
-  });
+  let selectedMultiFilesData = []; // [{file: File, organ: 'leaf', previewUrl: 'data:...'}, ...]
+
+  if (fileCaptureInput) {
+    fileCaptureInput.addEventListener("change", e => {
+      handleSingleFileSelect(e.target.files[0]);
+    });
+  }
+
+  if (fileGalleryInput) {
+    fileGalleryInput.addEventListener("change", e => {
+      handleSingleFileSelect(e.target.files[0]);
+    });
+  }
 
   const performSpeciesSearch = async () => {
     const query = speciesSearchInput.value.trim();
@@ -215,45 +276,21 @@ if (fileCaptureInput && fileGalleryInput && speciesSearchButton) { // Assure qu'
       alert("Veuillez entrer un nom d'espèce à rechercher.");
       return;
     }
-    console.log("Recherche par nom d'espèce:", query);
-
     try {
-        await ready; // S'assurer que taxref et ecology sont chargés
+        await ready;
         const normalizedQuery = norm(query);
         let foundSpeciesName = null;
+        const originalTaxrefKeys = Object.keys(JSON.parse(await (await fetch("taxref.json")).text()));
+        foundSpeciesName = originalTaxrefKeys.find(key => norm(key) === normalizedQuery) || 
+                           (taxref[normalizedQuery] ? normalizedQuery : null); // Utilise la clé normalisée si le nom original n'est pas retrouvé mais que la clé normalisée existe
 
-        // Chercher la clé correspondante dans taxref (qui sont déjà normalisées à l'init)
-        if (taxref[normalizedQuery]) {
-            // Trouver la clé originale non-normalisée serait idéal pour l'affichage, 
-            // mais nos objets taxref et ecology sont indexés par nom normalisé.
-            // Nous allons utiliser la clé normalisée si c'est la seule disponible pour récupérer cdRef/ecolOf
-            // Il faudrait idéalement une structure qui conserve le nom original.
-            // Pour l'instant, on assume que le nom normalisé est acceptable pour affichage, ou qu'on le retrouve.
-            // Pour retrouver le nom original, il faudrait parcourir Object.keys(j) de taxref.json original.
-            // Simplification: on utilise la query normalisée comme base si elle matche une clé.
-            foundSpeciesName = Object.keys(taxref).find(key => key === normalizedQuery);
-             if (!foundSpeciesName) { // Fallback si la clé exacte n'est pas retrouvée (devrait l'être)
-                // Ceci est une tentative pour retrouver une clé qui, une fois normalisée, correspond.
-                // Cela suppose que les clés de `taxref` sont déjà normalisées à l'initialisation.
-                // Si on veut le nom original, il faudrait le stocker.
-                // Pour cette version, on va passer le nom normalisé qui a matché une clé.
-                 foundSpeciesName = normalizedQuery; 
-             }
-        } else {
-             // Tentative de recherche plus flexible (ex: "Abies Alba" pour "abies alba")
-             const originalTaxrefKeys = Object.keys(JSON.parse(await (await fetch("taxref.json")).text()));
-             foundSpeciesName = originalTaxrefKeys.find(key => norm(key) === normalizedQuery);
-        }
-
-
-        if (foundSpeciesName && cdRef(foundSpeciesName)) { // cdRef normalise à nouveau, donc c'est ok
-            console.log("Espèce trouvée localement:", foundSpeciesName, "CD_REF:", cdRef(foundSpeciesName));
-            sessionStorage.setItem("speciesQueryName", foundSpeciesName); // Stocker le nom trouvé
-            sessionStorage.removeItem("photoData"); // Effacer une éventuelle photo précédente
+        if (foundSpeciesName && cdRef(foundSpeciesName)) {
+            sessionStorage.setItem("speciesQueryName", foundSpeciesName);
+            sessionStorage.removeItem("photoData");
+            sessionStorage.removeItem("identificationResults");
             location.href = "organ.html";
         } else {
             alert(`L'espèce "${query}" n'a pas été trouvée dans nos données locales.`);
-            console.warn(`Espèce non trouvée pour la requête normalisée: "${normalizedQuery}"`);
         }
     } catch (err) {
         console.error("Erreur lors de la recherche d'espèce:", err);
@@ -261,47 +298,110 @@ if (fileCaptureInput && fileGalleryInput && speciesSearchButton) { // Assure qu'
     }
   };
 
-  speciesSearchButton.addEventListener("click", performSpeciesSearch);
-  speciesSearchInput.addEventListener("keypress", e => {
-    if (e.key === "Enter") {
-      performSpeciesSearch();
-    }
-  });
+  if (speciesSearchButton && speciesSearchInput) {
+    speciesSearchButton.addEventListener("click", performSpeciesSearch);
+    speciesSearchInput.addEventListener("keypress", e => {
+      if (e.key === "Enter") performSpeciesSearch();
+    });
+  }
 
+  // Logique pour l'upload multi-images
+  if (multiFileInput && multiImageListArea && multiImageIdentifyButton) {
+    multiFileInput.addEventListener("change", event => {
+      multiImageListArea.innerHTML = ''; // Nettoyer la zone
+      selectedMultiFilesData = [];
+      const files = Array.from(event.target.files).slice(0, MAX_MULTI_IMAGES);
+
+      if (files.length === 0) {
+          multiImageIdentifyButton.style.display = 'none';
+          return;
+      }
+
+      files.forEach((file, index) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'image-organ-item';
+            
+            const imgPreview = document.createElement('img');
+            imgPreview.src = e.target.result;
+            imgPreview.className = 'preview';
+            itemDiv.appendChild(imgPreview);
+
+            const fileNameSpan = document.createElement('span');
+            fileNameSpan.className = 'file-name';
+            fileNameSpan.textContent = file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name;
+            itemDiv.appendChild(fileNameSpan);
+
+            const organSelect = document.createElement('select');
+            organSelect.id = `organ-select-${index}`;
+            ['leaf', 'flower', 'fruit', 'bark'].forEach(organValue => {
+                const option = document.createElement('option');
+                option.value = organValue;
+                option.textContent = organValue.charAt(0).toUpperCase() + organValue.slice(1);
+                organSelect.appendChild(option);
+            });
+            itemDiv.appendChild(organSelect);
+            multiImageListArea.appendChild(itemDiv);
+
+            selectedMultiFilesData.push({ file: file, organSelectElement: organSelect, previewUrl: e.target.result });
+        }
+        reader.readAsDataURL(file);
+      });
+      multiImageIdentifyButton.style.display = 'block';
+    });
+
+    multiImageIdentifyButton.addEventListener("click", async () => {
+      if (selectedMultiFilesData.length === 0) {
+        alert("Veuillez sélectionner au moins une image.");
+        return;
+      }
+      if (selectedMultiFilesData.length > MAX_MULTI_IMAGES) {
+        alert(`Vous ne pouvez sélectionner que ${MAX_MULTI_IMAGES} images au maximum.`);
+        return;
+      }
+
+      const filesToSend = selectedMultiFilesData.map(item => item.file);
+      const organsToSend = selectedMultiFilesData.map(item => item.organSelectElement.value);
+      
+      // Valider que tous les organes sont sélectionnés (ils auront une valeur par défaut)
+      await identifyMultipleImages(filesToSend, organsToSend);
+    });
+  }
 }
 
 
 // --- Logique pour ORGAN.HTML ---
-if (organBox) { // Assure qu'on est sur organ.html (ou une page avec organBox)
+const organBoxOnPage = document.getElementById("organ-choice"); 
+// Ce test est plus fiable pour savoir si on est sur organ.html que `if(organBox)` 
+// car organBox est initialisé plus haut et pourrait être null si le script s'exécute avant que le DOM soit prêt pour index.html
+
+if (typeof organBoxOnPage !== 'undefined' && organBoxOnPage !== null) { // Logique spécifique à organ.html
   
   const displaySpeciesNameResults = async (speciesName) => {
     console.log("Affichage des résultats pour la recherche par nom:", speciesName);
-    if (document.getElementById("preview")) document.getElementById("preview").style.display = 'none';
-    if (organBox) organBox.style.display = 'none';
-    document.getElementById("results").innerHTML = ""; // Nettoyer la zone
-    document.getElementById("cards").innerHTML = "";   // Nettoyer la zone
+    const previewEl = document.getElementById("preview");
+    const organChoiceEl = document.getElementById("organ-choice"); // Récupérer à nouveau au cas où
+    if (previewEl) previewEl.style.display = 'none';
+    if (organChoiceEl) organChoiceEl.style.display = 'none';
+    
+    document.getElementById("results").innerHTML = "";
+    document.getElementById("cards").innerHTML = "";   
 
     try {
-        await ready; // S'assurer que taxref et ecology sont chargés
-        
-        // Récupérer le CD_REF et l'écologie. cdRef et ecolOf utilisent des noms normalisés.
-        // Il est important que speciesName soit la version correcte pour ces fonctions.
-        // Si speciesName est déjà la clé normalisée, c'est bon.
-        // Si c'est le nom original, cdRef et ecolOf le normaliseront.
-        const scientificNameForLookup = speciesName; // Assumons que speciesName est la bonne clé ou sera normalisée par les helpers
+        await ready; 
+        const scientificNameForLookup = speciesName; 
 
-        if (cdRef(scientificNameForLookup)) { // Vérifie si l'espèce est dans taxref
+        if (cdRef(scientificNameForLookup)) { 
             const resultsForDisplay = [{
-                score: 1.00, // Score de 100% pour une correspondance directe par nom
+                score: 1.00, 
                 species: {
-                    scientificNameWithoutAuthor: speciesName, // Afficher le nom tel que recherché/trouvé
+                    scientificNameWithoutAuthor: speciesName, 
                     scientificNameAuthorship: "", 
                     scientificName: speciesName, 
-                    // Les informations de genre/famille ne sont pas directement dans taxref.json/ecology.json
-                    // On pourrait les déduire ou les omettre pour la recherche par nom.
                     genus: { scientificNameWithoutAuthor: speciesName.split(' ')[0], scientificNameAuthorship: "", scientificName: speciesName.split(' ')[0] },
                     family: { scientificNameWithoutAuthor: "N/A", scientificNameAuthorship: "", scientificName: "N/A" },
-                    commonNames: [] // Non disponible dans les JSON fournis
+                    commonNames: [] 
                 }
             }];
             document.body.classList.remove("home");
@@ -309,7 +409,6 @@ if (organBox) { // Assure qu'on est sur organ.html (ou une page avec organBox)
             buildCards(resultsForDisplay);
         } else {
             document.getElementById("results").innerHTML = `<p>Données détaillées non trouvées pour ${speciesName}.</p>`;
-            console.warn("CD_REF non trouvé pour ", speciesName, "après redirection.");
         }
     } catch (err) {
         console.error("Erreur lors de l'affichage des résultats de recherche par nom:", err);
@@ -317,19 +416,38 @@ if (organBox) { // Assure qu'on est sur organ.html (ou une page avec organBox)
     }
   };
 
+  const displayIdentificationResults = (results) => {
+    const previewEl = document.getElementById("preview");
+    const organChoiceEl = document.getElementById("organ-choice");
+    if (previewEl) previewEl.style.display = 'none'; // Cacher la prévisualisation single-image
+    if (organChoiceEl) organChoiceEl.style.display = 'none'; // Cacher la sélection d'organe single-image
+    
+    document.body.classList.remove("home");
+    buildTable(results);
+    buildCards(results);
+  };
+
+
   const speciesQueryName = sessionStorage.getItem("speciesQueryName");
   const storedImage = sessionStorage.getItem("photoData");
+  const multiImageResults = sessionStorage.getItem("identificationResults");
 
   if (speciesQueryName) {
-    sessionStorage.removeItem("speciesQueryName"); // Important: consommer l'item
+    sessionStorage.removeItem("speciesQueryName");
     displaySpeciesNameResults(speciesQueryName);
+  } else if (multiImageResults) {
+    sessionStorage.removeItem("identificationResults");
+    const parsedResults = JSON.parse(multiImageResults);
+    displayIdentificationResults(parsedResults);
   } else if (storedImage) {
+    // Logique pour identification d'image unique (existante)
     const previewElement = document.getElementById("preview");
     if(previewElement) {
         previewElement.src = storedImage;
-        previewElement.style.display = 'block';
+        previewElement.style.display = 'block'; // Assurer la visibilité
     }
-    if (organBox) organBox.style.display = 'block'; // S'assurer que les boutons d'organe sont visibles
+    const organChoiceEl = document.getElementById("organ-choice");
+    if (organChoiceEl) organChoiceEl.style.display = 'block'; // Assurer la visibilité
 
     const toBlob = dataURL => {
       try {
@@ -342,10 +460,7 @@ if (organBox) { // Assure qu'on est sur organ.html (ou une page avec organBox)
         let arr = new Uint8Array(bin.length);
         for(let i=0; i<bin.length; i++) arr[i] = bin.charCodeAt(i);
         return new Blob([arr], {type:mime});
-      } catch (e) {
-        console.error("Erreur dans toBlob:", e);
-        return null;
-      }
+      } catch (e) { console.error("Erreur dans toBlob:", e); return null; }
     };
     
     const imageBlob = toBlob(storedImage); 
@@ -354,23 +469,24 @@ if (organBox) { // Assure qu'on est sur organ.html (ou une page avec organBox)
     }
 
     const handleOrganChoice = async (event) => {
-      console.log("Bouton organe cliqué:", event.currentTarget.dataset.organ);
+      console.log("Bouton organe (single image) cliqué:", event.currentTarget.dataset.organ);
       if (!imageBlob) {
-        console.error("L'image n'a pas pu être convertie en Blob. Impossible d'identifier.");
         alert("Erreur: L'image n'est pas prête pour l'identification. Veuillez retourner à l'accueil.");
         return;
       }
       const selectedOrgan = event.currentTarget.dataset.organ;
-      await identify(imageBlob, selectedOrgan);
+      await identifySingleImage(imageBlob, selectedOrgan); // Appel de la fonction pour image unique
     };
-
-    organBox.querySelectorAll("button").forEach(button => {
-      button.addEventListener("click", handleOrganChoice);
-    });
-    console.log("Écouteurs d'événements attachés aux boutons d'organe pour identification d'image.");
+    
+    const currentOrganBox = document.getElementById("organ-choice"); // Utiliser une variable locale
+    if(currentOrganBox) {
+        currentOrganBox.querySelectorAll("button").forEach(button => {
+          button.addEventListener("click", handleOrganChoice);
+        });
+        console.log("Écouteurs d'événements attachés aux boutons d'organe pour identification d'image unique.");
+    }
   } else {
-    // Ni recherche par nom, ni image stockée
-    console.warn("Aucune photoData ni speciesQueryName trouvée, redirection vers index.html.");
+    console.warn("Organ.html: Aucune donnée à afficher (pas de recherche par nom, pas de résultats multi-images, pas d'image unique). Redirection.");
     location.href = "index.html";
   }
 }
