@@ -1,10 +1,11 @@
 /* ================================================================
    Service-Worker – PlantID PWA
    ================================================================ */
-const CACHE  = "plantid-v10";       // ← incrémentez à chaque déploiement
+const CACHE  = "plantid-v11";       // ← incrémentez à chaque déploiement
 const ASSETS = [
   "./",
   "./index.html",
+  "./organ.html",
   "./app.js",
   "./manifest.json",
   "./taxref.json",

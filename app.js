@@ -58,14 +58,14 @@ const proxyStatut = c => `/.netlify/functions/inpn-proxy?cd=${c}&type=statut`;
 /* ================================================================
    FONCTION PRINCIPALE : IDENTIFICATION Pl@ntNet
    ================================================================ */
-async function identify(file){
+async function identify(file, organ){
   /* On attend que taxref + ecology soient chargés */
   await ready;
 
   /* Requête API Pl@ntNet */
   const fd = new FormData();
   fd.append("images", file, "photo.jpg");
-  fd.append("organs", "auto");
+  fd.append("organs", organ); // organ: leaf | flower | bark | fruit
 
   const res = await fetch(ENDPOINT, { method:"POST", body:fd });
   if(!res.ok){ alert("Erreur API Pl@ntNet"); return; }
@@ -143,7 +143,48 @@ function buildCards(items){
 /* ================================================================
    LISTENER SUR L’INPUT FILE
    ================================================================ */
-document.getElementById("file")
-  .addEventListener("change", e => {
-    if(e.target.files[0]) identify(e.target.files[0]);
+/* ================================================================
+   ÉCOUTEURS SELON LA PAGE
+   ================================================================ */
+const fileInput  = document.getElementById("file");
+const organBox   = document.getElementById("organ-choice");
+
+if(fileInput && !organBox){
+  /* page d'accueil : sauvegarde la photo et redirection */
+  fileInput.addEventListener("change", e => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      sessionStorage.setItem("photoData", reader.result);
+      location.href = "organ.html";
+    };
+    reader.readAsDataURL(file);
   });
+}
+
+if(organBox){
+  /* page de choix de l'organe */
+  const data = sessionStorage.getItem("photoData");
+  if(!data){
+    location.href = "index.html";
+  } else {
+    const prev = document.getElementById("preview");
+    if(prev) prev.src = data;
+    const toBlob = str => {
+      const [meta, b64] = str.split(",");
+      const mime = /:(.*?);/.exec(meta)[1];
+      const bin = atob(b64);
+      const arr = new Uint8Array(bin.length);
+      for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
+      return new Blob([arr], {type:mime});
+    };
+    organBox.querySelectorAll("button").forEach(btn =>
+      btn.addEventListener("click", () => {
+        identify(toBlob(data), btn.dataset.organ);
+        sessionStorage.removeItem("photoData");
+      })
+    );
+  }
+}
+
