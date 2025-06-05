@@ -63,7 +63,7 @@ initPhotoDB().catch(err => {
 });
 
 async function savePhotoToDB(imageFile) {
-    if (!imageFile || !(imageFile instanceof Blob)) { // Vérifier que imageFile est un Blob/File
+    if (!imageFile || !(imageFile instanceof Blob)) {
         console.warn("Tentative de sauvegarde d'un objet invalide ou non défini. Attendu: File/Blob.", imageFile);
         return;
     }
@@ -102,13 +102,6 @@ async function savePhotoToDB(imageFile) {
     }
 }
 
-/**
- * Déclenche le téléchargement d'un Blob image par le navigateur.
- * Remarque : Ceci enregistrera le fichier dans le dossier de téléchargement du téléphone,
- * le rendant accessible en dehors de l'application. Il ne s'intègre pas directement
- * à la galerie "Google Photos" comme une photo prise par l'appareil natif,
- * car les applications web ont des restrictions d'accès direct au système de fichiers pour des raisons de sécurité.
- */
 function downloadPhotoForDeviceGallery(imageBlob, filename) {
     if (!imageBlob || !(imageBlob instanceof Blob)) {
         console.error("downloadPhotoForDeviceGallery: imageBlob invalide.");
@@ -122,9 +115,9 @@ function downloadPhotoForDeviceGallery(imageBlob, filename) {
     a.href = url;
     a.download = effectiveFilename;
     document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    a.click(); 
+    document.body.removeChild(a); 
+    URL.revokeObjectURL(url); 
     console.log("Tentative de téléchargement de la photo pour la galerie:", effectiveFilename);
 }
 
@@ -154,8 +147,13 @@ const ready = Promise.all([
     console.log("Taxref.json chargé et normalisé.");
   }).catch(err => console.error("Erreur chargement taxref.json:", err)),
   fetch("ecology.json").then(r => r.json()).then(j => {
-    Object.entries(j).forEach(([k,v]) => ecology[norm(k)] = v);
-    console.log("Ecology.json chargé et normalisé.");
+    Object.entries(j).forEach(([complexKey, value]) => {
+        // Correction: Extraire la partie nom scientifique de la clé complexe
+        // avant la normalisation, si la clé contient des informations additionnelles (ex: "nom espèce; description additionnelle")
+        const scientificNamePart = complexKey.split(';')[0].trim();
+        ecology[norm(scientificNamePart)] = value;
+    });
+    console.log("Ecology.json chargé. Clés normalisées basées sur la partie nom scientifique uniquement.");
   }).catch(err => console.error("Erreur chargement ecology.json:", err))
 ]).catch(err => {
   alert("Erreur chargement des fichiers de données locaux : " + err.message);
@@ -166,7 +164,7 @@ const ready = Promise.all([
    HELPERS URLS
    ================================================================ */
 const cdRef      = n => taxref[norm(n)];
-const ecolOf     = n => ecology[norm(n)] || "—";
+const ecolOf     = n => ecology[norm(n)] || "—"; // Utilise le nom normalisé pour la recherche
 const slug       = n => norm(n).replace(/ /g,"-");
 
 const infoFlora  = n => `https://www.infoflora.ch/fr/flore/${slug(n)}.html`;
@@ -254,7 +252,7 @@ async function identifyMultipleImages(filesArray, organsArray) {
 
   const fd = new FormData();
   filesArray.forEach((file, index) => {
-    if (file instanceof Blob) { // S'assurer que c'est bien un Blob/File
+    if (file instanceof Blob) { 
         const fileName = file.name || `photo_${index}.jpg`;
         fd.append("images", file, fileName);
     } else {
@@ -265,7 +263,6 @@ async function identifyMultipleImages(filesArray, organsArray) {
     fd.append("organs", organ);
   });
 
-  // Vérifier si des images ont effectivement été ajoutées à FormData
   if (!fd.has("images")) {
       alert("Aucune image valide n'a pu être préparée pour l'envoi.");
       return;
@@ -294,8 +291,8 @@ function buildTable(items){
   const rows = items.map(item => {
     const score = item.score !== undefined ? Math.round(item.score * 100) : "N/A";
     const sci  = item.species.scientificNameWithoutAuthor;
-    const cd   = cdRef(sci);
-    const eco  = ecolOf(sci);
+    const cd   = cdRef(sci); // cdRef va normaliser sci
+    const eco  = ecolOf(sci); // ecolOf va normaliser sci
     return `<tr>
       <td>${sci}</td>
       <td style="text-align:center">${score}</td>
@@ -352,25 +349,22 @@ function buildCards(items){
 /* ================================================================
    LOGIQUE COMMUNE DE TRAITEMENT DE FICHIER IMAGE (pour single image flow)
    ================================================================ */
-function handleSingleFileSelect(file, sourceType) { // sourceType peut être 'capture' ou 'gallery'
+function handleSingleFileSelect(file, sourceType) { 
   if (!file) return;
   console.log(`Image unique sélectionnée depuis ${sourceType || 'source inconnue'}:`, file.name, "Type:", file.type, "Taille:", file.size);
 
-  // Sauvegarde locale immédiate dans IndexedDB
   savePhotoToDB(file).catch(err => {
       console.error(`La sauvegarde locale (IndexedDB) de la photo depuis ${sourceType || 'source inconnue'} a échoué:`, err);
   });
 
-  // Déclenchement du téléchargement uniquement si la photo est 'prise' (capture)
-  // pour qu'elle apparaisse dans le dossier "Téléchargements" du téléphone.
   if (sourceType === 'capture') {
       downloadPhotoForDeviceGallery(file, file.name || `plantouille_capture_${Date.now()}.${file.type.split('/')[1] || 'jpg'}`);
   }
 
   const reader = new FileReader();
   reader.onload = () => {
-    sessionStorage.setItem("photoData", reader.result);
-    console.log("Image unique sauvegardée dans sessionStorage; redirection vers organ.html.");
+    sessionStorage.setItem("photoData", reader.result); 
+    console.log("Image unique (DataURL) sauvegardée dans sessionStorage; redirection vers organ.html.");
     sessionStorage.removeItem("speciesQueryName"); 
     sessionStorage.removeItem("identificationResults");
     location.href = "organ.html";
@@ -379,7 +373,7 @@ function handleSingleFileSelect(file, sourceType) { // sourceType peut être 'ca
     console.error("Erreur lors de la lecture du fichier image pour DataURL.");
     alert("Erreur lors de la lecture de l'image.");
   };
-  reader.readAsDataURL(file);
+  reader.readAsDataURL(file); 
 }
 
 /* ================================================================
@@ -400,13 +394,13 @@ if (document.getElementById("file-capture")) {
 
   if (fileCaptureInput) {
     fileCaptureInput.addEventListener("change", e => {
-      handleSingleFileSelect(e.target.files[0], 'capture'); // Source 'capture'
+      handleSingleFileSelect(e.target.files[0], 'capture'); 
     });
   }
 
   if (fileGalleryInput) {
     fileGalleryInput.addEventListener("change", e => {
-      handleSingleFileSelect(e.target.files[0], 'gallery'); // Source 'gallery'
+      handleSingleFileSelect(e.target.files[0], 'gallery'); 
     });
   }
 
@@ -420,9 +414,6 @@ if (document.getElementById("file-capture")) {
         await ready;
         const normalizedQuery = norm(query);
         let foundSpeciesName = null;
-        // Pour obtenir le nom original, il faut re-parser le JSON ou stocker une map inversée.
-        // Ici, on récupère la clé (qui est normalisée dans notre objet `taxref`) si elle existe.
-        // Ou on cherche une clé originale dont la version normalisée correspond.
         let taxrefOriginalData = null;
         try {
             taxrefOriginalData = JSON.parse(await (await fetch("taxref.json")).text());
@@ -432,12 +423,12 @@ if (document.getElementById("file-capture")) {
             const originalTaxrefKeys = Object.keys(taxrefOriginalData);
             foundSpeciesName = originalTaxrefKeys.find(key => norm(key) === normalizedQuery);
         }
-        if (!foundSpeciesName && taxref[normalizedQuery]) { // Fallback si la clé normalisée existe directement
-            foundSpeciesName = normalizedQuery; // Utiliser le nom normalisé si original non trouvé mais cdRef existe
+        if (!foundSpeciesName && taxref[normalizedQuery]) { 
+            foundSpeciesName = normalizedQuery; 
         }
         
-        if (foundSpeciesName && cdRef(foundSpeciesName)) { // cdRef va normaliser à nouveau `foundSpeciesName`
-            sessionStorage.setItem("speciesQueryName", foundSpeciesName); // Stocker le nom (original si trouvé, sinon normalisé)
+        if (foundSpeciesName && cdRef(foundSpeciesName)) { 
+            sessionStorage.setItem("speciesQueryName", foundSpeciesName); 
             sessionStorage.removeItem("photoData");
             sessionStorage.removeItem("identificationResults");
             location.href = "organ.html";
@@ -458,7 +449,7 @@ if (document.getElementById("file-capture")) {
   }
 
   function renderMultiImageList() {
-    if (!multiImageListArea || !multiImageIdentifyButton || !multiFileInput) return;
+    if (!multiImageListArea || !multiImageIdentifyButton || !multiFileInput) return; 
     multiImageListArea.innerHTML = ''; 
     if (selectedMultiFilesData.length === 0) {
         multiImageIdentifyButton.style.display = 'none';
