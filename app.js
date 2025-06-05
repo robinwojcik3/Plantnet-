@@ -7,7 +7,7 @@ const ENDPOINT = `https://my-api.plantnet.org/v2/identify/${PROJECT}?api-key=${A
 const MAX_RESULTS = 5;                                // nb lignes tableau/fiches
 
 /* ================================================================
-   FONCTION DE NORMALISATION (minuscules + pas d’accents + espaces simples)
+   FONCTION DE NORMALISATION (minuscules + pas d'accents + espaces simples)
    ================================================================ */
 function norm(txt){
   return txt
@@ -56,16 +56,31 @@ const proxyCarte  = c => `/.netlify/functions/inpn-proxy?cd=${c}&type=carte`;
 const proxyStatut = c => `/.netlify/functions/inpn-proxy?cd=${c}&type=statut`;
 
 /* ================================================================
+   GESTION DE LA SÉLECTION D'ORGANE
+   ================================================================ */
+let pendingFile = null;
+
+function showOrganModal(file) {
+  pendingFile = file;
+  document.getElementById("organModal").classList.add("active");
+}
+
+function hideOrganModal() {
+  document.getElementById("organModal").classList.remove("active");
+  pendingFile = null;
+}
+
+/* ================================================================
    FONCTION PRINCIPALE : IDENTIFICATION Pl@ntNet
    ================================================================ */
-async function identify(file){
+async function identify(file, organ){
   /* On attend que taxref + ecology soient chargés */
   await ready;
 
   /* Requête API Pl@ntNet */
   const fd = new FormData();
   fd.append("images", file, "photo.jpg");
-  fd.append("organs", "auto");
+  fd.append("organs", organ);  // Utilise l'organe sélectionné au lieu de "auto"
 
   const res = await fetch(ENDPOINT, { method:"POST", body:fd });
   if(!res.ok){ alert("Erreur API Pl@ntNet"); return; }
@@ -141,9 +156,34 @@ function buildCards(items){
 }
 
 /* ================================================================
-   LISTENER SUR L’INPUT FILE
+   LISTENERS
    ================================================================ */
-document.getElementById("file")
-  .addEventListener("change", e => {
-    if(e.target.files[0]) identify(e.target.files[0]);
+document.addEventListener("DOMContentLoaded", () => {
+  /* Listener sur l'input file */
+  document.getElementById("file").addEventListener("change", e => {
+    if(e.target.files[0]) {
+      showOrganModal(e.target.files[0]);
+    }
   });
+
+  /* Listeners sur les boutons d'organe */
+  document.querySelectorAll(".organ-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const organ = btn.getAttribute("data-organ");
+      if(pendingFile) {
+        hideOrganModal();
+        identify(pendingFile, organ);
+      }
+    });
+  });
+
+  /* Listener sur le bouton annuler */
+  document.getElementById("cancelOrgan").addEventListener("click", hideOrganModal);
+  
+  /* Fermeture du modal si on clique en dehors */
+  document.getElementById("organModal").addEventListener("click", e => {
+    if(e.target.id === "organModal") {
+      hideOrganModal();
+    }
+  });
+});
