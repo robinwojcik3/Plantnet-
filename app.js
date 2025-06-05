@@ -22,7 +22,7 @@ function initPhotoDB() {
             return;
         }
         console.log("Initialisation de IndexedDB 'plantPhotosDB'...");
-        const request = indexedDB.open("plantPhotosDB", 1); // Version 1
+        const request = indexedDB.open("plantPhotosDB", 1); 
 
         request.onupgradeneeded = function(event) {
             const dbInstance = event.target.result;
@@ -38,7 +38,7 @@ function initPhotoDB() {
             db = event.target.result;
             console.log("IndexedDB: plantPhotosDB ouvert avec succès.");
             db.onerror = (dbEvent) => {
-                console.error("Erreur de base de données IndexedDB (global): " + dbEvent.target.errorCode);
+                console.error("Erreur de base de données IndexedDB (global): " + (dbEvent.target.error ? dbEvent.target.error.message : dbEvent.target.errorCode));
             };
             resolve(db);
         };
@@ -58,25 +58,22 @@ function initPhotoDB() {
     return dbInitPromise;
 }
 
-// Initialiser la base de données au chargement du script
 initPhotoDB().catch(err => {
     console.error("Échec de l'initialisation de la base de données locale au démarrage:", err);
-    // L'utilisateur pourrait être informé que la sauvegarde locale ne fonctionnera pas.
 });
 
 async function savePhotoToDB(imageFile) {
-    if (!imageFile) {
-        console.warn("Tentative de sauvegarde d'un fichier image vide ou non défini.");
+    if (!imageFile || !(imageFile instanceof Blob)) { // Vérifier que imageFile est un Blob/File
+        console.warn("Tentative de sauvegarde d'un objet invalide ou non défini. Attendu: File/Blob.", imageFile);
         return;
     }
 
     try {
         if (!db) {
             console.log("savePhotoToDB: La base de données n'est pas prête, attente de initPhotoDB...");
-            await initPhotoDB(); // Assure que la tentative d'initialisation est terminée
+            await initPhotoDB(); 
             if (!db) { 
                  console.error("savePhotoToDB: Échec de l'initialisation de la DB, impossible de sauvegarder la photo.");
-                 // Pourrait informer l'utilisateur que la sauvegarde spécifique a échoué.
                  return;
             }
         }
@@ -85,24 +82,52 @@ async function savePhotoToDB(imageFile) {
         const store = transaction.objectStore("photosStore");
         
         const photoEntry = {
-            imageFile: imageFile, // Le File object lui-même
+            imageFile: imageFile, 
             name: imageFile.name || `photo_${Date.now()}.${imageFile.type.split('/')[1] || 'jpg'}`,
+            type: imageFile.type,
+            size: imageFile.size,
             timestamp: new Date().toISOString()
         };
 
-        const request = store.add(photoEntry);
+        const addRequest = store.add(photoEntry);
 
-        request.onsuccess = function(event) {
+        addRequest.onsuccess = function(event) {
             console.log("Photo sauvegardée localement dans IndexedDB avec la clé:", event.target.result, "Nom:", photoEntry.name);
         };
-        request.onerror = function(event) {
+        addRequest.onerror = function(event) {
             console.error("Erreur de sauvegarde de la photo dans IndexedDB:", event.target.error);
-            // Pourrait informer l'utilisateur de l'échec de la sauvegarde pour cette photo.
         };
     } catch (error) {
         console.error("Erreur inattendue dans savePhotoToDB:", error);
     }
 }
+
+/**
+ * Déclenche le téléchargement d'un Blob image par le navigateur.
+ * Remarque : Ceci enregistrera le fichier dans le dossier de téléchargement du téléphone,
+ * le rendant accessible en dehors de l'application. Il ne s'intègre pas directement
+ * à la galerie "Google Photos" comme une photo prise par l'appareil natif,
+ * car les applications web ont des restrictions d'accès direct au système de fichiers pour des raisons de sécurité.
+ */
+function downloadPhotoForDeviceGallery(imageBlob, filename) {
+    if (!imageBlob || !(imageBlob instanceof Blob)) {
+        console.error("downloadPhotoForDeviceGallery: imageBlob invalide.");
+        return;
+    }
+    const defaultFilename = `plantouille_${Date.now()}.${imageBlob.type.split('/')[1] || 'jpg'}`;
+    const effectiveFilename = filename || defaultFilename;
+
+    const url = URL.createObjectURL(imageBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = effectiveFilename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    console.log("Tentative de téléchargement de la photo pour la galerie:", effectiveFilename);
+}
+
 
 /* ================================================================
    FONCTION DE NORMALISATION
@@ -187,8 +212,8 @@ async function callPlantNetAPI(formData) {
    ================================================================ */
 async function identifySingleImage(fileBlob, organ) {
   console.log("identifySingleImage appelée avec organe:", organ);
-  if (!fileBlob) {
-    alert("Erreur: Aucune image à identifier.");
+  if (!fileBlob || !(fileBlob instanceof Blob)) {
+    alert("Erreur: Image invalide pour identification.");
     return;
   }
   try {
@@ -199,7 +224,7 @@ async function identifySingleImage(fileBlob, organ) {
   }
 
   const fd = new FormData();
-  fd.append("images", fileBlob, fileBlob.name || "photo.jpg"); // Utiliser le nom du fichier s'il existe
+  fd.append("images", fileBlob, fileBlob.name || "photo.jpg");
   fd.append("organs", organ);
 
   const results = await callPlantNetAPI(fd);
@@ -229,12 +254,22 @@ async function identifyMultipleImages(filesArray, organsArray) {
 
   const fd = new FormData();
   filesArray.forEach((file, index) => {
-    const fileName = file.name || `photo_${index}.jpg`;
-    fd.append("images", file, fileName);
+    if (file instanceof Blob) { // S'assurer que c'est bien un Blob/File
+        const fileName = file.name || `photo_${index}.jpg`;
+        fd.append("images", file, fileName);
+    } else {
+        console.warn(`Élément invalide dans filesArray à l'index ${index}, ignoré.`);
+    }
   });
   organsArray.forEach(organ => {
     fd.append("organs", organ);
   });
+
+  // Vérifier si des images ont effectivement été ajoutées à FormData
+  if (!fd.has("images")) {
+      alert("Aucune image valide n'a pu être préparée pour l'envoi.");
+      return;
+  }
 
   const results = await callPlantNetAPI(fd);
   if (results) {
@@ -317,16 +352,20 @@ function buildCards(items){
 /* ================================================================
    LOGIQUE COMMUNE DE TRAITEMENT DE FICHIER IMAGE (pour single image flow)
    ================================================================ */
-function handleSingleFileSelect(file) {
+function handleSingleFileSelect(file, sourceType) { // sourceType peut être 'capture' ou 'gallery'
   if (!file) return;
-  console.log("Image unique sélectionnée:", file.name, "Type:", file.type, "Taille:", file.size);
+  console.log(`Image unique sélectionnée depuis ${sourceType || 'source inconnue'}:`, file.name, "Type:", file.type, "Taille:", file.size);
 
-  // Sauvegarde locale immédiate de la photo prise/sélectionnée via ce flux
+  // Sauvegarde locale immédiate dans IndexedDB
   savePhotoToDB(file).catch(err => {
-      console.error("La sauvegarde locale (via handleSingleFileSelect) de la photo a échoué de manière asynchrone:", err);
-      // On pourrait choisir d'alerter l'utilisateur ici si la sauvegarde est critique
-      // alert("Attention: la sauvegarde locale de la photo a échoué.");
+      console.error(`La sauvegarde locale (IndexedDB) de la photo depuis ${sourceType || 'source inconnue'} a échoué:`, err);
   });
+
+  // Déclenchement du téléchargement uniquement si la photo est 'prise' (capture)
+  // pour qu'elle apparaisse dans le dossier "Téléchargements" du téléphone.
+  if (sourceType === 'capture') {
+      downloadPhotoForDeviceGallery(file, file.name || `plantouille_capture_${Date.now()}.${file.type.split('/')[1] || 'jpg'}`);
+  }
 
   const reader = new FileReader();
   reader.onload = () => {
@@ -347,7 +386,7 @@ function handleSingleFileSelect(file) {
    ÉCOUTEURS ET LOGIQUE SPÉCIFIQUE AUX PAGES
    ================================================================ */
 
-if (document.getElementById("file-capture")) { // On est probablement sur index.html
+if (document.getElementById("file-capture")) { 
   
   const fileCaptureInput = document.getElementById("file-capture");
   const fileGalleryInput = document.getElementById("file-gallery");
@@ -361,13 +400,13 @@ if (document.getElementById("file-capture")) { // On est probablement sur index.
 
   if (fileCaptureInput) {
     fileCaptureInput.addEventListener("change", e => {
-      handleSingleFileSelect(e.target.files[0]);
+      handleSingleFileSelect(e.target.files[0], 'capture'); // Source 'capture'
     });
   }
 
   if (fileGalleryInput) {
     fileGalleryInput.addEventListener("change", e => {
-      handleSingleFileSelect(e.target.files[0]);
+      handleSingleFileSelect(e.target.files[0], 'gallery'); // Source 'gallery'
     });
   }
 
@@ -381,13 +420,24 @@ if (document.getElementById("file-capture")) { // On est probablement sur index.
         await ready;
         const normalizedQuery = norm(query);
         let foundSpeciesName = null;
-        const taxrefOriginalData = await fetch("taxref.json").then(r => r.json()); // Re-fetch pour les clés originales
-        const originalTaxrefKeys = Object.keys(taxrefOriginalData);
-        foundSpeciesName = originalTaxrefKeys.find(key => norm(key) === normalizedQuery) || 
-                           (taxref[normalizedQuery] ? normalizedQuery : null);
+        // Pour obtenir le nom original, il faut re-parser le JSON ou stocker une map inversée.
+        // Ici, on récupère la clé (qui est normalisée dans notre objet `taxref`) si elle existe.
+        // Ou on cherche une clé originale dont la version normalisée correspond.
+        let taxrefOriginalData = null;
+        try {
+            taxrefOriginalData = JSON.parse(await (await fetch("taxref.json")).text());
+        } catch (e) { console.error("Impossible de récupérer taxref.json pour les noms originaux", e); }
 
-        if (foundSpeciesName && cdRef(foundSpeciesName)) {
-            sessionStorage.setItem("speciesQueryName", foundSpeciesName);
+        if (taxrefOriginalData) {
+            const originalTaxrefKeys = Object.keys(taxrefOriginalData);
+            foundSpeciesName = originalTaxrefKeys.find(key => norm(key) === normalizedQuery);
+        }
+        if (!foundSpeciesName && taxref[normalizedQuery]) { // Fallback si la clé normalisée existe directement
+            foundSpeciesName = normalizedQuery; // Utiliser le nom normalisé si original non trouvé mais cdRef existe
+        }
+        
+        if (foundSpeciesName && cdRef(foundSpeciesName)) { // cdRef va normaliser à nouveau `foundSpeciesName`
+            sessionStorage.setItem("speciesQueryName", foundSpeciesName); // Stocker le nom (original si trouvé, sinon normalisé)
             sessionStorage.removeItem("photoData");
             sessionStorage.removeItem("identificationResults");
             location.href = "organ.html";
@@ -408,11 +458,11 @@ if (document.getElementById("file-capture")) { // On est probablement sur index.
   }
 
   function renderMultiImageList() {
-    if (!multiImageListArea || !multiImageIdentifyButton || !multiFileInput) return; // Safety check
+    if (!multiImageListArea || !multiImageIdentifyButton || !multiFileInput) return;
     multiImageListArea.innerHTML = ''; 
     if (selectedMultiFilesData.length === 0) {
         multiImageIdentifyButton.style.display = 'none';
-        multiFileInput.value = ''; // Permet de re-sélectionner les mêmes fichiers si la liste est vide.
+        multiFileInput.value = '';
         return;
     }
 
@@ -477,14 +527,14 @@ if (document.getElementById("file-capture")) { // On est probablement sur index.
       let filesActuallyAddedCount = 0;
       if (remainingSlots <= 0 && files.length > 0) {
           alert(`Vous avez déjà atteint la limite de ${MAX_MULTI_IMAGES} images. Impossible d'en ajouter plus.`);
-          multiFileInput.value = ''; // Réinitialiser pour permettre de nouvelles sélections plus tard
+          multiFileInput.value = '';
           return;
       }
 
       files.slice(0, remainingSlots).forEach(file => {
         const isAlreadySelected = selectedMultiFilesData.some(item => item.file.name === file.name && item.file.size === file.size && item.file.lastModified === file.lastModified);
         if (!isAlreadySelected) {
-            selectedMultiFilesData.push({ file: file, organ: 'leaf' }); // 'leaf' par défaut
+            selectedMultiFilesData.push({ file: file, organ: 'leaf' });
             filesActuallyAddedCount++;
         } else {
             console.log(`Fichier "${file.name}" déjà sélectionné ou identique.`);
@@ -496,8 +546,6 @@ if (document.getElementById("file-capture")) { // On est probablement sur index.
       }
       
       renderMultiImageList();
-      // Important: Réinitialiser la valeur de l'input file pour permettre à l'événement "change"
-      // de se déclencher même si l'utilisateur sélectionne à nouveau le même ensemble de fichiers (par exemple, après en avoir supprimé).
       multiFileInput.value = ''; 
     });
 
