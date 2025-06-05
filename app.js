@@ -21,15 +21,8 @@ function getLiveUserLocation() {
             return;
         }
         navigator.geolocation.getCurrentPosition(
-            (position) => {
-                resolve({
-                    latitude: position.coords.latitude,
-                    longitude: position.coords.longitude
-                });
-            },
-            (error) => {
-                reject(error);
-            }
+            (position) => resolve({ latitude: position.coords.latitude, longitude: position.coords.longitude }),
+            (error) => reject(error)
         );
     });
 }
@@ -43,7 +36,6 @@ window.handleOpenObsClick = async function(event, cd_ref) {
 
     try {
         const location = await getLiveUserLocation();
-        console.log("Géolocalisation obtenue pour OpenObs:", location);
         const url = buildOpenObsUrl(cd_ref, location);
         window.open(url, '_blank', 'noopener,noreferrer');
     } catch (error) {
@@ -58,19 +50,14 @@ window.handleOpenObsClick = async function(event, cd_ref) {
 }
 
 /* ================================================================
-   FONCTION DE CLASSIFICATION VIA GEMINI AI
+   FONCTIONS IA & FLORA GALLICA
    ================================================================ */
 async function classifyWithGemini(speciesName) {
     const prompt = `Détermine auquel des 4 groupes suivants l'espèce floristique '${speciesName}' appartient : Angiospermes Dicotylédon, Angiospermes Monocotylédon, Gymnospermes, ou Ptéridophytes. Ta réponse doit uniquement être le nom du groupe. Si tu ne sais pas ou que ce n'est pas une plante, réponds "Inconnu".`;
 
     const requestBody = {
-        "contents": [{
-            "parts": [{ "text": prompt }]
-        }],
-        "generationConfig": {
-            "temperature": 0.2,
-            "maxOutputTokens": 50
-        }
+        "contents": [{ "parts": [{ "text": prompt }] }],
+        "generationConfig": { "temperature": 0.2, "maxOutputTokens": 50 }
     };
 
     try {
@@ -79,181 +66,116 @@ async function classifyWithGemini(speciesName) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestBody)
         });
-
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ error: { message: "Réponse non JSON de l'API" }}));
-            console.error("Erreur API Gemini:", errorData);
             throw new Error(errorData.error.message || "Réponse non valide de l'API Gemini");
         }
-
         const responseData = await response.json();
-        
-        // MODIFICATION: Vérification robuste de la structure de la réponse de l'API Gemini
-        if (responseData && responseData.candidates && responseData.candidates.length > 0 &&
-            responseData.candidates[0].content && responseData.candidates[0].content.parts &&
-            responseData.candidates[0].content.parts.length > 0 && responseData.candidates[0].content.parts[0].text) {
-            
-            const classification = responseData.candidates[0].content.parts[0].text;
-            return classification.trim();
+        if (responseData?.candidates?.[0]?.content?.parts?.[0]?.text) {
+            return responseData.candidates[0].content.parts[0].text.trim();
         } else {
-            console.error("Réponse de l'API Gemini inattendue ou vide:", responseData);
-            // Vérifie si la réponse a été bloquée pour des raisons de sécurité
-            if (responseData.promptFeedback && responseData.promptFeedback.blockReason) {
-                return `Bloqué (${responseData.promptFeedback.blockReason})`;
-            }
+            if (responseData.promptFeedback?.blockReason) return `Bloqué (${responseData.promptFeedback.blockReason})`;
             return "Réponse vide";
         }
-
     } catch (error) {
         console.error("Erreur lors de l'appel à Gemini:", error);
         return "Erreur"; 
     }
 }
 
-window.handleGeminiClick = async function(event, element, speciesName) {
+window.handleGeminiClick = async function(event, element, speciesName, cd_ref) {
     event.preventDefault();
     const parentCell = element.parentElement;
     parentCell.innerHTML = '<i>Classification...</i>';
 
-    const result = await classifyWithGemini(speciesName);
-    parentCell.textContent = result;
+    const classificationResult = await classifyWithGemini(speciesName);
+    parentCell.textContent = classificationResult;
+
+    // Une fois la classification obtenue, active le lien Flora Gallica
+    const floraCell = document.querySelector(`.flora-gallica-cell-${cd_ref}`);
+    if (floraCell && !["Erreur", "Inconnu"].some(err => classificationResult.startsWith(err))) {
+        const genus = speciesName.split(' ')[0];
+        const escapedGenus = genus.replace(/'/g, "\\'");
+        const escapedClassification = classificationResult.replace(/'/g, "\\'");
+        floraCell.innerHTML = `<a href="#" onclick="handleFloraGallicaClick(event, '${escapedClassification}', '${escapedGenus}')">Extraire</a>`;
+    } else if (floraCell) {
+        floraCell.textContent = 'N/A';
+    }
+}
+
+window.handleFloraGallicaClick = function(event, classificationGroup, genus) {
+    event.preventDefault();
+    const targetCell = event.currentTarget.parentElement;
+    targetCell.innerHTML = '<i>Création...</i>';
+    
+    // Construire l'URL de la fonction serverless
+    const functionUrl = `/.netlify/functions/get_flora_gallica_genus?group=${encodeURIComponent(classificationGroup)}&genus=${encodeURIComponent(genus)}`;
+
+    // Ouvrir l'URL dans un nouvel onglet, le navigateur gérera le téléchargement du PDF
+    window.open(functionUrl, '_blank');
+    
+    // Réinitialiser le lien après un court instant
+    setTimeout(() => {
+        const escapedGenus = genus.replace(/'/g, "\\'");
+        const escapedClassification = classificationGroup.replace(/'/g, "\\'");
+        targetCell.innerHTML = `<a href="#" onclick="handleFloraGallicaClick(event, '${escapedClassification}', '${escapedGenus}')">Extraire</a>`;
+    }, 2000);
 }
 
 
 /* ================================================================
-   INITIALISATION IndexedDB POUR SAUVEGARDE LOCALE DES PHOTOS
+   INITIALISATION IndexedDB (code inchangé)
    ================================================================ */
 let db = null;
 let dbInitPromise = null;
-
 function initPhotoDB() {
     if (dbInitPromise) return dbInitPromise;
     dbInitPromise = new Promise((resolve, reject) => {
         if (db) return resolve(db);
         const request = indexedDB.open("plantPhotosDB", 1);
-        request.onupgradeneeded = (event) => {
-            const dbInstance = event.target.result;
+        request.onupgradeneeded = (e) => {
+            const dbInstance = e.target.result;
             if (!dbInstance.objectStoreNames.contains("photosStore")) {
                 dbInstance.createObjectStore("photosStore", { autoIncrement: true }).createIndex("timestamp_idx", "timestamp");
             }
         };
-        request.onsuccess = (event) => { db = event.target.result; resolve(db); };
-        request.onerror = (event) => { dbInitPromise = null; reject(event.target.error); };
+        request.onsuccess = (e) => { db = e.target.result; resolve(db); };
+        request.onerror = (e) => { dbInitPromise = null; reject(e.target.error); };
         request.onblocked = () => { alert("Veuillez fermer les autres onglets utilisant l'application pour mettre à jour la base de données."); reject(new Error("IndexedDB open blocked")); };
     });
     return dbInitPromise;
 }
-
 initPhotoDB().catch(err => console.error("Échec de l'initialisation de la base de données locale:", err));
+async function savePhotoToDB(imageFile) { if (!imageFile || !(imageFile instanceof Blob)) return; try { await initPhotoDB(); if (!db) return; const tx = db.transaction(["photosStore"], "readwrite"); const store = tx.objectStore("photosStore"); const entry = { imageFile, name: imageFile.name || `photo_${Date.now()}`, timestamp: new Date().toISOString() }; store.add(entry).onsuccess = e => console.log("Photo sauvegardée dans IndexedDB, clé:", e.target.result); } catch (err) { console.error("Erreur dans savePhotoToDB:", err); } }
+function downloadPhotoForDeviceGallery(blob, filename) { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = filename || `plantouille_${Date.now()}.jpg`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }
 
-async function savePhotoToDB(imageFile) {
-    if (!imageFile || !(imageFile instanceof Blob)) return;
-    try {
-        await initPhotoDB();
-        if (!db) return;
-        const transaction = db.transaction(["photosStore"], "readwrite");
-        const store = transaction.objectStore("photosStore");
-        const photoEntry = { imageFile, name: imageFile.name || `photo_${Date.now()}`, timestamp: new Date().toISOString() };
-        const request = store.add(photoEntry);
-        request.onsuccess = (event) => console.log("Photo sauvegardée dans IndexedDB, clé:", event.target.result);
-        request.onerror = (event) => console.error("Erreur de sauvegarde photo dans IndexedDB:", event.target.error);
-    } catch (error) {
-        console.error("Erreur dans savePhotoToDB:", error);
-    }
-}
-
-function downloadPhotoForDeviceGallery(imageBlob, filename) {
-    const url = URL.createObjectURL(imageBlob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename || `plantouille_${Date.now()}.jpg`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    console.log("Tentative de téléchargement de la photo:", a.download);
-}
 
 /* ================================================================
-   FONCTION DE NORMALISATION
+   FONCTIONS DE BASE (code inchangé)
    ================================================================ */
-function norm(txt){
-  if (typeof txt !== 'string') return "";
-  return txt.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/\s+/g," ");
-}
-
-/* ================================================================
-   CHARGEMENT DES JSON LOCAUX
-   ================================================================ */
-let taxref   = {};
-let ecology  = {};
-
-const ready = Promise.all([
-  fetch("taxref.json").then(r => r.json()).then(j => Object.entries(j).forEach(([k,v]) => taxref[norm(k)] = v)),
-  fetch("ecology.json").then(r => r.json()).then(j => Object.entries(j).forEach(([k,v]) => ecology[norm(k.split(';')[0])] = v))
-]).catch(err => alert("Erreur chargement des fichiers de données locaux: " + err.message));
-
-/* ================================================================
-   HELPERS URLS
-   ================================================================ */
-const cdRef      = n => taxref[norm(n)];
-const ecolOf     = n => ecology[norm(n)] || "—"; 
-const slug       = n => norm(n).replace(/ /g,"-");
-
+function norm(txt){ if (typeof txt !== 'string') return ""; return txt.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/\s+/g," "); }
+const ready = Promise.all([ fetch("taxref.json").then(r => r.json()).then(j => Object.entries(j).forEach(([k,v]) => taxref[norm(k)] = v)), fetch("ecology.json").then(r => r.json()).then(j => Object.entries(j).forEach(([k,v]) => ecology[norm(k.split(';')[0])] = v)) ]).catch(err => alert("Erreur chargement des fichiers de données: " + err.message));
+const cdRef = n => taxref[norm(n)];
+const ecolOf = n => ecology[norm(n)] || "—"; 
+const slug = n => norm(n).replace(/ /g,"-");
 const infoFlora  = n => `https://www.infoflora.ch/fr/flore/${slug(n)}.html`;
 const inpnStatut = c => `https://inpn.mnhn.fr/espece/cd_nom/${c}/tab/statut`;
 const aura       = c => `https://atlas.biodiversite-auvergne-rhone-alpes.fr/espece/${c}`;
 const proxyStatut = c => `/.netlify/functions/inpn-proxy?cd=${c}&type=statut`;
 
+
 /* ================================================================
    LOGIQUE D'IDENTIFICATION ET D'AFFICHAGE
    ================================================================ */
-async function callPlantNetAPI(formData) {
-  try {
-    const res = await fetch(ENDPOINT, { method: "POST", body: formData });
-    if (!res.ok) {
-        const errorBody = await res.json().catch(() => res.text());
-        throw new Error(`Erreur API PlantNet (${res.status}): ${typeof errorBody === 'object' ? errorBody.message : errorBody}`);
-    }
-    const responseData = await res.json();
-    return responseData.results.slice(0, MAX_RESULTS);
-  } catch (error) {
-    console.error("Erreur lors de l'appel à l'API PlantNet:", error);
-    alert(error.message);
-    return null;
-  }
-}
-
-async function identifySingleImage(fileBlob, organ) {
-  const fd = new FormData();
-  fd.append("images", fileBlob, fileBlob.name || "photo.jpg");
-  fd.append("organs", organ);
-  const results = await callPlantNetAPI(fd);
-  if (results) {
-    document.body.classList.remove("home"); 
-    buildTable(results);
-    buildCards(results);
-  }
-}
-
-async function identifyMultipleImages(filesArray, organsArray) {
-  const fd = new FormData();
-  filesArray.forEach((file, i) => fd.append("images", file, file.name || `photo_${i}.jpg`));
-  organsArray.forEach(organ => fd.append("organs", organ));
-  if (!fd.has("images")) return alert("Aucune image valide à envoyer.");
-
-  const results = await callPlantNetAPI(fd);
-  if (results) {
-    sessionStorage.setItem("identificationResults", JSON.stringify(results));
-    location.href = "organ.html";
-  }
-}
+async function callPlantNetAPI(formData) { try { const res = await fetch(ENDPOINT, { method: "POST", body: formData }); if (!res.ok) { const errBody = await res.json().catch(() => res.text()); throw new Error(`Erreur API PlantNet (${res.status}): ${typeof errBody === 'object' ? errBody.message : errBody}`); } return (await res.json()).results.slice(0, MAX_RESULTS); } catch (err) { console.error(err); alert(err.message); return null; } }
+async function identifySingleImage(fileBlob, organ) { const fd = new FormData(); fd.append("images", fileBlob, fileBlob.name || "photo.jpg"); fd.append("organs", organ); const results = await callPlantNetAPI(fd); if (results) { document.body.classList.remove("home"); buildTable(results); buildCards(results); } }
+async function identifyMultipleImages(files, organs) { const fd = new FormData(); files.forEach((f, i) => fd.append("images", f, f.name || `photo_${i}.jpg`)); organs.forEach(o => fd.append("organs", o)); if (!fd.has("images")) return alert("Aucune image valide."); const results = await callPlantNetAPI(fd); if (results) { sessionStorage.setItem("identificationResults", JSON.stringify(results)); location.href = "organ.html"; } }
 
 function buildTable(items){
   const wrap = document.getElementById("results");
   if (!wrap) return;
 
-  const headers = ["Nom latin","Score (%)","InfoFlora","Écologie","INPN statut","Biodiv'AURA","OpenObs", "Gemini"];
+  const headers = ["Nom latin","Score (%)","InfoFlora","Écologie","INPN statut","Biodiv'AURA","OpenObs", "Gemini", "Flora Gallica"];
   const link = (url, label) => url ? `<a href="${url}" target="_blank" rel="noopener">${label}</a>` : "—";
 
   const rows = items.map(item => {
@@ -270,8 +192,9 @@ function buildTable(items){
       <td>${link(cd && inpnStatut(cd),"statut")}</td>
       <td>${link(cd && aura(cd),"atlas")}</td>
       <td>${cd ? `<a href="#" onclick="handleOpenObsClick(event, '${cd}')" title="Ouvrir la carte avec votre position actuelle">carte</a>` : "—"}</td>
-      <td><a href="#" onclick="handleGeminiClick(event, this, '${escapedSci}')">Classifier</a></td>
-    </tr>`;
+      <td class="gemini-cell-${cd || escapedSci}">${link("#", "Classifier", `handleGeminiClick(event, this, '${escapedSci}', '${cd || escapedSci}')`)}</td>
+      <td class="flora-gallica-cell-${cd || escapedSci}">—</td>
+    </tr>`.replace('href="#" onclick="', 'href="#" onclick="'); // Nettoyage
   }).join("");
 
   const headerHtml = headers.map(h => `<th class="${h === 'Écologie' ? 'ecology-column' : ''}">${h}</th>`).join("");
@@ -320,19 +243,12 @@ function buildCards(items){
    ================================================================ */
 function handleSingleFileSelect(file, sourceType) { 
   if (!file) return;
-  console.log(`Image unique sélectionnée depuis ${sourceType || 'source inconnue'}:`, file.name);
-
   savePhotoToDB(file).catch(err => console.error(`La sauvegarde locale (IndexedDB) a échoué:`, err));
-
-  if (sourceType === 'capture') {
-      downloadPhotoForDeviceGallery(file);
-  }
-
+  if (sourceType === 'capture') downloadPhotoForDeviceGallery(file);
   const reader = new FileReader();
   reader.onload = () => {
     sessionStorage.setItem("photoData", reader.result); 
-    sessionStorage.removeItem("speciesQueryName"); 
-    sessionStorage.removeItem("identificationResults");
+    ["speciesQueryName", "identificationResults"].forEach(k => sessionStorage.removeItem(k));
     location.href = "organ.html";
   };
   reader.onerror = () => alert("Erreur lors de la lecture de l'image.");
@@ -342,7 +258,6 @@ function handleSingleFileSelect(file, sourceType) {
 /* ================================================================
    ÉCOUTEURS ET LOGIQUE SPÉCIFIQUE AUX PAGES
    ================================================================ */
-
 if (document.getElementById("file-capture")) { 
   
   const fileCaptureInput = document.getElementById("file-capture");
@@ -408,34 +323,29 @@ if (document.getElementById("file-capture")) {
   }
 
   multiImageListArea?.addEventListener('click', (e) => {
-    if (e.target && e.target.classList.contains('delete-file-btn')) {
-        const indexToRemove = parseInt(e.target.dataset.index, 10);
-        selectedMultiFilesData.splice(indexToRemove, 1);
+    if (e.target?.classList.contains('delete-file-btn')) {
+        selectedMultiFilesData.splice(parseInt(e.target.dataset.index, 10), 1);
         renderMultiImageList();
     }
   });
 
   multiImageListArea?.addEventListener('change', (e) => {
-    if (e.target && e.target.tagName === 'SELECT') {
-        const itemIndex = parseInt(e.target.dataset.index, 10);
-        selectedMultiFilesData[itemIndex].organ = e.target.value;
+    if (e.target?.tagName === 'SELECT') {
+        selectedMultiFilesData[parseInt(e.target.dataset.index, 10)].organ = e.target.value;
     }
   });
 
   multiFileInput?.addEventListener("change", (event) => {
       const files = Array.from(event.target.files);
-      const currentFileCount = selectedMultiFilesData.length;
-      const remainingSlots = MAX_MULTI_IMAGES - currentFileCount;
-      
-      if (remainingSlots <= 0 && files.length > 0) return alert(`Limite de ${MAX_MULTI_IMAGES} images atteinte.`);
+      const remainingSlots = MAX_MULTI_IMAGES - selectedMultiFilesData.length;
+      if (remainingSlots <= 0) return alert(`Limite de ${MAX_MULTI_IMAGES} images atteinte.`);
       
       files.slice(0, remainingSlots).forEach(file => {
         if (!selectedMultiFilesData.some(item => item.file.name === file.name && item.file.size === file.size)) {
-            selectedMultiFilesData.push({ file: file, organ: 'leaf' });
+            selectedMultiFilesData.push({ file, organ: 'leaf' });
         }
       });
       if (files.length > remainingSlots) alert(`Limite de ${MAX_MULTI_IMAGES} images atteinte. Certaines images n'ont pas été ajoutées.`);
-      
       renderMultiImageList();
       multiFileInput.value = ''; 
   });
@@ -445,7 +355,6 @@ if (document.getElementById("file-capture")) {
     identifyMultipleImages(selectedMultiFilesData.map(item => item.file), selectedMultiFilesData.map(item => item.organ));
   });
 }
-
 
 // --- Logique pour ORGAN.HTML ---
 const organBoxOnPage = document.getElementById("organ-choice"); 
