@@ -8,6 +8,103 @@ const MAX_RESULTS = 5;
 const MAX_MULTI_IMAGES = 5;
 
 /* ================================================================
+   INITIALISATION IndexedDB POUR SAUVEGARDE LOCALE DES PHOTOS
+   ================================================================ */
+let db = null;
+let dbInitPromise = null;
+
+function initPhotoDB() {
+    if (dbInitPromise) return dbInitPromise;
+
+    dbInitPromise = new Promise((resolve, reject) => {
+        if (db) {
+            resolve(db);
+            return;
+        }
+        console.log("Initialisation de IndexedDB 'plantPhotosDB'...");
+        const request = indexedDB.open("plantPhotosDB", 1); // Version 1
+
+        request.onupgradeneeded = function(event) {
+            const dbInstance = event.target.result;
+            if (!dbInstance.objectStoreNames.contains("photosStore")) {
+                const photoStore = dbInstance.createObjectStore("photosStore", { autoIncrement: true });
+                photoStore.createIndex("timestamp_idx", "timestamp", { unique: false });
+                photoStore.createIndex("name_idx", "name", { unique: false });
+                console.log("IndexedDB: photosStore créé.");
+            }
+        };
+
+        request.onsuccess = function(event) {
+            db = event.target.result;
+            console.log("IndexedDB: plantPhotosDB ouvert avec succès.");
+            db.onerror = (dbEvent) => {
+                console.error("Erreur de base de données IndexedDB (global): " + dbEvent.target.errorCode);
+            };
+            resolve(db);
+        };
+
+        request.onerror = function(event) {
+            console.error("Erreur d'ouverture de IndexedDB:", event.target.error);
+            dbInitPromise = null; 
+            reject(event.target.error);
+        };
+        request.onblocked = function(event) {
+            console.warn("Ouverture d'IndexedDB bloquée. Fermez les autres instances de l'application.");
+            alert("L'application a besoin de mettre à jour la base de données locale. Veuillez fermer les autres onglets de cette application et rafraîchir.");
+            dbInitPromise = null;
+            reject(new Error("Ouverture IndexedDB bloquée"));
+        };
+    });
+    return dbInitPromise;
+}
+
+// Initialiser la base de données au chargement du script
+initPhotoDB().catch(err => {
+    console.error("Échec de l'initialisation de la base de données locale au démarrage:", err);
+    // L'utilisateur pourrait être informé que la sauvegarde locale ne fonctionnera pas.
+});
+
+async function savePhotoToDB(imageFile) {
+    if (!imageFile) {
+        console.warn("Tentative de sauvegarde d'un fichier image vide ou non défini.");
+        return;
+    }
+
+    try {
+        if (!db) {
+            console.log("savePhotoToDB: La base de données n'est pas prête, attente de initPhotoDB...");
+            await initPhotoDB(); // Assure que la tentative d'initialisation est terminée
+            if (!db) { 
+                 console.error("savePhotoToDB: Échec de l'initialisation de la DB, impossible de sauvegarder la photo.");
+                 // Pourrait informer l'utilisateur que la sauvegarde spécifique a échoué.
+                 return;
+            }
+        }
+
+        const transaction = db.transaction(["photosStore"], "readwrite");
+        const store = transaction.objectStore("photosStore");
+        
+        const photoEntry = {
+            imageFile: imageFile, // Le File object lui-même
+            name: imageFile.name || `photo_${Date.now()}.${imageFile.type.split('/')[1] || 'jpg'}`,
+            timestamp: new Date().toISOString()
+        };
+
+        const request = store.add(photoEntry);
+
+        request.onsuccess = function(event) {
+            console.log("Photo sauvegardée localement dans IndexedDB avec la clé:", event.target.result, "Nom:", photoEntry.name);
+        };
+        request.onerror = function(event) {
+            console.error("Erreur de sauvegarde de la photo dans IndexedDB:", event.target.error);
+            // Pourrait informer l'utilisateur de l'échec de la sauvegarde pour cette photo.
+        };
+    } catch (error) {
+        console.error("Erreur inattendue dans savePhotoToDB:", error);
+    }
+}
+
+/* ================================================================
    FONCTION DE NORMALISATION
    ================================================================ */
 function norm(txt){
@@ -102,7 +199,7 @@ async function identifySingleImage(fileBlob, organ) {
   }
 
   const fd = new FormData();
-  fd.append("images", fileBlob, "photo.jpg");
+  fd.append("images", fileBlob, fileBlob.name || "photo.jpg"); // Utiliser le nom du fichier s'il existe
   fd.append("organs", organ);
 
   const results = await callPlantNetAPI(fd);
@@ -222,17 +319,25 @@ function buildCards(items){
    ================================================================ */
 function handleSingleFileSelect(file) {
   if (!file) return;
-  console.log("Image unique sélectionnée:", file.name);
+  console.log("Image unique sélectionnée:", file.name, "Type:", file.type, "Taille:", file.size);
+
+  // Sauvegarde locale immédiate de la photo prise/sélectionnée via ce flux
+  savePhotoToDB(file).catch(err => {
+      console.error("La sauvegarde locale (via handleSingleFileSelect) de la photo a échoué de manière asynchrone:", err);
+      // On pourrait choisir d'alerter l'utilisateur ici si la sauvegarde est critique
+      // alert("Attention: la sauvegarde locale de la photo a échoué.");
+  });
+
   const reader = new FileReader();
   reader.onload = () => {
     sessionStorage.setItem("photoData", reader.result);
-    console.log("Image unique sauvegardée; redirection vers organ.html.");
+    console.log("Image unique sauvegardée dans sessionStorage; redirection vers organ.html.");
     sessionStorage.removeItem("speciesQueryName"); 
     sessionStorage.removeItem("identificationResults");
     location.href = "organ.html";
   };
   reader.onerror = () => {
-    console.error("Erreur lors de la lecture du fichier image.");
+    console.error("Erreur lors de la lecture du fichier image pour DataURL.");
     alert("Erreur lors de la lecture de l'image.");
   };
   reader.readAsDataURL(file);
@@ -242,8 +347,7 @@ function handleSingleFileSelect(file) {
    ÉCOUTEURS ET LOGIQUE SPÉCIFIQUE AUX PAGES
    ================================================================ */
 
-// --- Logique pour INDEX.HTML ---
-if (document.getElementById("file-capture")) { 
+if (document.getElementById("file-capture")) { // On est probablement sur index.html
   
   const fileCaptureInput = document.getElementById("file-capture");
   const fileGalleryInput = document.getElementById("file-gallery");
@@ -253,7 +357,7 @@ if (document.getElementById("file-capture")) {
   const multiImageListArea = document.getElementById("multi-image-list-area");
   const multiImageIdentifyButton = document.getElementById("multi-image-identify-button");
 
-  let selectedMultiFilesData = []; // Structure: [{file: FileObject, organ: 'leaf'}, ...]
+  let selectedMultiFilesData = []; 
 
   if (fileCaptureInput) {
     fileCaptureInput.addEventListener("change", e => {
@@ -277,7 +381,8 @@ if (document.getElementById("file-capture")) {
         await ready;
         const normalizedQuery = norm(query);
         let foundSpeciesName = null;
-        const originalTaxrefKeys = Object.keys(JSON.parse(await (await fetch("taxref.json")).text()));
+        const taxrefOriginalData = await fetch("taxref.json").then(r => r.json()); // Re-fetch pour les clés originales
+        const originalTaxrefKeys = Object.keys(taxrefOriginalData);
         foundSpeciesName = originalTaxrefKeys.find(key => norm(key) === normalizedQuery) || 
                            (taxref[normalizedQuery] ? normalizedQuery : null);
 
@@ -302,13 +407,12 @@ if (document.getElementById("file-capture")) {
     });
   }
 
-  // --- Logique pour la section multi-images sur index.html ---
   function renderMultiImageList() {
+    if (!multiImageListArea || !multiImageIdentifyButton || !multiFileInput) return; // Safety check
     multiImageListArea.innerHTML = ''; 
     if (selectedMultiFilesData.length === 0) {
         multiImageIdentifyButton.style.display = 'none';
-        // Ne pas réinitialiser multiFileInput.value ici, car cela empêcherait la séléction des mêmes fichiers
-        // si l'utilisateur annule et recommence sans recharger la page.
+        multiFileInput.value = ''; // Permet de re-sélectionner les mêmes fichiers si la liste est vide.
         return;
     }
 
@@ -329,18 +433,17 @@ if (document.getElementById("file-capture")) {
         fileInfoSpan.appendChild(fileNameSpan);
         
         const organSelect = document.createElement('select');
-        organSelect.dataset.index = index; // Lier le select à l'item de données
+        organSelect.dataset.index = index; 
         ['leaf', 'flower', 'fruit', 'bark'].forEach(organValue => {
             const option = document.createElement('option');
             option.value = organValue;
             option.textContent = organValue.charAt(0).toUpperCase() + organValue.slice(1);
             organSelect.appendChild(option);
         });
-        organSelect.value = item.organ || 'leaf'; // Appliquer la valeur stockée ou 'leaf' par défaut
+        organSelect.value = item.organ; 
         organSelect.addEventListener('change', (e) => {
             const itemIndex = parseInt(e.target.dataset.index, 10);
-            selectedMultiFilesData[itemIndex].organ = e.target.value; // Mettre à jour l'organe dans notre tableau
-            console.log(`Organe pour image ${itemIndex + 1} changé en: ${selectedMultiFilesData[itemIndex].organ}`);
+            selectedMultiFilesData[itemIndex].organ = e.target.value; 
         });
         
         const deleteButton = document.createElement('button');
@@ -348,6 +451,7 @@ if (document.getElementById("file-capture")) {
         deleteButton.className = 'delete-file-btn';
         deleteButton.type = 'button';
         deleteButton.dataset.index = index;
+        deleteButton.title = "Supprimer cette image";
         deleteButton.addEventListener('click', handleDeleteMultiFile);
 
         listItemDiv.appendChild(fileInfoSpan);
@@ -361,44 +465,40 @@ if (document.getElementById("file-capture")) {
   function handleDeleteMultiFile(event) {
     const indexToRemove = parseInt(event.currentTarget.dataset.index, 10);
     selectedMultiFilesData.splice(indexToRemove, 1);
-    // Si c'est le dernier fichier, il faut aussi vider l'input file pour permettre de re-sélectionner le même fichier
-    if (selectedMultiFilesData.length === 0) {
-        multiFileInput.value = ''; // Réinitialiser l'input file
-    }
     renderMultiImageList();
   }
 
   if (multiFileInput && multiImageListArea && multiImageIdentifyButton) {
     multiFileInput.addEventListener("change", event => {
       const files = Array.from(event.target.files);
-      // Concaténer avec les fichiers déjà sélectionnés, en respectant la limite
-      const totalFilesAfterAdd = selectedMultiFilesData.length + files.length;
+      const currentFileCount = selectedMultiFilesData.length;
+      const remainingSlots = MAX_MULTI_IMAGES - currentFileCount;
       
-      let filesToAdd = [];
-      if (totalFilesAfterAdd > MAX_MULTI_IMAGES) {
-          const remainingSlots = MAX_MULTI_IMAGES - selectedMultiFilesData.length;
-          if (remainingSlots > 0) {
-              filesToAdd = files.slice(0, remainingSlots);
-              alert(`Vous ne pouvez ajouter que ${remainingSlots} image(s) de plus. ${files.length - remainingSlots} image(s) n'ont pas été ajoutée(s).`);
-          } else {
-              alert(`Vous avez déjà atteint la limite de ${MAX_MULTI_IMAGES} images.`);
-          }
-      } else {
-          filesToAdd = files;
+      let filesActuallyAddedCount = 0;
+      if (remainingSlots <= 0 && files.length > 0) {
+          alert(`Vous avez déjà atteint la limite de ${MAX_MULTI_IMAGES} images. Impossible d'en ajouter plus.`);
+          multiFileInput.value = ''; // Réinitialiser pour permettre de nouvelles sélections plus tard
+          return;
       }
 
-      filesToAdd.forEach(file => {
-        // Vérifier si le fichier n'est pas déjà dans la liste (basé sur le nom et la taille pour une simple vérification)
-        const isAlreadySelected = selectedMultiFilesData.some(item => item.file.name === file.name && item.file.size === file.size);
-        if (!isAlreadySelected && selectedMultiFilesData.length < MAX_MULTI_IMAGES) {
+      files.slice(0, remainingSlots).forEach(file => {
+        const isAlreadySelected = selectedMultiFilesData.some(item => item.file.name === file.name && item.file.size === file.size && item.file.lastModified === file.lastModified);
+        if (!isAlreadySelected) {
             selectedMultiFilesData.push({ file: file, organ: 'leaf' }); // 'leaf' par défaut
-        } else if (isAlreadySelected) {
-            console.log(`Fichier "${file.name}" déjà sélectionné.`);
+            filesActuallyAddedCount++;
+        } else {
+            console.log(`Fichier "${file.name}" déjà sélectionné ou identique.`);
         }
       });
+
+      if (files.length > 0 && filesActuallyAddedCount < files.length && selectedMultiFilesData.length === MAX_MULTI_IMAGES) {
+          alert(`Limite de ${MAX_MULTI_IMAGES} images atteinte. Certaines images n'ont pas été ajoutées.`);
+      }
+      
       renderMultiImageList();
-      // Ne pas réinitialiser multiFileInput.value ici pour permettre d'ajouter d'autres fichiers plus tard
-      // sauf si l'utilisateur le fait manuellement ou qu'on fournit un bouton "vider la sélection"
+      // Important: Réinitialiser la valeur de l'input file pour permettre à l'événement "change"
+      // de se déclencher même si l'utilisateur sélectionne à nouveau le même ensemble de fichiers (par exemple, après en avoir supprimé).
+      multiFileInput.value = ''; 
     });
 
     multiImageIdentifyButton.addEventListener("click", async () => {
@@ -406,10 +506,9 @@ if (document.getElementById("file-capture")) {
         alert("Veuillez sélectionner au moins une image.");
         return;
       }
-      // La validation de MAX_MULTI_IMAGES est déjà gérée à l'ajout
       
       const filesToSend = selectedMultiFilesData.map(item => item.file);
-      const organsToSend = selectedMultiFilesData.map(item => item.organ); // L'organe est mis à jour via le 'change' listener du select
+      const organsToSend = selectedMultiFilesData.map(item => item.organ); 
       
       await identifyMultipleImages(filesToSend, organsToSend);
     });
@@ -425,12 +524,14 @@ if (typeof organBoxOnPage !== 'undefined' && organBoxOnPage !== null) {
   const displaySpeciesNameResults = async (speciesName) => {
     console.log("Affichage des résultats pour la recherche par nom:", speciesName);
     const previewEl = document.getElementById("preview");
-    const organChoiceEl = document.getElementById("organ-choice");
+    const organChoiceEl = document.getElementById("organ-choice"); 
     if (previewEl) previewEl.style.display = 'none';
     if (organChoiceEl) organChoiceEl.style.display = 'none';
     
-    document.getElementById("results").innerHTML = "";
-    document.getElementById("cards").innerHTML = "";   
+    const resultsDiv = document.getElementById("results");
+    const cardsDiv = document.getElementById("cards");
+    if(resultsDiv) resultsDiv.innerHTML = "";
+    if(cardsDiv) cardsDiv.innerHTML = "";   
 
     try {
         await ready; 
@@ -452,7 +553,7 @@ if (typeof organBoxOnPage !== 'undefined' && organBoxOnPage !== null) {
             buildTable(resultsForDisplay);
             buildCards(resultsForDisplay);
         } else {
-            document.getElementById("results").innerHTML = `<p>Données détaillées non trouvées pour ${speciesName}.</p>`;
+            if(resultsDiv) resultsDiv.innerHTML = `<p>Données détaillées non trouvées pour ${speciesName}.</p>`;
         }
     } catch (err) {
         console.error("Erreur lors de l'affichage des résultats de recherche par nom:", err);
