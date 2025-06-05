@@ -63,7 +63,7 @@ initPhotoDB().catch(err => {
 });
 
 async function savePhotoToDB(imageFile) {
-    if (!imageFile || !(imageFile instanceof Blob)) {
+    if (!imageFile || !(imageFile instanceof Blob)) { 
         console.warn("Tentative de sauvegarde d'un objet invalide ou non défini. Attendu: File/Blob.", imageFile);
         return;
     }
@@ -148,8 +148,6 @@ const ready = Promise.all([
   }).catch(err => console.error("Erreur chargement taxref.json:", err)),
   fetch("ecology.json").then(r => r.json()).then(j => {
     Object.entries(j).forEach(([complexKey, value]) => {
-        // Correction: Extraire la partie nom scientifique de la clé complexe
-        // avant la normalisation, si la clé contient des informations additionnelles (ex: "nom espèce; description additionnelle")
         const scientificNamePart = complexKey.split(';')[0].trim();
         ecology[norm(scientificNamePart)] = value;
     });
@@ -164,7 +162,7 @@ const ready = Promise.all([
    HELPERS URLS
    ================================================================ */
 const cdRef      = n => taxref[norm(n)];
-const ecolOf     = n => ecology[norm(n)] || "—"; // Utilise le nom normalisé pour la recherche
+const ecolOf     = n => ecology[norm(n)] || "—"; 
 const slug       = n => norm(n).replace(/ /g,"-");
 
 const infoFlora  = n => `https://www.infoflora.ch/fr/flore/${slug(n)}.html`;
@@ -291,14 +289,13 @@ function buildTable(items){
   const rows = items.map(item => {
     const score = item.score !== undefined ? Math.round(item.score * 100) : "N/A";
     const sci  = item.species.scientificNameWithoutAuthor;
-    const cd   = cdRef(sci); // cdRef va normaliser sci
-    const eco  = ecolOf(sci); // ecolOf va normaliser sci
+    const cd   = cdRef(sci); 
+    const eco  = ecolOf(sci); 
     return `<tr>
       <td>${sci}</td>
       <td style="text-align:center">${score}</td>
       <td>${link(infoFlora(sci),"fiche")}</td>
-      <td>${eco.slice(0,120)}${eco.length>120?"…":""}</td>
-      <td>${link(cd && inpnCarte(cd),"carte")}</td>
+      <td>${eco}</td> <td>${link(cd && inpnCarte(cd),"carte")}</td>
       <td>${link(cd && inpnStatut(cd),"statut")}</td>
       <td>${link(cd && aura(cd),"atlas")}</td>
       <td>${link(cd && openObs(cd),"carte")}</td>
@@ -340,8 +337,7 @@ function buildCards(items){
 
     details.innerHTML = `
       <summary>${sci} — ${pct}${item.score !== undefined && !isNameSearchResult ? '%' : ''}</summary>
-      <p style="padding:0 12px 8px;font-style:italic">${ecolOf(sci)}</p>
-      ${iframeHTML}`;
+      <p style="padding:0 12px 8px;font-style:italic">${ecolOf(sci)}</p> ${iframeHTML}`;
     zone.appendChild(details);
   });
 }
