@@ -52,11 +52,11 @@
     .option-container {
       margin-bottom: 1.5rem;
       padding: 1rem;
-      background-color: rgba(255, 255, 255, 0.8); /* Légère transparence pour lisibilité */
+      background-color: rgba(255, 255, 255, 0.8);
       border-radius: 8px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       width: 90vw;
-      max-width: 450px; /* Augmenté pour plus d'espace */
+      max-width: 450px;
     }
     
     .option-container h2 {
@@ -66,8 +66,7 @@
         margin-bottom: 0.8rem;
     }
 
-
-    .upload-btn, .action-button { /* Classe générique pour les boutons d'action */
+    .upload-btn, .action-button {
       display:block;
       width:100%;
       padding: 10px 15px;
@@ -109,7 +108,7 @@
     }
 
     .search-species-container input[type="search"] {
-      width: calc(100% - 22px); /* Ajuster pour padding/border */
+      width: calc(100% - 22px);
       padding: 10px;
       margin-bottom: 0.5rem;
       border: 1px solid var(--border);
@@ -117,41 +116,58 @@
       font-size: 1rem;
     }
     
-    /* Styles pour la section multi-images */
-    #multi-image-list .image-organ-item {
+    /* Styles pour la section multi-images (liste textuelle) */
+    #multi-image-list-area .image-organ-item {
         display: flex;
         align-items: center;
-        margin-bottom: 0.5rem;
-        padding: 0.5rem;
+        justify-content: space-between;
+        margin-bottom: 0.6rem; /* Augmenté l'espace entre les items */
+        padding: 0.6rem; /* Ajusté le padding */
         border: 1px solid var(--border);
         border-radius: 4px;
         background-color: var(--card);
+        font-size: 0.9rem; /* Taille de police pour toute la ligne */
     }
-    #multi-image-list .image-organ-item img.preview {
-        width: 60px;
-        height: 60px;
-        object-fit: cover;
-        margin-right: 10px;
-        border-radius: 4px;
-    }
-    #multi-image-list .image-organ-item .file-name {
+    #multi-image-list-area .file-info { /* Conteneur pour nom et index */
         flex-grow: 1;
-        font-size: 0.9rem;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
         margin-right: 10px;
     }
-    #multi-image-list .image-organ-item select {
-        padding: 5px;
+    #multi-image-list-area .file-info .file-index {
+        font-weight: bold;
+        margin-right: 5px;
+    }
+    #multi-image-list-area select {
+        padding: 5px 7px;
         border-radius: 4px;
         border: 1px solid var(--border);
-        background-color: white; /* Assurer lisibilité en dark mode */
+        background-color: white;
         color: var(--text);
+        font-size: 0.85rem; /* Légèrement plus petit pour le select */
+        margin-right: 10px;
+        min-width: 75px; 
+        flex-shrink: 0; /* Empêcher le select de rétrécir excessivement */
+    }
+    #multi-image-list-area .delete-file-btn {
+        background: transparent;
+        border: none;
+        color: #c0392b; /* Rouge plus doux */
+        font-weight: bold;
+        cursor: pointer;
+        padding: 0 5px; /* Ajuster le padding pour ne pas être trop large */
+        font-size: 1.1rem; 
+        line-height: 1; /* Assurer un bon alignement vertical du X */
+        flex-shrink: 0; /* Empêcher le bouton de rétrécir */
+    }
+    #multi-image-list-area .delete-file-btn:hover {
+        color: #e74c3c; /* Rouge plus vif au survol */
     }
 
-
-    /* Styles généraux pour les pages de résultats (organ.html) */
+    body:not(.home) .upload-btn {
+        display:none;
+    }
     body:not(.home) h1 { font-size:1.6rem; color:var(--primary); margin-bottom: 1rem;}
     table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.05);margin-bottom:1.2rem;}
     th,td{padding:8px 10px;border-bottom:1px solid var(--border);}
@@ -173,9 +189,11 @@
       table,details{border-color:#333}
       th{background:#262b2f;color:#ececec}
       body.home .upload-btn.logo-btn span { color: var(--text); }
-      .option-container { background-color: rgba(38, 43, 47, 0.8); } /* Fond plus sombre pour conteneurs */
-      #multi-image-list .image-organ-item { background-color: var(--card); border-color: var(--border); }
-      #multi-image-list .image-organ-item select { background-color: #333; color: var(--text); border-color: #555;}
+      .option-container { background-color: rgba(38, 43, 47, 0.8); }
+      #multi-image-list-area .image-organ-item { background-color: var(--card); border-color: var(--border); }
+      #multi-image-list-area select { background-color: #333; color: var(--text); border-color: #555; }
+      #multi-image-list-area .delete-file-btn { color: #ff6b6b; }
+      #multi-image-list-area .delete-file-btn:hover { color: #ff8787; }
       .search-species-container input[type="search"] { background-color: #333; color: var(--text); border-color: #555; }
     }
   </style>
