@@ -8,6 +8,42 @@ const MAX_RESULTS = 5;
 const MAX_MULTI_IMAGES = 5;
 
 /* ================================================================
+   GESTION DE LA GÉOLOCALISATION
+   ================================================================ */
+// Coordonnées par défaut (Grenoble, France) si la géolocalisation échoue ou est refusée.
+let userLocation = { latitude: 45.188529, longitude: 5.724524 };
+
+/**
+ * Demande la géolocalisation de l'utilisateur.
+ * REMARQUE : Pour des raisons de sécurité et de respect de la vie privée, tous les navigateurs
+ * modernes EXIGENT que l'utilisateur donne son autorisation pour partager sa position.
+ * Cette demande d'autorisation n'est faite qu'une seule fois ; le navigateur mémorise ensuite le choix.
+ * Il est techniquement impossible d'obtenir la position GPS sans cette permission initiale.
+ */
+function requestUserLocation() {
+  if ("geolocation" in navigator) {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        userLocation = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        };
+        console.log("Géolocalisation de l'utilisateur obtenue :", userLocation);
+      },
+      (error) => {
+        console.warn(`ERREUR de géolocalisation (${error.code}): ${error.message}. Utilisation des coordonnées par défaut.`);
+      }
+    );
+  } else {
+    console.warn("La géolocalisation n'est pas supportée par ce navigateur. Utilisation des coordonnées par défaut.");
+  }
+}
+
+// Lancer la demande de géolocalisation au chargement de l'application.
+requestUserLocation();
+
+
+/* ================================================================
    INITIALISATION IndexedDB POUR SAUVEGARDE LOCALE DES PHOTOS
    ================================================================ */
 let db = null;
@@ -166,12 +202,18 @@ const ecolOf     = n => ecology[norm(n)] || "—";
 const slug       = n => norm(n).replace(/ /g,"-");
 
 const infoFlora  = n => `https://www.infoflora.ch/fr/flore/${slug(n)}.html`;
-const inpnCarte  = c => `https://inpn.mnhn.fr/espece/cd_nom/${c}/tab/carte`;
+// const inpnCarte  = c => `https://inpn.mnhn.fr/espece/cd_nom/${c}/tab/carte`; // Supprimé
 const inpnStatut = c => `https://inpn.mnhn.fr/espece/cd_nom/${c}/tab/statut`;
 const aura       = c => `https://atlas.biodiversite-auvergne-rhone-alpes.fr/espece/${c}`;
-const openObs    = c => `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=lsid%3A${c}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&qc=&radius=239.6&lat=44.57641801313443&lon=4.9718137085437775#tab_mapView`;
+// MODIFICATION: L'URL OpenObs utilise maintenant userLocation et un radius fixe.
+const openObs    = c => {
+    const lat = userLocation.latitude;
+    const lon = userLocation.longitude;
+    return `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=lsid%3A${c}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&qc=&radius=120.6&lat=${lat}&lon=${lon}#tab_mapView`;
+};
 
-const proxyCarte  = c => `/.netlify/functions/inpn-proxy?cd=${c}&type=carte`;
+
+// const proxyCarte  = c => `/.netlify/functions/inpn-proxy?cd=${c}&type=carte`; // Supprimé
 const proxyStatut = c => `/.netlify/functions/inpn-proxy?cd=${c}&type=statut`;
 
 /* ================================================================
@@ -283,7 +325,8 @@ function buildTable(items){
   if (!wrap) return;
   wrap.innerHTML = ""; 
 
-  const headers = ["Nom latin","Score (%)","InfoFlora","Écologie","INPN carte","INPN statut","Biodiv'AURA","OpenObs"];
+  // MODIFICATION: Suppression de "INPN carte" de l'en-tête
+  const headers = ["Nom latin","Score (%)","InfoFlora","Écologie","INPN statut","Biodiv'AURA","OpenObs"];
   const link = (url, label) => url ? `<a href="${url}" target="_blank" rel="noopener">${label}</a>` : "—";
 
   const rows = items.map(item => {
@@ -295,7 +338,7 @@ function buildTable(items){
       <td>${sci}</td>
       <td style="text-align:center">${score}</td>
       <td>${link(infoFlora(sci),"fiche")}</td>
-      <td>${eco}</td> <td>${link(cd && inpnCarte(cd),"carte")}</td>
+      <td>${eco}</td>
       <td>${link(cd && inpnStatut(cd),"statut")}</td>
       <td>${link(cd && aura(cd),"atlas")}</td>
       <td>${link(cd && openObs(cd),"carte")}</td>
@@ -326,9 +369,9 @@ function buildCards(items){
     const details = document.createElement("details");
     let iframeHTML = '';
     if (cd) {
+        // MODIFICATION: Suppression de l'iframe pour proxyCarte
         iframeHTML = `
         <div class="iframe-grid">
-            <iframe loading="lazy" src="${proxyCarte(cd)}"  title="Carte INPN"></iframe>
             <iframe loading="lazy" src="${proxyStatut(cd)}" title="Statut INPN"></iframe>
             <iframe loading="lazy" src="${aura(cd)}"        title="Biodiv'AURA"></iframe>
             <iframe loading="lazy" src="${openObs(cd)}"     title="OpenObs"></iframe>
@@ -337,7 +380,8 @@ function buildCards(items){
 
     details.innerHTML = `
       <summary>${sci} — ${pct}${item.score !== undefined && !isNameSearchResult ? '%' : ''}</summary>
-      <p style="padding:0 12px 8px;font-style:italic">${ecolOf(sci)}</p> ${iframeHTML}`;
+      <p style="padding:0 12px 8px;font-style:italic">${ecolOf(sci)}</p>
+      ${iframeHTML}`;
     zone.appendChild(details);
   });
 }
