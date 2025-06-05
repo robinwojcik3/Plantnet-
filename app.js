@@ -10,17 +10,14 @@ const MAX_MULTI_IMAGES = 5;
 /* ================================================================
    INITIALISATION ET GESTION DES DONNÉES
    ================================================================ */
-// Variables globales pour les données
 let taxref = {};
 let ecology = {};
 let floraToc = {}; // Pour stocker l'index des PDF Flora Gallica
-let userLocation = { latitude: 45.188529, longitude: 5.724524 }; // Coordonnées par défaut (Grenoble)
 
-// Promesse unique pour le chargement des fichiers JSON
+// Promesse unique pour le chargement des fichiers de données
 const ready = Promise.all([
   fetch("taxref.json").then(r => r.json()).then(j => Object.entries(j).forEach(([k,v]) => taxref[norm(k)] = v)),
   fetch("ecology.json").then(r => r.json()).then(j => Object.entries(j).forEach(([k,v]) => ecology[norm(k.split(';')[0])] = v)),
-  // Chargement du nouvel index de la table des matières
   fetch("assets/flora_gallica_toc.json").then(r => r.json()).then(j => floraToc = j)
 ]).then(() => {
     console.log("Fichiers de données (Taxref, Ecology, Flora Gallica TOC) chargés et prêts.");
@@ -29,45 +26,35 @@ const ready = Promise.all([
     alert("Erreur de chargement des fichiers de données locaux : " + err.message);
 });
 
-
 /* ================================================================
    FONCTIONS UTILITAIRES ET HELPERS
    ================================================================ */
 function norm(txt) { if (typeof txt !== 'string') return ""; return txt.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/\s+/g, " "); }
 const cdRef = n => taxref[norm(n)];
-const ecolOf = n => ecology[norm(n)] || "—";
+const ecolOf = n => ecology[norm(n)] || "—"; 
 const slug = n => norm(n).replace(/ /g, "-");
 
 const infoFlora  = n => `https://www.infoflora.ch/fr/flore/${slug(n)}.html`;
 const inpnStatut = c => `https://inpn.mnhn.fr/espece/cd_nom/${c}/tab/statut`;
 const aura       = c => `https://atlas.biodiversite-auvergne-rhone-alpes.fr/espece/${c}`;
-const proxyStatut = c => `/.netlify/functions/inpn-proxy?cd=${c}&type=statut`;
 
-function buildOpenObsUrl(cd_ref, location) {
-    const lat = location ? location.latitude : userLocation.latitude;
-    const lon = location ? location.longitude : userLocation.longitude;
-    return `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=lsid%3A${cd_ref}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&qc=&radius=120.6&lat=${lat}&lon=${lon}#tab_mapView`;
+function buildOpenObsUrl(cd_ref) {
+    // URL avec coordonnées et radius fixes comme demandé initialement
+    return `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=lsid%3A${cd_ref}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&qc=&radius=120.6&lat=45.188529&lon=5.724524#tab_mapView`;
 }
-
-/* ================================================================
-   GESTION DES ACTIONS UTILISATEUR (CLICS)
-   ================================================================ */
-function getLiveUserLocation() { return new Promise((resolve, reject) => { if (!("geolocation" in navigator)) return reject(new Error("Géolocalisation non supportée.")); navigator.geolocation.getCurrentPosition(resolve, reject); }); }
-window.handleOpenObsClick = async function(event, cd_ref) { event.preventDefault(); const targetLink = event.currentTarget; const originalText = targetLink.textContent; targetLink.textContent = 'Localisation...'; targetLink.style.pointerEvents = 'none'; try { const position = await getLiveUserLocation(); userLocation = { latitude: position.coords.latitude, longitude: position.coords.longitude }; window.open(buildOpenObsUrl(cd_ref, userLocation), '_blank', 'noopener,noreferrer'); } catch (error) { alert("Impossible d'obtenir la localisation. Ouverture de la carte avec une position par défaut."); window.open(buildOpenObsUrl(cd_ref, null), '_blank', 'noopener,noreferrer'); } finally { targetLink.textContent = originalText; targetLink.style.pointerEvents = 'auto'; } }
-
 
 /* ================================================================
    LOGIQUE D'IDENTIFICATION ET D'AFFICHAGE
    ================================================================ */
-async function callPlantNetAPI(formData) { try { const res = await fetch(ENDPOINT, { method: "POST", body: formData }); if (!res.ok) { const errBody = await res.json().catch(() => res.text()); throw new Error(`Erreur API PlantNet (${res.status}): ${typeof errBody === 'object' ? errBody.message : errBody}`); } return (await res.json()).results.slice(0, MAX_RESULTS); } catch (err) { console.error("Erreur appel API PlantNet:", err); alert(err.message); return null; } }
-async function identifySingleImage(fileBlob, organ) { const fd = new FormData(); fd.append("images", fileBlob, fileBlob.name || "photo.jpg"); fd.append("organs", organ); const results = await callPlantNetAPI(fd); if (results) { document.body.classList.remove("home"); buildTable(results); buildCards(results); } }
+async function callPlantNetAPI(formData) { try { const res = await fetch(ENDPOINT, { method: "POST", body: formData }); if (!res.ok) { const errBody = await res.json().catch(() => res.text()); throw new Error(`Erreur API PlantNet (${res.status}): ${typeof errBody === 'object' ? errBody.message : errBody}`); } return (await res.json()).results.slice(0, MAX_RESULTS); } catch (err) { console.error(err); alert(err.message); return null; } }
+async function identifySingleImage(fileBlob, organ) { const fd = new FormData(); fd.append("images", fileBlob, fileBlob.name || "photo.jpg"); fd.append("organs", organ); const results = await callPlantNetAPI(fd); if (results) { document.body.classList.remove("home"); await ready; buildTable(results); buildCards(results); } }
 async function identifyMultipleImages(files, organs) { const fd = new FormData(); files.forEach((f, i) => fd.append("images", f, f.name || `photo_${i}.jpg`)); organs.forEach(o => fd.append("organs", o)); if (!fd.has("images")) return alert("Aucune image valide."); const results = await callPlantNetAPI(fd); if (results) { sessionStorage.setItem("identificationResults", JSON.stringify(results)); ["photoData", "speciesQueryName"].forEach(k => sessionStorage.removeItem(k)); location.href = "organ.html"; } }
 
 function buildTable(items){
   const wrap = document.getElementById("results");
   if (!wrap) return;
 
-  const headers = ["Nom latin","Score (%)","InfoFlora","Écologie","INPN statut","Biodiv'AURA","OpenObs", "Flora Gallica"];
+  const headers = ["Nom latin", "Score (%)", "InfoFlora", "Écologie", "INPN statut", "Biodiv'AURA", "OpenObs", "Flora Gallica"];
   const link = (url, label) => url ? `<a href="${url}" target="_blank" rel="noopener">${label}</a>` : "—";
 
   const rows = items.map(item => {
@@ -81,7 +68,7 @@ function buildTable(items){
     let floraLink = "—";
     if (tocEntry && tocEntry.pdfFile && tocEntry.page) {
       const pdfUrl = `assets/flora_gallica_pdfs/${tocEntry.pdfFile}#page=${tocEntry.page}`;
-      floraLink = `<a href="${pdfUrl}" target="_blank" rel="noopener" title="Ouvrir le PDF de Flora Gallica à la page du genre ${genus}">Page ${tocEntry.page}</a>`;
+      floraLink = `<a href="${pdfUrl}" target="_blank" rel="noopener" title="Ouvrir Flora Gallica à la page du genre ${genus}">Page ${tocEntry.page}</a>`;
     }
 
     return `<tr>
@@ -91,7 +78,7 @@ function buildTable(items){
       <td class="ecology-column">${eco}</td>
       <td>${link(cd && inpnStatut(cd),"statut")}</td>
       <td>${link(cd && aura(cd),"atlas")}</td>
-      <td>${cd ? `<a href="#" onclick="handleOpenObsClick(event, '${cd}')" title="Ouvrir la carte avec votre position actuelle">carte</a>` : "—"}</td>
+      <td>${cd ? link(buildOpenObsUrl(cd), "carte") : "—"}</td>
       <td>${floraLink}</td>
     </tr>`;
   }).join("");
@@ -116,12 +103,11 @@ function buildCards(items){
     const details = document.createElement("details");
     let iframeHTML = '';
     if (cd) {
-        const openObsDefaultUrl = buildOpenObsUrl(cd, null);
         iframeHTML = `
         <div class="iframe-grid">
             <iframe loading="lazy" src="${inpnStatut(cd)}" title="Statut INPN"></iframe>
             <iframe loading="lazy" src="${aura(cd)}" title="Biodiv'AURA"></iframe>
-            <iframe loading="lazy" src="${openObsDefaultUrl}" title="OpenObs"></iframe>
+            <iframe loading="lazy" src="${buildOpenObsUrl(cd)}" title="OpenObs"></iframe>
         </div>`;
     }
 
@@ -134,13 +120,10 @@ function buildCards(items){
 }
 
 /* ================================================================
-   LOGIQUE DE SÉLECTION DE FICHIERS ET SAUVEGARDE
+   LOGIQUE SPÉCIFIQUE AUX PAGES (ÉCOUTEURS ET HANDLERS)
    ================================================================ */
 function handleSingleFileSelect(file, sourceType) { 
   if (!file) return;
-  if (sourceType === 'capture') {
-      downloadPhotoForDeviceGallery(file);
-  }
   const reader = new FileReader();
   reader.onload = () => {
     sessionStorage.setItem("photoData", reader.result); 
@@ -151,10 +134,6 @@ function handleSingleFileSelect(file, sourceType) {
   reader.readAsDataURL(file); 
 }
 
-/* ================================================================
-   ÉCOUTEURS ET LOGIQUE SPÉCIFIQUE AUX PAGES
-   ================================================================ */
-// --- Logique pour la page d'accueil (index.html) ---
 if (document.getElementById("file-capture")) {
   const fileCaptureInput = document.getElementById("file-capture");
   const fileGalleryInput = document.getElementById("file-gallery");
@@ -173,9 +152,9 @@ if (document.getElementById("file-capture")) {
     if (!query) return alert("Veuillez entrer un nom d'espèce.");
     try {
         await ready;
-        const normalizedQuery = norm(query);
+        const normQuery = norm(query);
         let taxrefData = await fetch("taxref.json").then(r => r.json());
-        let foundName = Object.keys(taxrefData).find(k => norm(k) === normalizedQuery);
+        let foundName = Object.keys(taxrefData).find(k => norm(k) === normQuery);
         if (foundName) { 
             sessionStorage.setItem("speciesQueryName", foundName);
             ["photoData", "identificationResults"].forEach(k => sessionStorage.removeItem(k));
@@ -207,7 +186,6 @@ if (document.getElementById("file-capture")) {
   multiImageIdentifyButton?.addEventListener("click", () => { if (selectedMultiFilesData.length === 0) return alert("Veuillez sélectionner au moins une image."); identifyMultipleImages(selectedMultiFilesData.map(i => i.file), selectedMultiFilesData.map(i => i.organ)); });
 }
 
-// --- Logique pour la page des résultats (organ.html) ---
 const organBoxOnPage = document.getElementById("organ-choice"); 
 if (organBoxOnPage) {
   
@@ -215,9 +193,7 @@ if (organBoxOnPage) {
     const previewEl = document.getElementById("preview");
     if (previewEl) previewEl.style.display = 'none';
     if (organBoxOnPage) organBoxOnPage.style.display = 'none';
-    
-    await ready; // **CORRECTION CRUCIALE : Attendre le chargement des données avant d'afficher**
-    
+    await ready; // S'assurer que les données sont chargées avant d'afficher
     document.body.classList.remove("home");
     buildTable(isNameSearch ? [{ score: 1.0, species: { scientificNameWithoutAuthor: results } }] : results);
     buildCards(isNameSearch ? [{ score: 1.0, species: { scientificNameWithoutAuthor: results } }] : results);
@@ -240,13 +216,9 @@ if (organBoxOnPage) {
     if (organBoxOnPage) organBoxOnPage.style.display = 'block';
 
     const toBlob = dataURL => { try { const [m,b] = dataURL.split(','), [,e] = /:(.*?);/.exec(m), B=atob(b), a=new Uint8Array(B.length); for(let i=0;i<B.length;i++)a[i]=B.charCodeAt(i); return new Blob([a],{type:e})}catch(e){return null}};
-    
     const imageBlob = toBlob(storedImage); 
-    if (imageBlob) { 
-        organBoxOnPage.querySelectorAll("button").forEach(b => b.addEventListener("click", (e) => identifySingleImage(imageBlob, e.currentTarget.dataset.organ))); 
-    } else {
-        alert("Erreur lors de la préparation de l'image. Veuillez retourner à l'accueil.");
-    }
+    if (imageBlob) { organBoxOnPage.querySelectorAll("button").forEach(b => b.addEventListener("click", (e) => identifySingleImage(imageBlob, e.currentTarget.dataset.organ))); }
+    else { alert("Erreur lors de la préparation de l'image."); }
   } else {
     location.href = "index.html";
   }
