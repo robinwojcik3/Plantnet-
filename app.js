@@ -121,7 +121,6 @@ function downloadPhotoForDeviceGallery(imageBlob, filename) {
     console.log("Tentative de téléchargement de la photo pour la galerie:", effectiveFilename);
 }
 
-
 /* ================================================================
    FONCTION DE NORMALISATION
    ================================================================ */
@@ -170,15 +169,12 @@ const inpnStatut = c => `https://inpn.mnhn.fr/espece/cd_nom/${c}/tab/statut`;
 const aura       = c => `https://atlas.biodiversite-auvergne-rhone-alpes.fr/espece/${c}`;
 const proxyStatut = c => `/.netlify/functions/inpn-proxy?cd=${c}&type=statut`;
 
-// La fonction de création de l'URL OpenObs est maintenant privée car elle est appelée par handleOpenObsClick.
 function buildOpenObsUrl(cd_ref, location) {
-    // Utiliser la localisation passée en argument, ou des coordonnées par défaut.
-    const lat = location ? location.latitude : 45.188529;
+    const lat = location ? location.latitude : 45.188529; // Coordonnées par défaut si location est null
     const lon = location ? location.longitude : 5.724524;
     return `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=lsid%3A${cd_ref}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&qc=&radius=120.6&lat=${lat}&lon=${lon}#tab_mapView`;
 }
 
-// Fonction pour obtenir la géolocalisation de l'utilisateur. Retourne une Promise.
 function getLiveUserLocation() {
     return new Promise((resolve, reject) => {
         if (!("geolocation" in navigator)) {
@@ -199,25 +195,26 @@ function getLiveUserLocation() {
     });
 }
 
-// Handler pour le clic sur le lien OpenObs. Doit être global pour être appelé par `onclick`.
 window.handleOpenObsClick = async function(event, cd_ref) {
-    event.preventDefault(); // Empêche le lien de suivre href="#"
+    event.preventDefault(); 
     const targetLink = event.currentTarget;
-    targetLink.textContent = 'Localisation...'; // Indique à l'utilisateur qu'une action est en cours
+    const originalText = targetLink.textContent;
+    targetLink.textContent = 'Localisation...';
+    targetLink.style.pointerEvents = 'none'; // Désactiver clics multiples
 
     try {
-        // Demande la localisation en temps réel (déclenche la demande de permission si nécessaire)
         const location = await getLiveUserLocation();
         console.log("Géolocalisation obtenue pour OpenObs:", location);
         const url = buildOpenObsUrl(cd_ref, location);
         window.open(url, '_blank', 'noopener,noreferrer');
-        targetLink.textContent = 'carte'; // Réinitialise le texte du lien
     } catch (error) {
         console.error("Échec de l'obtention de la géolocalisation pour OpenObs:", error.message);
         alert("Impossible d'obtenir la localisation. Ouverture de la carte avec une position par défaut.");
         const defaultUrl = buildOpenObsUrl(cd_ref, null); // Appel avec null pour utiliser les coordonnées par défaut
         window.open(defaultUrl, '_blank', 'noopener,noreferrer');
-        targetLink.textContent = 'carte'; // Réinitialise le texte du lien
+    } finally {
+        targetLink.textContent = originalText; // Réinitialise le texte du lien
+        targetLink.style.pointerEvents = 'auto'; // Réactiver le lien
     }
 }
 
@@ -346,7 +343,7 @@ function buildTable(items){
       <td class="ecology-column">${eco}</td>
       <td>${link(cd && inpnStatut(cd),"statut")}</td>
       <td>${link(cd && aura(cd),"atlas")}</td>
-      <td>${cd ? `<a href="#" onclick="handleOpenObsClick(event, '${cd}')">carte</a>` : "—"}</td>
+      <td>${cd ? `<a href="#" onclick="handleOpenObsClick(event, '${cd}')" title="Ouvrir la carte avec votre position actuelle">carte</a>` : "—"}</td>
     </tr>`;
   }).join("");
 
@@ -384,9 +381,7 @@ function buildCards(items){
     const details = document.createElement("details");
     let iframeHTML = '';
     if (cd) {
-        // L'iframe OpenObs utilisera l'URL avec les coordonnées par défaut.
-        // Le lien "carte" dans le tableau est celui qui proposera la localisation dynamique.
-        const openObsDefaultUrl = buildOpenObsUrl(cd, null);
+        const openObsDefaultUrl = buildOpenObsUrl(cd, null); // URL avec coordonnées par défaut
         iframeHTML = `
         <div class="iframe-grid">
             <iframe loading="lazy" src="${proxyStatut(cd)}" title="Statut INPN"></iframe>
