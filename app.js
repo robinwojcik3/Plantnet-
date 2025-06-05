@@ -36,6 +36,7 @@ const ready = Promise.all([
   })
 ]).catch(err => {
   alert("Erreur chargement des fichiers locaux : " + err);
+  console.error("Erreur chargement des fichiers locaux:", err);
 });
 
 /* ================================================================
@@ -59,25 +60,55 @@ const proxyStatut = c => `/.netlify/functions/inpn-proxy?cd=${c}&type=statut`;
    FONCTION PRINCIPALE : IDENTIFICATION Pl@ntNet
    ================================================================ */
 async function identify(file, organ){
+  console.log("Fonction identify appelée avec organe:", organ, "et fichier:", file ? "Oui" : "Non");
+  if (!file) {
+    console.error("Aucun fichier fourni à identify.");
+    alert("Erreur: Aucune image à identifier.");
+    return;
+  }
+
   /* On attend que taxref + ecology soient chargés */
-  await ready;
+  try {
+    await ready;
+    console.log("Données taxref et ecology prêtes.");
+  } catch (err) {
+    console.error("Erreur lors de l'attente du chargement des données locales (ready):", err);
+    alert("Erreur critique lors du chargement des données. Veuillez réessayer.");
+    return;
+  }
+
 
   /* Requête API Pl@ntNet */
   const fd = new FormData();
   fd.append("images", file, "photo.jpg");
   fd.append("organs", organ); // organ: leaf | flower | bark | fruit
 
-  const res = await fetch(ENDPOINT, { method:"POST", body:fd });
-  if(!res.ok){ alert("Erreur API Pl@ntNet"); return; }
+  console.log(`Envoi de la requête à l'API PlantNet pour l'organe: ${organ}`);
+  try {
+    const res = await fetch(ENDPOINT, { method:"POST", body:fd });
+    if(!res.ok){
+      const errorText = await res.text();
+      console.error("Erreur API Pl@ntNet:", res.status, errorText);
+      alert(`Erreur API Pl@ntNet (${res.status}): ${errorText || 'Réponse non OK'}`);
+      return;
+    }
 
-  const results = (await res.json()).results.slice(0, MAX_RESULTS);
+    const responseData = await res.json();
+    console.log("Réponse API Pl@ntNet reçue:", responseData);
+    const results = responseData.results.slice(0, MAX_RESULTS);
 
-  /* Retire le bandeau de fond */
-  document.body.classList.remove("home");
+    /* Retire le bandeau de fond */
+    document.body.classList.remove("home");
 
-  /* Affichage */
-  buildTable(results);
-  buildCards(results);
+    /* Affichage */
+    buildTable(results);
+    buildCards(results);
+    console.log("Affichage des résultats terminé.");
+
+  } catch (error) {
+    console.error("Erreur lors de l'appel à l'API PlantNet ou du traitement des résultats:", error);
+    alert("Une erreur est survenue lors de l'identification: " + error.message);
+  }
 }
 
 /* ================================================================
@@ -85,7 +116,11 @@ async function identify(file, organ){
    ================================================================ */
 function buildTable(items){
   const wrap = document.getElementById("results");
-  wrap.innerHTML = "";
+  if (!wrap) {
+    console.error("Élément #results non trouvé dans le DOM pour buildTable.");
+    return;
+  }
+  wrap.innerHTML = ""; // Efface les résultats précédents
 
   const headers = ["Nom latin","Score (%)","InfoFlora","Écologie","INPN carte","INPN statut","Biodiv'AURA","OpenObs"];
   const link = (url, label) => url ? `<a href="${url}" target="_blank" rel="noopener">${label}</a>` : "—";
@@ -119,7 +154,11 @@ function buildTable(items){
    ================================================================ */
 function buildCards(items){
   const zone = document.getElementById("cards");
-  zone.innerHTML = "";
+   if (!zone) {
+    console.error("Élément #cards non trouvé dans le DOM pour buildCards.");
+    return;
+  }
+  zone.innerHTML = ""; // Efface les résultats précédents
 
   items.forEach(({score,species}) => {
     const sci = species.scientificNameWithoutAuthor;
@@ -151,10 +190,16 @@ if(fileInput && !organBox){
   fileInput.addEventListener("change", e => {
     const file = e.target.files[0];
     if(!file) return;
+    console.log("Image sélectionnée sur index.html:", file.name);
     const reader = new FileReader();
     reader.onload = () => {
       sessionStorage.setItem("photoData", reader.result);
+      console.log("Image sauvegardée dans sessionStorage; redirection vers organ.html.");
       location.href = "organ.html";
+    };
+    reader.onerror = () => {
+        console.error("Erreur lors de la lecture du fichier image.");
+        alert("Erreur lors de la lecture de l'image.");
     };
     reader.readAsDataURL(file);
   });
@@ -162,27 +207,56 @@ if(fileInput && !organBox){
 
 if(organBox){
   /* page de choix de l'organe */
-   const stored = sessionStorage.getItem("photoData");
-  if(!stored){
+   const storedImage = sessionStorage.getItem("photoData"); // Récupérer l'image une seule fois
+  if(!storedImage){
+    console.warn("Aucune photoData trouvée dans sessionStorage, redirection vers index.html.");
     location.href = "index.html";
   } else {
-    const prev = document.getElementById("preview");
-    if(prev) prev.src = stored;
-    const toBlob = str => {
-      const [meta, b64] = str.split(",");
-      const mime = /:(.*?);/.exec(meta)[1];
-      const bin = atob(b64);
-      const arr = new Uint8Array(bin.length);
-      for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
-      return new Blob([arr], {type:mime});
+    const previewElement = document.getElementById("preview");
+    if(previewElement) previewElement.src = storedImage; // Afficher l'image
+
+    // Fonction pour convertir la DataURL (string) en Blob
+    const toBlob = dataURL => {
+      try {
+        const [meta, b64] = dataURL.split(",");
+        const mime = /:(.*?);/.exec(meta)[1];
+        const bin = atob(b64);
+        let arr = new Uint8Array(bin.length);
+        for(let i=0; i<bin.length; i++) arr[i] = bin.charCodeAt(i);
+        return new Blob([arr], {type:mime});
+      } catch (e) {
+        console.error("Erreur dans toBlob:", e);
+        return null; // Retourner null en cas d'erreur
+      }
     };
-    const handle = e => {
-      const img = sessionStorage.getItem("photoData");
-      if(!img) return;
-      identify(toBlob(img), e.currentTarget.dataset.organ);
+    
+    // Image Blob, préparée une fois si elle ne change pas
+    const imageBlob = toBlob(storedImage); 
+    if (!imageBlob) {
+        alert("Erreur lors de la préparation de l'image pour l'envoi. Veuillez réessayer.");
+        // Optionnel: rediriger ou désactiver les boutons si imageBlob est null
+    }
+
+    // Gestionnaire pour les clics sur les boutons d'organe
+    const handleOrganChoice = async (event) => {
+      console.log("Bouton organe cliqué:", event.currentTarget.dataset.organ);
+      
+      if (!imageBlob) { // Vérifier si imageBlob a été correctement créé
+        console.error("L'image n'a pas pu être convertie en Blob. Impossible d'identifier.");
+        alert("Erreur: L'image n'est pas prête pour l'identification. Veuillez retourner à l'accueil.");
+        return;
+      }
+      
+      const selectedOrgan = event.currentTarget.dataset.organ;
+      // Appel de la fonction d'identification avec le Blob de l'image et l'organe du bouton cliqué
+      await identify(imageBlob, selectedOrgan);
     };
-    organBox.querySelectorAll("button").forEach(btn =>
-      btn.addEventListener("click", handle)
-    );
+
+    // Attacher l'écouteur d'événement à chaque bouton
+    // Ces écouteurs restent actifs et fonctionnels pour chaque clic.
+    organBox.querySelectorAll("button").forEach(button => {
+      button.addEventListener("click", handleOrganChoice);
+    });
+    console.log("Écouteurs d'événements attachés aux boutons d'organe.");
   }
 }
