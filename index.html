@@ -52,11 +52,11 @@
     .option-container {
       margin-bottom: 1.5rem;
       padding: 1rem;
-      background-color: rgba(255, 255, 255, 0.8); /* Légère transparence pour lisibilité */
+      background-color: rgba(255, 255, 255, 0.8);
       border-radius: 8px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       width: 90vw;
-      max-width: 450px; /* Augmenté pour plus d'espace */
+      max-width: 450px;
     }
     
     .option-container h2 {
@@ -66,8 +66,7 @@
         margin-bottom: 0.8rem;
     }
 
-
-    .upload-btn, .action-button { /* Classe générique pour les boutons d'action */
+    .upload-btn, .action-button {
       display:block;
       width:100%;
       padding: 10px 15px;
@@ -109,7 +108,7 @@
     }
 
     .search-species-container input[type="search"] {
-      width: calc(100% - 22px); /* Ajuster pour padding/border */
+      width: calc(100% - 22px);
       padding: 10px;
       margin-bottom: 0.5rem;
       border: 1px solid var(--border);
@@ -117,19 +116,18 @@
       font-size: 1rem;
     }
     
-    /* Styles pour la section multi-images (liste textuelle) */
     #multi-image-list-area .image-organ-item {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 0.6rem; /* Augmenté l'espace entre les items */
-        padding: 0.6rem; /* Ajusté le padding */
+        margin-bottom: 0.6rem;
+        padding: 0.6rem;
         border: 1px solid var(--border);
         border-radius: 4px;
         background-color: var(--card);
-        font-size: 0.9rem; /* Taille de police pour toute la ligne */
+        font-size: 0.9rem;
     }
-    #multi-image-list-area .file-info { /* Conteneur pour nom et index */
+    #multi-image-list-area .file-info {
         flex-grow: 1;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -146,24 +144,24 @@
         border: 1px solid var(--border);
         background-color: white;
         color: var(--text);
-        font-size: 0.85rem; /* Légèrement plus petit pour le select */
+        font-size: 0.85rem;
         margin-right: 10px;
         min-width: 75px; 
-        flex-shrink: 0; /* Empêcher le select de rétrécir excessivement */
+        flex-shrink: 0;
     }
     #multi-image-list-area .delete-file-btn {
         background: transparent;
         border: none;
-        color: #c0392b; /* Rouge plus doux */
+        color: #c0392b;
         font-weight: bold;
         cursor: pointer;
-        padding: 0 5px; /* Ajuster le padding pour ne pas être trop large */
+        padding: 0 5px;
         font-size: 1.1rem; 
-        line-height: 1; /* Assurer un bon alignement vertical du X */
-        flex-shrink: 0; /* Empêcher le bouton de rétrécir */
+        line-height: 1;
+        flex-shrink: 0;
     }
     #multi-image-list-area .delete-file-btn:hover {
-        color: #e74c3c; /* Rouge plus vif au survol */
+        color: #e74c3c;
     }
 
     body:not(.home) .upload-btn {
@@ -175,10 +173,9 @@
     th{background:#fff;color:#000;font-weight:600;text-align:left}
     tr:last-child td{border-bottom:none}
     
-    /* MODIFICATION: Ajout de la classe pour élargir la colonne Écologie */
     .ecology-column {
-        width: 35%; /* Ajustez ce pourcentage selon vos préférences */
-        min-width: 250px; /* Largeur minimale pour éviter un écrasement excessif */
+        width: 35%; 
+        min-width: 250px; 
     }
     
     td a{color:var(--primary);text-decoration:none}
