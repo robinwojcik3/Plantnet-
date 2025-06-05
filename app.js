@@ -77,13 +77,21 @@ async function identify(file, organ){
     return;
   }
 
-
   /* Requête API Pl@ntNet */
   const fd = new FormData();
+  // 'images' est géré comme un tableau par FormData si plusieurs append sont faits.
+  // Pour un seul fichier, cela est généralement bien interprété comme un tableau d'un seul élément.
   fd.append("images", file, "photo.jpg");
-  fd.append("organs", organ); // organ: leaf | flower | bark | fruit
 
-  console.log(`Envoi de la requête à l'API PlantNet pour l'organe: ${organ}`);
+  // MODIFICATION : Utilisation de "organs[]" pour aider certains backends à interpréter
+  // la valeur comme un tableau, même avec un seul élément, conformément à la documentation
+  // qui spécifie 'organs' comme 'array[string]'.
+  // Cela garantit que l'API reçoit l'organe pour l'image unique envoyée.
+  fd.append("organs[]", organ); // Anciennement: fd.append("organs", organ);
+  // La documentation stipule que organs.length doit être égal à images.length.
+  // Avec une image et un organe, cette condition est respectée.
+
+  console.log(`Envoi de la requête à l'API PlantNet pour l'organe: ${organ} (envoyé comme organs[]: ${organ})`);
   try {
     const res = await fetch(ENDPOINT, { method:"POST", body:fd });
     if(!res.ok){
@@ -230,30 +238,25 @@ if(organBox){
       }
     };
     
-    // Image Blob, préparée une fois si elle ne change pas
     const imageBlob = toBlob(storedImage); 
     if (!imageBlob) {
         alert("Erreur lors de la préparation de l'image pour l'envoi. Veuillez réessayer.");
-        // Optionnel: rediriger ou désactiver les boutons si imageBlob est null
     }
 
     // Gestionnaire pour les clics sur les boutons d'organe
     const handleOrganChoice = async (event) => {
       console.log("Bouton organe cliqué:", event.currentTarget.dataset.organ);
       
-      if (!imageBlob) { // Vérifier si imageBlob a été correctement créé
+      if (!imageBlob) {
         console.error("L'image n'a pas pu être convertie en Blob. Impossible d'identifier.");
         alert("Erreur: L'image n'est pas prête pour l'identification. Veuillez retourner à l'accueil.");
         return;
       }
       
       const selectedOrgan = event.currentTarget.dataset.organ;
-      // Appel de la fonction d'identification avec le Blob de l'image et l'organe du bouton cliqué
       await identify(imageBlob, selectedOrgan);
     };
 
-    // Attacher l'écouteur d'événement à chaque bouton
-    // Ces écouteurs restent actifs et fonctionnels pour chaque clic.
     organBox.querySelectorAll("button").forEach(button => {
       button.addEventListener("click", handleOrganChoice);
     });
