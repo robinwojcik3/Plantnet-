@@ -6,14 +6,11 @@
 
   <title>Plantouille express</title>
 
-  <!-- PWA -->
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon-192.png">
 
-  <!-- Logique métier -->
   <script defer src="app.js"></script>
 
-  <!-- Style global -->
   <style>
     :root{
       --primary:#388e3c;
@@ -24,13 +21,12 @@
     }
     *{box-sizing:border-box;}
 
-    /* ----- bandeau uniquement avant résultats ----- */
     body.home::before{
       content:"";
       position:fixed; inset:0;
       background:url("assets/Bandeau.jpg") center/cover no-repeat fixed;
       z-index:-1;
-      opacity:.30;                      /* lisibilité du texte */
+      opacity:.30;
     }
 
     body.home{
@@ -51,22 +47,81 @@
       padding:1.2rem;
       max-width:1100px;
     }
-    h1{margin:0 0 0.8rem;font-size:1.6rem;color:var(--primary)}
+    h1{margin:0 0 1.5rem;font-size:1.8rem;color:var(--primary)} /* Slightly larger title */
 
-    /* input caché et bouton */
-    #file{display:none;}
-    body.home .upload-btn{
-      display:block;
-      width:60vw;
-      max-width:260px;
-      margin:1.5rem 0 0;
-      cursor:pointer;
+    .option-container {
+      margin-bottom: 1.5rem;
+      width: 80vw;
+      max-width: 300px;
     }
-    body.home .upload-btn:hover img{transform:scale(1.05);}
-    body:not(.home) .upload-btn{display:none;}
-    .upload-btn img{width:100%;height:auto;display:block;transition:transform .15s;}
 
-    /* ----- tableau des résultats ----- */
+    .upload-btn, .search-species-container button {
+      display:block;
+      width:100%;
+      padding: 10px 15px;
+      margin-top: 0.5rem;
+      cursor:pointer;
+      border: 1px solid var(--primary);
+      background-color: var(--primary);
+      color: white;
+      border-radius: 6px;
+      font-size: 1rem;
+      text-align: center;
+      transition: background-color .15s, transform .15s;
+    }
+    .upload-btn:hover, .search-species-container button:hover {
+      background-color: #2e7d32; /* Darker shade of primary */
+      transform: scale(1.03);
+    }
+    .upload-btn img { /* For logo if used within button */
+        width: 100%;
+        max-width: 200px; /* Adjust as needed */
+        height: auto;
+        display: block;
+        margin: 0 auto 0.5rem auto; /* Center image and add space below */
+    }
+    
+    .upload-btn.logo-btn img { /* Specific for the main logo button */
+        max-width: 260px; 
+        margin-bottom: 0;
+    }
+    .upload-btn.logo-btn span {
+        display: block;
+        margin-top: 0.5rem;
+        font-size: 0.9rem;
+        color: var(--text); /* Text color for span under logo */
+    }
+     body.home .upload-btn.logo-btn {
+        background-color: transparent;
+        border: none;
+        padding: 0;
+    }
+    body.home .upload-btn.logo-btn:hover img {
+        transform:scale(1.05);
+    }
+    body:not(.home) .upload-btn { /* Hide all upload buttons if not on home for results page */
+        display:none;
+    }
+
+
+    .search-species-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+    .search-species-container input[type="search"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+
+    /* Styles for results page (organ.html) - mostly copied from index.html for consistency */
+    body:not(.home) h1 { font-size:1.6rem; color:var(--primary); margin-bottom: 1rem;}
+
     table{
       width:100%;
       border-collapse:collapse;
@@ -81,7 +136,7 @@
       border-bottom:1px solid var(--border);
     }
     th{
-      background:#fff;                 /* entête lisible */
+      background:#fff;
       color:#000;
       font-weight:600;
       text-align:left;
@@ -93,7 +148,6 @@
     }
     td a:hover{text-decoration:underline}
 
-    /* ----- accordéons fiches ----- */
     details{
       margin-bottom:1rem;
       background:var(--card);
@@ -117,7 +171,6 @@
     details[open] summary::after{transform:rotate(90deg);}
     summary:hover{background:rgba(0,0,0,.04);}
 
-    /* ----- grille des iframes ----- */
     .iframe-grid{
       display:grid;
       grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
@@ -131,23 +184,37 @@
       border-radius:4px;
     }
 
-    /* ----- Dark-mode automatique ----- */
     @media (prefers-color-scheme:dark){
       :root{--bg:#181a1b;--card:#262b2f;--border:#333;--text:#ececec}
       table,details{border-color:#333}
       th{background:#262b2f;color:#ececec}
+      body.home .upload-btn.logo-btn span { color: var(--text); }
     }
   </style>
 </head>
 
-<!-- classe home : retirée par app.js quand les résultats s’affichent -->
 <body class="home">
   <h1>Plantouille express</h1>
 
-  <!-- chargement photo -->
-  <input type="file" id="file" accept="image/*" capture="environment">
-  <label for="file" class="upload-btn">
-    <img src="logo acceuil.svg" alt="Logo Plantouille express" loading="lazy">
-  </label>
+  <div class="option-container">
+    <input type="file" id="file-capture" accept="image/*" capture="environment" style="display:none;">
+    <label for="file-capture" class="upload-btn logo-btn">
+      <img src="logo acceuil.svg" alt="Prendre une photo pour identification">
+      <span>Prendre une photo</span>
+    </label>
+  </div>
+
+  <div class="option-container">
+    <input type="file" id="file-gallery" accept="image/*" style="display:none;">
+    <label for="file-gallery" class="upload-btn">
+      Choisir depuis la galerie
+    </label>
+  </div>
+
+  <div class="option-container search-species-container">
+    <input type="search" id="species-search-input" placeholder="Nom de l'espèce...">
+    <button type="button" id="species-search-button">Rechercher par nom</button>
+  </div>
+
 </body>
 </html>
