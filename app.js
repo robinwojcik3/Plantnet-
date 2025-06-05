@@ -3,6 +3,8 @@
    ================================================================ */
 const API_KEY  = "2b10vfT6MvFC2lcAzqG1ZMKO";          // clé Pl@ntNet
 const PROJECT  = "all";
+// L'ENDPOINT pour les requêtes POST n'a pas besoin de l'API_KEY dans l'URL si elle est envoyée autrement,
+// mais la documentation du POST la liste comme query param. Gardons-la pour l'instant.
 const ENDPOINT = `https://my-api.plantnet.org/v2/identify/${PROJECT}?api-key=${API_KEY}`;
 const MAX_RESULTS = 5;                                // nb lignes tableau/fiches
 
@@ -31,7 +33,6 @@ const ready = Promise.all([
   }),
   /* ECOLOGY ----------------------------------------------------- */
   fetch("ecology.json").then(r => r.json()).then(j => {
-    // le JSON est déjà normalisé, mais on re-normalise par sécurité
     Object.entries(j).forEach(([k,v]) => ecology[norm(k)] = v);
   })
 ]).catch(err => {
@@ -67,7 +68,6 @@ async function identify(file, organ){
     return;
   }
 
-  /* On attend que taxref + ecology soient chargés */
   try {
     await ready;
     console.log("Données taxref et ecology prêtes.");
@@ -77,27 +77,31 @@ async function identify(file, organ){
     return;
   }
 
-  /* Requête API Pl@ntNet */
   const fd = new FormData();
-  // 'images' est géré comme un tableau par FormData si plusieurs append sont faits.
-  // Pour un seul fichier, cela est généralement bien interprété comme un tableau d'un seul élément.
   fd.append("images", file, "photo.jpg");
+  // Correction : Revenir à "organs" comme nom de champ, conformément à l'erreur API reçue.
+  // L'API s'attend à ce que la clé soit "organs" et la valeur un tableau de chaînes.
+  // Pour une seule image/organe, le backend devrait interpréter cela correctement.
+  fd.append("organs", organ);
 
-  // MODIFICATION : Utilisation de "organs[]" pour aider certains backends à interpréter
-  // la valeur comme un tableau, même avec un seul élément, conformément à la documentation
-  // qui spécifie 'organs' comme 'array[string]'.
-  // Cela garantit que l'API reçoit l'organe pour l'image unique envoyée.
-  fd.append("organs[]", organ); // Anciennement: fd.append("organs", organ);
-  // La documentation stipule que organs.length doit être égal à images.length.
-  // Avec une image et un organe, cette condition est respectée.
-
-  console.log(`Envoi de la requête à l'API PlantNet pour l'organe: ${organ} (envoyé comme organs[]: ${organ})`);
+  console.log(`Envoi de la requête à l'API PlantNet pour l'organe: ${organ}`);
   try {
+    // Pour une requête POST, l'API key peut aussi être uniquement dans l'URL.
+    // L'URL de base pour l'endpoint POST est juste https://my-api.plantnet.org/v2/identify/${PROJECT}
+    // Les paramètres comme lang, api-key etc. sont dans l'URL de construction de ENDPOINT ou peuvent être ajoutés dynamiquement.
+    // Le ENDPOINT actuel inclut déjà l'API_KEY.
     const res = await fetch(ENDPOINT, { method:"POST", body:fd });
+    
     if(!res.ok){
-      const errorText = await res.text();
-      console.error("Erreur API Pl@ntNet:", res.status, errorText);
-      alert(`Erreur API Pl@ntNet (${res.status}): ${errorText || 'Réponse non OK'}`);
+      const errorBody = await res.json().catch(() => res.text()); // Tenter de parser en JSON, sinon prendre le texte
+      console.error("Erreur API Pl@ntNet:", res.status, errorBody);
+      let alertMessage = `Erreur API Pl@ntNet (${res.status})`;
+      if (typeof errorBody === 'object' && errorBody !== null && errorBody.message) {
+        alertMessage += `: ${errorBody.message}`;
+      } else if (typeof errorBody === 'string') {
+        alertMessage += `: ${errorBody}`;
+      }
+      alert(alertMessage);
       return;
     }
 
@@ -105,10 +109,8 @@ async function identify(file, organ){
     console.log("Réponse API Pl@ntNet reçue:", responseData);
     const results = responseData.results.slice(0, MAX_RESULTS);
 
-    /* Retire le bandeau de fond */
     document.body.classList.remove("home");
 
-    /* Affichage */
     buildTable(results);
     buildCards(results);
     console.log("Affichage des résultats terminé.");
@@ -128,7 +130,7 @@ function buildTable(items){
     console.error("Élément #results non trouvé dans le DOM pour buildTable.");
     return;
   }
-  wrap.innerHTML = ""; // Efface les résultats précédents
+  wrap.innerHTML = ""; 
 
   const headers = ["Nom latin","Score (%)","InfoFlora","Écologie","INPN carte","INPN statut","Biodiv'AURA","OpenObs"];
   const link = (url, label) => url ? `<a href="${url}" target="_blank" rel="noopener">${label}</a>` : "—";
@@ -166,11 +168,11 @@ function buildCards(items){
     console.error("Élément #cards non trouvé dans le DOM pour buildCards.");
     return;
   }
-  zone.innerHTML = ""; // Efface les résultats précédents
+  zone.innerHTML = ""; 
 
   items.forEach(({score,species}) => {
     const sci = species.scientificNameWithoutAuthor;
-    const cd  = cdRef(sci); if(!cd) return;     // skip si pas de cd_ref
+    const cd  = cdRef(sci); if(!cd) return;
     const pct = Math.round(score * 100);
 
     const details = document.createElement("details");
@@ -178,10 +180,10 @@ function buildCards(items){
       <summary>${sci} — ${pct}%</summary>
       <p style="padding:0 12px 8px;font-style:italic">${ecolOf(sci)}</p>
       <div class="iframe-grid">
-        <iframe src="${proxyCarte(cd)}"  title="Carte INPN"></iframe>
-        <iframe src="${proxyStatut(cd)}" title="Statut INPN"></iframe>
-        <iframe src="${aura(cd)}"        title="Biodiv'AURA"></iframe>
-        <iframe src="${openObs(cd)}"     title="OpenObs"></iframe>
+        <iframe loading="lazy" src="${proxyCarte(cd)}"  title="Carte INPN"></iframe>
+        <iframe loading="lazy" src="${proxyStatut(cd)}" title="Statut INPN"></iframe>
+        <iframe loading="lazy" src="${aura(cd)}"        title="Biodiv'AURA"></iframe>
+        <iframe loading="lazy" src="${openObs(cd)}"     title="OpenObs"></iframe>
       </div>`;
     zone.appendChild(details);
   });
@@ -194,7 +196,6 @@ const fileInput  = document.getElementById("file");
 const organBox   = document.getElementById("organ-choice");
 
 if(fileInput && !organBox){
-  /* page d'accueil : sauvegarde la photo et redirection */
   fileInput.addEventListener("change", e => {
     const file = e.target.files[0];
     if(!file) return;
@@ -214,36 +215,36 @@ if(fileInput && !organBox){
 }
 
 if(organBox){
-  /* page de choix de l'organe */
-   const storedImage = sessionStorage.getItem("photoData"); // Récupérer l'image une seule fois
+   const storedImage = sessionStorage.getItem("photoData");
   if(!storedImage){
     console.warn("Aucune photoData trouvée dans sessionStorage, redirection vers index.html.");
     location.href = "index.html";
   } else {
     const previewElement = document.getElementById("preview");
-    if(previewElement) previewElement.src = storedImage; // Afficher l'image
+    if(previewElement) previewElement.src = storedImage;
 
-    // Fonction pour convertir la DataURL (string) en Blob
     const toBlob = dataURL => {
       try {
         const [meta, b64] = dataURL.split(",");
-        const mime = /:(.*?);/.exec(meta)[1];
+        if (!meta || !b64) throw new Error("Format DataURL invalide");
+        const mimeMatch = /:(.*?);/.exec(meta);
+        if (!mimeMatch || !mimeMatch[1]) throw new Error("Type MIME non trouvé dans DataURL");
+        const mime = mimeMatch[1];
         const bin = atob(b64);
         let arr = new Uint8Array(bin.length);
         for(let i=0; i<bin.length; i++) arr[i] = bin.charCodeAt(i);
         return new Blob([arr], {type:mime});
       } catch (e) {
         console.error("Erreur dans toBlob:", e);
-        return null; // Retourner null en cas d'erreur
+        return null;
       }
     };
     
     const imageBlob = toBlob(storedImage); 
     if (!imageBlob) {
-        alert("Erreur lors de la préparation de l'image pour l'envoi. Veuillez réessayer.");
+        alert("Erreur lors de la préparation de l'image pour l'envoi. Veuillez réessayer depuis l'accueil.");
     }
 
-    // Gestionnaire pour les clics sur les boutons d'organe
     const handleOrganChoice = async (event) => {
       console.log("Bouton organe cliqué:", event.currentTarget.dataset.organ);
       
