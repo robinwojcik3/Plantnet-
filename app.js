@@ -162,12 +162,12 @@ if(fileInput && !organBox){
 
 if(organBox){
   /* page de choix de l'organe */
-  const data = sessionStorage.getItem("photoData");
-  if(!data){
+   const stored = sessionStorage.getItem("photoData");
+  if(!stored){
     location.href = "index.html";
   } else {
     const prev = document.getElementById("preview");
-    if(prev) prev.src = data;
+    if(prev) prev.src = stored;
     const toBlob = str => {
       const [meta, b64] = str.split(",");
       const mime = /:(.*?);/.exec(meta)[1];
@@ -176,10 +176,13 @@ if(organBox){
       for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
       return new Blob([arr], {type:mime});
     };
+    const handle = e => {
+      const img = sessionStorage.getItem("photoData");
+      if(!img) return;
+      identify(toBlob(img), e.currentTarget.dataset.organ);
+    };
     organBox.querySelectorAll("button").forEach(btn =>
-      btn.addEventListener("click", () => {
-        identify(toBlob(data), btn.dataset.organ);
-      })
+      btn.addEventListener("click", handle)
     );
   }
 }
