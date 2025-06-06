@@ -20,7 +20,6 @@
       --text:#202124;
     }
     *{box-sizing:border-box;}
-
     body.home::before{
       content:"";
       position:fixed; inset:0;
@@ -28,7 +27,6 @@
       z-index:-1;
       opacity:.30;
     }
-
     body.home{
       display:flex;
       flex-direction:column;
@@ -38,7 +36,6 @@
       margin:0;
       text-align:center;
     }
-
     body{
       background:var(--bg);
       color:var(--text);
@@ -48,129 +45,29 @@
       max-width:1100px;
     }
     h1{margin:0 0 1.5rem;font-size:1.8rem;color:var(--primary)}
+    .option-container { margin-bottom: 1.5rem; padding: 1rem; background-color: rgba(255, 255, 255, 0.8); border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 90vw; max-width: 450px; }
+    .option-container h2 { font-size: 1.2rem; color: var(--primary); margin-top: 0; margin-bottom: 0.8rem; }
+    .upload-btn, .action-button { display:block; width:100%; padding: 10px 15px; margin-top: 0.5rem; cursor:pointer; border: 1px solid var(--primary); background-color: var(--primary); color: white; border-radius: 6px; font-size: 1rem; text-align: center; transition: background-color .15s, transform .15s; }
+    .upload-btn:hover, .action-button:hover { background-color: #2e7d32; transform: scale(1.03); }
+    .upload-btn.logo-btn { background-color: transparent; border: none; padding: 0; }
+    .upload-btn.logo-btn img { width: 100%; max-width: 220px; height: auto; display: block; margin: 0 auto 0.5rem auto; }
+    .upload-btn.logo-btn span { display: block; margin-top: 0.3rem; font-size: 0.9rem; color: var(--text); }
+    body.home .upload-btn.logo-btn:hover img { transform:scale(1.05); }
+    .search-species-container input[type="search"] { width: calc(100% - 22px); padding: 10px; margin-bottom: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; }
+    #multi-image-list-area .image-organ-item { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem; padding: 0.6rem; border: 1px solid var(--border); border-radius: 4px; background-color: var(--card); font-size: 0.9rem; }
+    #multi-image-list-area .file-info { flex-grow: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 10px; }
+    #multi-image-list-area .file-info .file-index { font-weight: bold; margin-right: 5px; }
+    #multi-image-list-area select { padding: 5px 7px; border-radius: 4px; border: 1px solid var(--border); background-color: white; color: var(--text); font-size: 0.85rem; margin-right: 10px; min-width: 75px; flex-shrink: 0; }
+    #multi-image-list-area .delete-file-btn { background: transparent; border: none; color: #c0392b; font-weight: bold; cursor: pointer; padding: 0 5px; font-size: 1.1rem; line-height: 1; flex-shrink: 0; }
+    #multi-image-list-area .delete-file-btn:hover { color: #e74c3c; }
 
-    .option-container {
-      margin-bottom: 1.5rem;
-      padding: 1rem;
-      background-color: rgba(255, 255, 255, 0.8);
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      width: 90vw;
-      max-width: 450px;
-    }
-    
-    .option-container h2 {
-        font-size: 1.2rem;
-        color: var(--primary);
-        margin-top: 0;
-        margin-bottom: 0.8rem;
-    }
-
-    .upload-btn, .action-button {
-      display:block;
-      width:100%;
-      padding: 10px 15px;
-      margin-top: 0.5rem;
-      cursor:pointer;
-      border: 1px solid var(--primary);
-      background-color: var(--primary);
-      color: white;
-      border-radius: 6px;
-      font-size: 1rem;
-      text-align: center;
-      transition: background-color .15s, transform .15s;
-    }
-    .upload-btn:hover, .action-button:hover {
-      background-color: #2e7d32;
-      transform: scale(1.03);
-    }
-    
-    .upload-btn.logo-btn { 
-        background-color: transparent;
-        border: none;
-        padding: 0;
-    }
-    .upload-btn.logo-btn img {
-        width: 100%;
-        max-width: 220px; 
-        height: auto;
-        display: block;
-        margin: 0 auto 0.5rem auto;
-    }
-    .upload-btn.logo-btn span {
-        display: block;
-        margin-top: 0.3rem;
-        font-size: 0.9rem;
-        color: var(--text); 
-    }
-     body.home .upload-btn.logo-btn:hover img {
-        transform:scale(1.05);
-    }
-
-    .search-species-container input[type="search"] {
-      width: calc(100% - 22px);
-      padding: 10px;
-      margin-bottom: 0.5rem;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      font-size: 1rem;
-    }
-    
-    #multi-image-list-area .image-organ-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 0.6rem;
-        padding: 0.6rem;
-        border: 1px solid var(--border);
-        border-radius: 4px;
-        background-color: var(--card);
-        font-size: 0.9rem;
-    }
-    #multi-image-list-area .file-info {
-        flex-grow: 1;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        margin-right: 10px;
-    }
-    #multi-image-list-area .file-info .file-index {
-        font-weight: bold;
-        margin-right: 5px;
-    }
-    #multi-image-list-area select {
-        padding: 5px 7px;
-        border-radius: 4px;
-        border: 1px solid var(--border);
-        background-color: white;
-        color: var(--text);
-        font-size: 0.85rem;
-        margin-right: 10px;
-        min-width: 75px; 
-        flex-shrink: 0;
-    }
-    #multi-image-list-area .delete-file-btn {
-        background: transparent;
-        border: none;
-        color: #c0392b;
-        font-weight: bold;
-        cursor: pointer;
-        padding: 0 5px;
-        font-size: 1.1rem; 
-        line-height: 1;
-        flex-shrink: 0;
-    }
-    #multi-image-list-area .delete-file-btn:hover {
-        color: #e74c3c;
-    }
-
-    body:not(.home) .upload-btn {
-        display:none;
-    }
+    body:not(.home) .upload-btn { display:none; }
     body:not(.home) h1 { font-size:1.6rem; color:var(--primary); margin-bottom: 1rem;}
+    
+    /* MODIFICATIONS POUR LE TABLEAU */
     table{
       width:100%;
-      table-layout: fixed; /* Force le respect des largeurs de colonnes */
+      table-layout: fixed; /* Force le navigateur à respecter les largeurs définies */
       border-collapse:collapse;
       background:var(--card);
       border:1px solid var(--border);
@@ -178,18 +75,24 @@
       box-shadow:0 2px 6px rgba(0,0,0,.05);
       margin-bottom:1.2rem;
     }
-    th,td{padding:8px 10px;border-bottom:1px solid var(--border); word-wrap: break-word;}
+    th,td{
+        padding: 8px 6px; /* Padding légèrement réduit pour gagner de la place */
+        border-bottom:1px solid var(--border);
+        word-wrap: break-word; /* Permet au texte de revenir à la ligne */
+        hyphens: auto; /* Permet la césure des mots longs si nécessaire */
+        vertical-align: top;
+    }
     th{background:#fff;color:#000;font-weight:600;text-align:left}
     tr:last-child td{border-bottom:none}
     
-    /* MODIFICATION : Ajout de classes pour fixer la largeur de chaque colonne */
-    .col-nom-latin { width: 20%; }
-    .col-score     { width: 8%; text-align: center; }
-    .col-ecologie  { width: 34%; } /* La colonne la plus large */
-    .col-link      { width: 8%; text-align: center; } /* Classe pour les autres liens */
+    .col-nom-latin { width: 22%; }
+    .col-score     { width: 10%; text-align: center; }
+    .col-ecologie  { width: 40%; } /* Colonne la plus large */
+    .col-link      { width: 7%; text-align: center; } /* Colonnes de liens plus étroites */
     
     td a{color:var(--primary);text-decoration:none}
     td a:hover{text-decoration:underline}
+
     details{margin-bottom:1rem;background:var(--card);border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.05);}
     summary{padding:10px 12px;cursor:pointer;font-weight:500;color:var(--primary);list-style:none;}
     summary::-webkit-details-marker{display:none;}
@@ -213,41 +116,34 @@
     }
   </style>
 </head>
-
 <body class="home">
-  <h1>Plantouille express</h1>
-
-  <div class="option-container">
-    <h2>Identification rapide (1 photo)</h2>
-    <input type="file" id="file-capture" accept="image/*" capture="environment" style="display:none;">
-    <label for="file-capture" class="upload-btn logo-btn">
-      <img src="logo acceuil.svg" alt="Prendre une photo pour identification">
-      <span>Prendre une photo</span>
-    </label>
-  </div>
-
-  <div class="option-container">
-     <h2>Identification depuis galerie (1 photo)</h2>
-    <input type="file" id="file-gallery" accept="image/*" style="display:none;">
-    <label for="file-gallery" class="upload-btn">
-      Choisir une image de la galerie
-    </label>
-  </div>
-  
-  <div class="option-container">
-    <h2>Identification avancée (multi-images, max 5)</h2>
-    <input type="file" id="multi-file-input" accept="image/*" multiple style="display:none;">
-    <label for="multi-file-input" class="upload-btn">Ajouter des images (max 5)</label>
-    <div id="multi-image-list-area" style="margin-top: 1rem; text-align: left;">
+    <h1>Plantouille express</h1>
+    <div class="option-container">
+      <h2>Identification rapide (1 photo)</h2>
+      <input type="file" id="file-capture" accept="image/*" capture="environment" style="display:none;">
+      <label for="file-capture" class="upload-btn logo-btn">
+        <img src="logo acceuil.svg" alt="Prendre une photo pour identification">
+        <span>Prendre une photo</span>
+      </label>
     </div>
-    <button type="button" id="multi-image-identify-button" class="action-button" style="margin-top: 1rem; display: none;">Identifier ces images</button>
-  </div>
-
-  <div class="option-container search-species-container">
-    <h2>Recherche par nom</h2>
-    <input type="search" id="species-search-input" placeholder="Nom de l'espèce...">
-    <button type="button" id="species-search-button" class="action-button">Rechercher par nom</button>
-  </div>
-
+    <div class="option-container">
+       <h2>Identification depuis galerie (1 photo)</h2>
+      <input type="file" id="file-gallery" accept="image/*" style="display:none;">
+      <label for="file-gallery" class="upload-btn">
+        Choisir une image de la galerie
+      </label>
+    </div>
+    <div class="option-container">
+      <h2>Identification avancée (multi-images, max 5)</h2>
+      <input type="file" id="multi-file-input" accept="image/*" multiple style="display:none;">
+      <label for="multi-file-input" class="upload-btn">Ajouter des images (max 5)</label>
+      <div id="multi-image-list-area" style="margin-top: 1rem; text-align: left;"></div>
+      <button type="button" id="multi-image-identify-button" class="action-button" style="margin-top: 1rem; display: none;">Identifier ces images</button>
+    </div>
+    <div class="option-container search-species-container">
+      <h2>Recherche par nom</h2>
+      <input type="search" id="species-search-input" placeholder="Nom de l'espèce...">
+      <button type="button" id="species-search-button" class="action-button">Rechercher par nom</button>
+    </div>
 </body>
 </html>
