@@ -60,7 +60,7 @@ Commence sans introduction par dire "Cette espèce est ... " ou bien "'Nom latin
 4.  **Écologie** : Décris son habitat préférentiel (milieux, type de sol, climat, exposition).
 5.  **Statut** : Indique brièvement son statut de conservation en France (si elle est protégée ou menacée). Si elle n'a pas de statut particulier, ne le mentionne pas.
 6.  **Répartition** : Conclus en indiquant ses principales régions de présence en France et son origine géographique générale.
-
+Je ne veux pas que tu. Utilise des objectifs inutiles, comme par exemple mentionner que cette espèce est "remarquable" ou "magnifique", garde un ton factuel.
 Pour construire ta réponse, consulte impérativement les informations disponibles sur les sites de référence suivants : FloreAlpes, Tela Botanica, Info Flora, et l'INPN.`;
 
     const requestBody = {
