@@ -1,83 +1,114 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lecteur de PDF - Flora Gallica</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        html, body { height: 100%; width: 100%; background-color: #333; overflow: hidden; }
-        #pdf-canvas-wrapper {
-            height: 100%;
-            width: 100%;
-            overflow: auto; 
-            text-align: center;
-            /* L'espace pour la barre de contrôle est conservé */
-            padding-bottom: 70px; 
-        }
-        #pdf-canvas {
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-            transition: opacity 0.15s ease-in-out;
-        }
-        #pdf-canvas.pdf-turning {
-            opacity: 0;
-        }
-        #pdf-controls {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background-color: rgba(34, 34, 34, 0.95);
-            color: white;
-            padding: 10px;
-            text-align: center;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 -2px 5px rgba(0,0,0,0.5);
-            z-index: 100;
-            -webkit-user-select: none;
-            user-select: none;
-            gap: 15px;
-        }
-        #pdf-controls button {
-            background-color: #555;
-            color: white;
-            border: 1px solid #777;
-            border-radius: 6px;
-            padding: 8px 18px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        #pdf-controls button:disabled {
-            background-color: #444;
-            cursor: not-allowed;
-            opacity: 0.5;
-        }
-        #page-info {
-            font-family: sans-serif;
-            font-size: 1rem;
-            min-width: 100px;
-        }
-    </style>
-</head>
-<body>
+import * as pdfjsLib from '../pdfjs/build/pdf.mjs';
 
-    <div id="pdf-canvas-wrapper">
-        <canvas id="pdf-canvas"></canvas>
-    </div>
+pdfjsLib.GlobalWorkerOptions.workerSrc = `../pdfjs/build/pdf.worker.mjs`;
 
-    <div id="pdf-controls">
-        <button id="prev-page-btn" title="Page précédente">Précédent</button>
-        <span id="page-info">
-            Page <span id="current-page-num">0</span> / <span id="total-page-num">0</span>
-        </span>
-        <button id="next-page-btn" title="Page suivante">Suivant</button>
-    </div>
+// Récupération des éléments du DOM
+const canvas = document.getElementById('pdf-canvas');
+const ctx = canvas.getContext('2d');
+const prevBtn = document.getElementById('prev-page-btn');
+const nextBtn = document.getElementById('next-page-btn');
+const currentPageNumSpan = document.getElementById('current-page-num');
+const totalPageNumSpan = document.getElementById('total-page-num');
 
-    <script src="pdfjs/build/pdf.mjs" type="module"></script>
-    <script src="assets/viewer_app.js" type="module"></script>
+// Variables pour garder l'état du PDF
+let pdfDoc = null;
+let currentPageNum = 1;
+let totalPages = 0;
+let isRendering = false;
 
-</body>
-</html>
+/**
+ * Affiche une page spécifique du PDF sur le canvas avec une haute résolution.
+ * @param {number} num - Le numéro de la page à afficher.
+ */
+async function renderPage(num) {
+    if (!pdfDoc) return;
+    currentPageNum = Math.max(1, Math.min(totalPages, num));
+
+    try {
+        const page = await pdfDoc.getPage(currentPageNum);
+        
+        const baseScale = 2.0; 
+        const devicePixelRatio = window.devicePixelRatio || 1;
+        const finalScale = baseScale * devicePixelRatio;
+        
+        const viewport = page.getViewport({ scale: finalScale });
+        
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        const renderContext = {
+            canvasContext: ctx,
+            viewport: viewport
+        };
+        await page.render(renderContext).promise;
+
+        currentPageNumSpan.textContent = currentPageNum;
+        prevBtn.disabled = (currentPageNum <= 1);
+        nextBtn.disabled = (currentPageNum >= totalPages);
+
+    } catch (error) {
+        console.error('Erreur lors du rendu de la page:', error);
+    }
+}
+
+/**
+ * Fonctions de navigation avec animation.
+ */
+async function goToPage(pageNumber) {
+    if (isRendering || !pdfDoc) return;
+    if (pageNumber < 1 || pageNumber > totalPages) return;
+
+    isRendering = true;
+    canvas.classList.add('pdf-turning');
+
+    await new Promise(resolve => setTimeout(resolve, 150)); 
+    
+    await renderPage(pageNumber);
+    
+    canvas.classList.remove('pdf-turning');
+    isRendering = false;
+}
+
+function goToPrevPage() {
+    goToPage(currentPageNum - 1);
+}
+
+function goToNextPage() {
+    goToPage(currentPageNum + 1);
+}
+
+// MODIFICATION : Suppression de toute la logique de swipe (handleTouchStart, handleTouchEnd)
+
+/**
+ * Fonction principale qui se lance au chargement de la page.
+ */
+async function loadPdfViewer() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const pdfUrl = urlParams.get('file');
+    const initialPage = parseInt(urlParams.get('page'), 10) || 1;
+
+    if (!pdfUrl) {
+        document.body.innerHTML = '<h1>Erreur : Aucun fichier PDF spécifié.</h1>';
+        return;
+    }
+
+    try {
+        const loadingTask = pdfjsLib.getDocument(pdfUrl);
+        pdfDoc = await loadingTask.promise;
+        totalPages = pdfDoc.numPages;
+        totalPageNumSpan.textContent = totalPages;
+
+        // Écouteurs pour les boutons uniquement
+        prevBtn.addEventListener('click', goToPrevPage);
+        nextBtn.addEventListener('click', goToNextPage);
+        // MODIFICATION : Les écouteurs pour 'touchstart' et 'touchend' ont été retirés.
+
+        await renderPage(initialPage);
+    } catch (error) {
+        console.error('Erreur lors du chargement du PDF:', error);
+        document.body.innerHTML = `<h1>Erreur de chargement du PDF</h1><p>${error.message}</p>`;
+    }
+}
+
+// Lancement de l'application du lecteur
+loadPdfViewer();
