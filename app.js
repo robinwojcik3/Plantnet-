@@ -138,8 +138,8 @@ function buildTable(items){
   const wrap = document.getElementById("results");
   if (!wrap) return;
 
-  // MODIFIÉ : Ajout de la colonne "Critères physiologiques"
-  const headers = ['Nom latin (score %)', "Critères physiologiques", "FloreAlpes", "INPN statut", "Écologie", "Flora Gallica", "OpenObs", "Biodiv'AURA", "Info Flora", "Fiche synthèse"];
+  // MODIFIÉ : Ajout de la colonne "Critères physiologiques" avant l'écologie
+  const headers = ['Nom latin (score %)', "FloreAlpes", "INPN statut", "Critères physiologiques", "Écologie", "Flora Gallica", "OpenObs", "Biodiv'AURA", "Info Flora", "Fiche synthèse"];
   const linkIcon = (url, img, alt) => {
     if (!url) return "—";
     const encoded = img.split('/').map(s => encodeURIComponent(s)).join('/');
@@ -168,14 +168,14 @@ function buildTable(items){
         floreAlpesLink = linkIcon(`https://www.florealpes.com/${urlPart}`, "FloreAlpes.png", "FloreAlpes");
     }
     const escapedSci = sci.replace(/'/g, "\\'");
-    // MODIFIÉ : Ajout de la colonne critères physiologiques dans le tableau
-    return `<tr><td class="col-nom-latin">${sci}<br><span class="score">(${pct})</span></td><td class="col-criteres">${crit}</td><td class="col-link">${floreAlpesLink}</td><td class="col-link">${linkIcon(cd && inpnStatut(cd), "INPN.png", "INPN")}</td><td class="col-ecologie">${eco}</td><td class="col-link">${floraGallicaLink}</td><td class="col-link">${linkIcon(cd && openObs(cd), "OpenObs.png", "OpenObs")}</td><td class="col-link">${linkIcon(cd && aura(cd), "Biodiv'AURA.png", "Biodiv'AURA")}</td><td class="col-link">${linkIcon(infoFlora(sci), "Info Flora.png", "Info Flora")}</td><td class="col-link"><a href="#" onclick="handleSynthesisClick(event, this, '${escapedSci}')"><img src="assets/Audio.png" alt="Audio" class="logo-icon"></a></td></tr>`;
+    // MODIFIÉ : Réorganisation des colonnes - critères physiologiques avant écologie
+    return `<tr><td class="col-nom-latin">${sci}<br><span class="score">(${pct})</span></td><td class="col-link">${floreAlpesLink}</td><td class="col-link">${linkIcon(cd && inpnStatut(cd), "INPN.png", "INPN")}</td><td class="col-criteres">${crit}</td><td class="col-ecologie">${eco}</td><td class="col-link">${floraGallicaLink}</td><td class="col-link">${linkIcon(cd && openObs(cd), "OpenObs.png", "OpenObs")}</td><td class="col-link">${linkIcon(cd && aura(cd), "Biodiv'AURA.png", "Biodiv'AURA")}</td><td class="col-link">${linkIcon(infoFlora(sci), "Info Flora.png", "Info Flora")}</td><td class="col-link"><a href="#" onclick="handleSynthesisClick(event, this, '${escapedSci}')"><img src="assets/Audio.png" alt="Audio" class="logo-icon"></a></td></tr>`;
   }).join("");
 
-  // MODIFIÉ : Ajout de l'en-tête pour les critères physiologiques
-  const headerHtml = `<tr><th class="col-nom-latin">Nom latin (score %)</th><th class="col-criteres">Critères physiologiques</th><th class="col-link">FloreAlpes</th><th class="col-link">INPN statut</th><th class="col-ecologie">Écologie</th><th class="col-link">Flora Gallica</th><th class="col-link">OpenObs</th><th class="col-link">Biodiv'AURA</th><th class="col-link">Info Flora</th><th class="col-link">Fiche synthèse</th></tr>`;
-  // MODIFIÉ : Ajustement des largeurs de colonnes pour inclure la nouvelle colonne
-  const colgroupHtml = `<colgroup><col style="width: 20%;"><col style="width: 25%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 25%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"></colgroup>`;
+  // MODIFIÉ : En-tête avec critères physiologiques avant écologie
+  const headerHtml = `<tr><th class="col-nom-latin">Nom latin (score %)</th><th class="col-link">FloreAlpes</th><th class="col-link">INPN statut</th><th class="col-criteres">Critères physiologiques</th><th class="col-ecologie">Écologie</th><th class="col-link">Flora Gallica</th><th class="col-link">OpenObs</th><th class="col-link">Biodiv'AURA</th><th class="col-link">Info Flora</th><th class="col-link">Fiche synthèse</th></tr>`;
+  // MODIFIÉ : Ajustement des largeurs avec critères physiologiques avant écologie
+  const colgroupHtml = `<colgroup><col style="width: 20%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 25%;"><col style="width: 25%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"></colgroup>`;
   wrap.innerHTML = `<table>${colgroupHtml}<thead>${headerHtml}</thead><tbody>${rows}</tbody></table>`;
 }
 
