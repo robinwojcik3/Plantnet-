@@ -14,7 +14,7 @@ let taxref = {};
 let ecology = {};
 let floraToc = {};
 let floreAlpesIndex = {}; 
-let userLocation = { latitude: 45.188529, longitude: 5.724524 };
+let userLocation = { latitude: 45.188529, longitude: 5.724524 }; // Coordonnées par défaut
 
 const ready = Promise.all([
   fetch("taxref.json").then(r => r.json()).then(j => Object.entries(j).forEach(([k,v]) => taxref[norm(k)] = v)),
@@ -33,14 +33,41 @@ const ready = Promise.all([
    ================================================================ */
 function norm(txt) { if (typeof txt !== 'string') return ""; return txt.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/\s+/g, " "); }
 const cdRef = n => taxref[norm(n)];
-const ecolOf = n => ecology[norm(n)] || "—";
+const ecolOf = n => ecology[norm(n)] || "—"; 
 const slug = n => norm(n).replace(/ /g, "-");
 
 const infoFlora  = n => `https://www.infoflora.ch/fr/flore/${slug(n)}.html`;
 const inpnStatut = c => `https://inpn.mnhn.fr/espece/cd_nom/${c}/tab/statut`;
 const aura       = c => `https://atlas.biodiversite-auvergne-rhone-alpes.fr/espece/${c}`;
-function buildOpenObsUrl(cd_ref) { return `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=lsid%3A${cd_ref}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&qc=&radius=120.6&lat=${userLocation.latitude}&lon=${userLocation.longitude}#tab_mapView`; }
+function buildOpenObsUrl(cd_ref, location = null) { 
+    const lat = location ? location.latitude : userLocation.latitude;
+    const lon = location ? location.longitude : userLocation.longitude;
+    return `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=lsid%3A${cd_ref}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&qc=&radius=120.6&lat=${lat}&lon=${lon}#tab_mapView`; 
+}
 
+/* ================================================================
+   GESTION DES ACTIONS UTILISATEUR (CLICS, SAUVEGARDES)
+   ================================================================ */
+function getLiveUserLocation() { return new Promise((resolve, reject) => { if (!("geolocation" in navigator)) return reject(new Error("Géolocalisation non supportée.")); navigator.geolocation.getCurrentPosition(resolve, reject); }); }
+window.handleOpenObsClick = async function(event, cd_ref) {
+    event.preventDefault(); 
+    const targetLink = event.currentTarget;
+    const originalText = targetLink.textContent;
+    targetLink.textContent = 'Localisation...';
+    targetLink.style.pointerEvents = 'none';
+    try {
+        const position = await getLiveUserLocation();
+        const liveLocation = { latitude: position.coords.latitude, longitude: position.coords.longitude };
+        userLocation = liveLocation; // Mettre à jour la localisation globale
+        window.open(buildOpenObsUrl(cd_ref, liveLocation), '_blank', 'noopener,noreferrer');
+    } catch (error) {
+        alert("Impossible d'obtenir la localisation. Ouverture de la carte avec une position par défaut.");
+        window.open(buildOpenObsUrl(cd_ref, null), '_blank', 'noopener,noreferrer');
+    } finally {
+        targetLink.textContent = originalText;
+        targetLink.style.pointerEvents = 'auto';
+    }
+}
 
 /* ================================================================
    LOGIQUE D'IDENTIFICATION ET D'AFFICHAGE
@@ -62,7 +89,6 @@ function buildTable(items){
     const cd   = cdRef(sci); 
     const eco  = ecolOf(sci); 
     
-    // Logique pour le lien Flora Gallica (lecteur PDF interne)
     const genus = sci.split(' ')[0].toLowerCase();
     const tocEntry = floraToc[genus];
     let floraGallicaLink = "—";
@@ -72,7 +98,6 @@ function buildTable(items){
       floraGallicaLink = `<a href="${viewerUrl}" target="_blank" rel="noopener" title="Ouvrir Flora Gallica à la page du genre ${genus}">Page ${tocEntry.page}</a>`;
     }
     
-    // Logique pour le lien FloreAlpes (site externe)
     const normalizedSci = norm(sci);
     let floreAlpesLink = "—";
     const foundKey = Object.keys(floreAlpesIndex).find(key => norm(key.split('(')[0]) === normalizedSci);
@@ -89,7 +114,7 @@ function buildTable(items){
       <td class="ecology-column">${eco}</td>
       <td>${link(cd && inpnStatut(cd),"statut")}</td>
       <td>${link(cd && aura(cd),"atlas")}</td>
-      <td>${cd ? `<a href="#" onclick="alert('Fonctionnalité de géolocalisation sur clic non implémentée dans cette version.')" title="Ouvrir la carte">carte</a>` : "—"}</td>
+      <td>${cd ? `<a href="#" onclick="handleOpenObsClick(event, '${cd}')" title="Ouvrir la carte avec votre position actuelle">carte</a>` : "—"}</td>
       <td>${floraGallicaLink}</td>
       <td>${floreAlpesLink}</td>
     </tr>`;
@@ -132,7 +157,7 @@ function buildCards(items){
 }
 
 /* ================================================================
-   LOGIQUE SPÉCIFIQUE AUX PAGES (ÉCOUTEURS)
+   LOGIQUE SPÉCIFIQUE AUX PAGES (ÉCOUTEURS ET HANDLERS)
    ================================================================ */
 function handleSingleFileSelect(file) { 
   if (!file) return;
@@ -146,7 +171,6 @@ function handleSingleFileSelect(file) {
   reader.readAsDataURL(file); 
 }
 
-// --- Logique pour la page d'accueil (index.html) ---
 if (document.getElementById("file-capture")) {
     const fileCaptureInput = document.getElementById("file-capture");
     const fileGalleryInput = document.getElementById("file-gallery");
@@ -200,7 +224,6 @@ if (document.getElementById("file-capture")) {
     multiImageIdentifyButton?.addEventListener("click", () => { if (selectedMultiFilesData.length === 0) return alert("Veuillez sélectionner au moins une image."); identifyMultipleImages(selectedMultiFilesData.map(i => i.file), selectedMultiFilesData.map(i => i.organ)); });
 }
 
-// --- Logique pour la page des résultats (organ.html) ---
 const organBoxOnPage = document.getElementById("organ-choice"); 
 if (organBoxOnPage) {
     const displayResults = async (results, isNameSearch = false) => {
