@@ -5,194 +5,234 @@ const API_KEY  = "2b10vfT6MvFC2lcAzqG1ZMKO";
 const PROJECT  = "all";
 const ENDPOINT = `https://my-api.plantnet.org/v2/identify/${PROJECT}?api-key=${API_KEY}`;
 const MAX_RESULTS = 5;
-const MAX_MULTI_IMAGES = 5; // Conservé pour la logique multi-images
+const MAX_MULTI_IMAGES = 5;
 
 /* ================================================================
    INITIALISATION ET GESTION DES DONNÉES
    ================================================================ */
-// Variables globales
 let taxref = {};
 let ecology = {};
-let floraToc = {}; // Pour l'index des PDF Flora Gallica
+let floreAlpesIndex = {}; 
+let userLocation = { latitude: 45.188529, longitude: 5.724524 };
 
-// Promesse unique pour le chargement de tous les fichiers de données
 const ready = Promise.all([
   fetch("taxref.json").then(r => r.json()).then(j => Object.entries(j).forEach(([k,v]) => taxref[norm(k)] = v)),
   fetch("ecology.json").then(r => r.json()).then(j => Object.entries(j).forEach(([k,v]) => ecology[norm(k.split(';')[0])] = v)),
-  // Chargement de l'index de la table des matières que vous avez créé
-  fetch("assets/flora_gallica_toc.json").then(r => r.json()).then(j => floraToc = j)
+  fetch("assets/florealpes_index.json").then(r => r.json()).then(j => floreAlpesIndex = j)
 ]).then(() => {
-    console.log("Fichiers de données (Taxref, Ecology, Flora Gallica TOC) chargés et prêts.");
+    console.log("Fichiers de données chargés et prêts.");
 }).catch(err => {
     console.error("Erreur critique lors du chargement des fichiers de données:", err);
     alert("Erreur de chargement des fichiers de données locaux : " + err.message);
 });
 
-
 /* ================================================================
    FONCTIONS UTILITAIRES ET HELPERS
    ================================================================ */
-function norm(txt) {
-  if (typeof txt !== 'string') return "";
-  return txt.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/\s+/g, " ");
-}
+function norm(txt) { if (typeof txt !== 'string') return ""; return txt.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/\s+/g, " "); }
 const cdRef = n => taxref[norm(n)];
 const ecolOf = n => ecology[norm(n)] || "—"; 
 const slug = n => norm(n).replace(/ /g, "-");
 
 const infoFlora  = n => `https://www.infoflora.ch/fr/flore/${slug(n)}.html`;
-const inpnCarte  = c => `https://inpn.mnhn.fr/espece/cd_nom/${c}/tab/carte`;
 const inpnStatut = c => `https://inpn.mnhn.fr/espece/cd_nom/${c}/tab/statut`;
 const aura       = c => `https://atlas.biodiversite-auvergne-rhone-alpes.fr/espece/${c}`;
-const openObs    = c => `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=lsid%3A${c}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&qc=&radius=239.6&lat=44.57641801313443&lon=4.9718137085437775#tab_mapView`;
-
-const proxyCarte  = c => `/.netlify/functions/inpn-proxy?cd=${c}&type=carte`;
-const proxyStatut = c => `/.netlify/functions/inpn-proxy?cd=${c}&type=statut`;
-
+function buildOpenObsUrl(cd_ref, location) { const lat = location ? location.latitude : userLocation.latitude; const lon = location ? location.longitude : userLocation.longitude; return `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=lsid%3A${cd_ref}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&qc=&radius=120.6&lat=${lat}&lon=${lon}#tab_mapView`; }
 
 /* ================================================================
    LOGIQUE D'IDENTIFICATION ET D'AFFICHAGE
    ================================================================ */
-async function identify(file, organ) {
-  await ready;
-  const fd = new FormData();
-  fd.append("images", file, "photo.jpg");
-  fd.append("organs", organ);
-
-  try {
-    const res = await fetch(ENDPOINT, { method:"POST", body:fd });
-    if(!res.ok) throw new Error("Erreur API Pl@ntNet");
-    
-    const results = (await res.json()).results.slice(0, MAX_RESULTS);
-    document.body.classList.remove("home");
-    buildTable(results);
-    buildCards(results);
-  } catch(err) {
-    alert(err.message);
-  }
-}
+async function callPlantNetAPI(formData) { try { const res = await fetch(ENDPOINT, { method: "POST", body: formData }); if (!res.ok) { const errBody = await res.json().catch(() => res.text()); throw new Error(`Erreur API PlantNet (${res.status}): ${typeof errBody === 'object' ? errBody.message : errBody}`); } return (await res.json()).results.slice(0, MAX_RESULTS); } catch (err) { console.error(err); alert(err.message); return null; } }
+async function identifySingleImage(fileBlob, organ) { const fd = new FormData(); fd.append("images", fileBlob, fileBlob.name || "photo.jpg"); fd.append("organs", organ); const results = await callPlantNetAPI(fd); if (results) { document.body.classList.remove("home"); await ready; buildTable(results); buildCards(results); } }
+async function identifyMultipleImages(files, organs) { const fd = new FormData(); files.forEach((f, i) => fd.append("images", f, f.name || `photo_${i}.jpg`)); organs.forEach(o => fd.append("organs", o)); if (!fd.has("images")) return alert("Aucune image valide."); const results = await callPlantNetAPI(fd); if (results) { sessionStorage.setItem("identificationResults", JSON.stringify(results)); ["photoData", "speciesQueryName"].forEach(k => sessionStorage.removeItem(k)); location.href = "organ.html"; } }
 
 function buildTable(items){
   const wrap = document.getElementById("results");
   if (!wrap) return;
-  wrap.innerHTML = "";
 
-  const headers = ["Nom latin", "Score (%)", "InfoFlora", "Écologie", "INPN carte", "INPN statut", "Biodiv'AURA", "OpenObs", "Flora Gallica"];
+  const headers = ["Nom latin", "Score (%)", "InfoFlora", "Écologie", "INPN statut", "Biodiv'AURA", "OpenObs", "FloreAlpes"];
   const link = (url, label) => url ? `<a href="${url}" target="_blank" rel="noopener">${label}</a>` : "—";
 
-  const rows = items.map(({score,species}) => {
-    const sci  = species.scientificNameWithoutAuthor;
-    const pct  = Math.round(score * 100);
-    const cd   = cdRef(sci);
+  const rows = items.map(item => {
+    const score = item.score !== undefined ? Math.round(item.score * 100) : "N/A";
+    const sci  = item.species.scientificNameWithoutAuthor;
+    const cd   = cdRef(sci); 
     const eco  = ecolOf(sci);
     
-    // Logique pour le lien Flora Gallica
-    const genus = sci.split(' ')[0].toLowerCase();
-    const tocEntry = floraToc[genus];
-    let floraLink = "—";
-    if (tocEntry && tocEntry.pdfFile && tocEntry.page) {
-      // MODIFICATION : Le lien pointe maintenant vers notre lecteur viewer.html
-      // Il passe le chemin du fichier et le numéro de page en paramètres.
-      const pdfPath = `assets/flora_gallica_pdfs/${tocEntry.pdfFile}`;
-      const viewerUrl = `viewer.html?file=${encodeURIComponent(pdfPath)}&page=${tocEntry.page}`;
-      floraLink = `<a href="${viewerUrl}" target="_blank" rel="noopener" title="Ouvrir Flora Gallica pour le genre ${genus}">Page ${tocEntry.page}</a>`;
+    // Logique pour construire le lien FloreAlpes à partir de votre index
+    const normalizedSci = norm(sci);
+    let floreAlpesLink = "—";
+    
+    // Recherche une clé correspondante en normalisant aussi les clés de l'index
+    const foundKey = Object.keys(floreAlpesIndex).find(key => {
+        const cleanKey = norm(key.split('(')[0]);
+        return cleanKey === normalizedSci;
+    });
+
+    if (foundKey) {
+        const urlPart = floreAlpesIndex[foundKey];
+        // Nettoie l'URL pour enlever l'identifiant de session
+        const cleanUrlPart = urlPart.split('?')[0];
+        const floreAlpesUrl = `https://www.florealpes.com/${cleanUrlPart}`;
+        floreAlpesLink = link(floreAlpesUrl, "fiche");
     }
 
     return `<tr>
       <td>${sci}</td>
-      <td style="text-align:center">${pct}</td>
+      <td style="text-align:center">${score}</td>
       <td>${link(infoFlora(sci),"fiche")}</td>
-      <td>${eco.slice(0,120)}${eco.length>120?"…":""}</td>
-      <td>${link(cd && proxyCarte(cd),"carte")}</td>
-      <td>${link(cd && proxyStatut(cd),"statut")}</td>
+      <td class="ecology-column">${eco}</td>
+      <td>${link(cd && inpnStatut(cd),"statut")}</td>
       <td>${link(cd && aura(cd),"atlas")}</td>
-      <td>${link(cd && openObs(cd),"carte")}</td>
-      <td>${floraLink}</td>
+      <td>${cd ? `<a href="#" onclick="alert('Fonctionnalité de géolocalisation sur clic non implémentée dans cette version.')" title="Ouvrir la carte">carte</a>` : "—"}</td>
+      <td>${floreAlpesLink}</td>
     </tr>`;
   }).join("");
 
-  wrap.innerHTML = `
-    <table>
-      <thead><tr>${headers.map(h=>`<th>${h}</th>`).join("")}</tr></thead>
-      <tbody>${rows}</tbody>
-    </table>`;
+  const headerHtml = headers.map(h => `<th class="${h === 'Écologie' ? 'ecology-column' : ''}">${h}</th>`).join("");
+  wrap.innerHTML = `<table><thead><tr>${headerHtml}</tr></thead><tbody>${rows}</tbody></table>`;
 }
 
 function buildCards(items){
   const zone = document.getElementById("cards");
   if (!zone) return;
-  zone.innerHTML = "";
+  zone.innerHTML = ""; 
 
-  items.forEach(({score,species}) => {
-    const sci = species.scientificNameWithoutAuthor;
+  items.forEach(item => {
+    const sci = item.species.scientificNameWithoutAuthor;
     const cd  = cdRef(sci); 
-    if(!cd) return;
-    const pct = Math.round(score * 100);
+    if(!cd && !(item.score === 1.00 && items.length === 1)) return;
+    
+    const pct = item.score !== undefined ? Math.round(item.score * 100) : "Info";
+    const isNameSearchResult = item.score === 1.00 && items.length === 1;
 
     const details = document.createElement("details");
+    let iframeHTML = '';
+    if (cd) {
+        iframeHTML = `
+        <div class="iframe-grid">
+            <iframe loading="lazy" src="${inpnStatut(cd)}" title="Statut INPN"></iframe>
+            <iframe loading="lazy" src="${aura(cd)}" title="Biodiv'AURA"></iframe>
+            <iframe loading="lazy" src="${openObs(cd)}" title="OpenObs"></iframe>
+        </div>`;
+    }
+
     details.innerHTML = `
-      <summary>${sci} — ${pct}%</summary>
+      <summary>${sci} — ${pct}${!isNameSearchResult ? '%' : ''}</summary>
       <p style="padding:0 12px 8px;font-style:italic">${ecolOf(sci)}</p>
-      <div class="iframe-grid">
-        <iframe loading="lazy" src="${proxyCarte(cd)}"  title="Carte INPN"></iframe>
-        <iframe loading="lazy" src="${proxyStatut(cd)}" title="Statut INPN"></iframe>
-        <iframe loading="lazy" src="${aura(cd)}"        title="Biodiv'AURA"></iframe>
-        <iframe loading="lazy" src="${openObs(cd)}"     title="OpenObs"></iframe>
-      </div>`;
+      ${iframeHTML}`;
     zone.appendChild(details);
   });
 }
 
 /* ================================================================
-   ÉCOUTEURS SPÉCIFIQUES AUX PAGES
+   LOGIQUE SPÉCIFIQUE AUX PAGES (ÉCOUTEURS ET HANDLERS)
    ================================================================ */
-const fileInput  = document.getElementById("file");
-const organBox   = document.getElementById("organ-choice");
-
-if(fileInput && !organBox){ // Logique pour index.html
-  fileInput.addEventListener("change", e => {
-    const file = e.target.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      sessionStorage.setItem("photoData", reader.result);
-      location.href = "organ.html";
-    };
-    reader.readAsDataURL(file);
-  });
+function handleSingleFileSelect(file) { 
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    sessionStorage.setItem("photoData", reader.result); 
+    ["speciesQueryName", "identificationResults"].forEach(k => sessionStorage.removeItem(k));
+    location.href = "organ.html";
+  };
+  reader.onerror = () => alert("Erreur lors de la lecture de l'image.");
+  reader.readAsDataURL(file); 
 }
 
-if(organBox){ // Logique pour organ.html
-   const stored = sessionStorage.getItem("photoData");
-  if(!stored){
-    location.href = "index.html";
-  } else {
-    const prev = document.getElementById("preview");
-    if(prev) prev.src = stored;
-    const toBlob = str => {
-      try {
-        const [meta, b64] = str.split(",");
-        const mime = /:(.*?);/.exec(meta)[1];
-        const bin = atob(b64);
-        const arr = new Uint8Array(bin.length);
-        for(let i=0; i<bin.length; i++) arr[i]=bin.charCodeAt(i);
-        return new Blob([arr], {type:mime});
-      } catch (e) {
-        return null;
-      }
+// --- Logique pour la page d'accueil (index.html) ---
+if (document.getElementById("file-capture")) {
+    const fileCaptureInput = document.getElementById("file-capture");
+    const fileGalleryInput = document.getElementById("file-gallery");
+    const speciesSearchInput = document.getElementById("species-search-input");
+    const speciesSearchButton = document.getElementById("species-search-button");
+    const multiFileInput = document.getElementById("multi-file-input");
+    const multiImageListArea = document.getElementById("multi-image-list-area");
+    const multiImageIdentifyButton = document.getElementById("multi-image-identify-button");
+    let selectedMultiFilesData = [];
+
+    fileCaptureInput?.addEventListener("change", e => handleSingleFileSelect(e.target.files[0]));
+    fileGalleryInput?.addEventListener("change", e => handleSingleFileSelect(e.target.files[0]));
+
+    const performSpeciesSearch = async () => {
+        const query = speciesSearchInput.value.trim();
+        if (!query) return alert("Veuillez entrer un nom d'espèce.");
+        try {
+            await ready;
+            const normQuery = norm(query);
+            let taxrefData = await fetch("taxref.json").then(r => r.json());
+            let foundName = Object.keys(taxrefData).find(k => norm(k) === normQuery);
+            if (foundName) { 
+                sessionStorage.setItem("speciesQueryName", foundName);
+                ["photoData", "identificationResults"].forEach(k => sessionStorage.removeItem(k));
+                location.href = "organ.html";
+            } else {
+                alert(`Espèce "${query}" non trouvée.`);
+            }
+        } catch (err) { alert("Erreur lors de la recherche."); }
     };
-    const handle = async e => {
-      const img = sessionStorage.getItem("photoData");
-      if(!img) return;
-      const blob = toBlob(img);
-      if (blob) {
-        await identify(blob, e.currentTarget.dataset.organ);
-      } else {
-        alert("Erreur lors de la préparation de l'image.");
-      }
+
+    speciesSearchButton?.addEventListener("click", performSpeciesSearch);
+    speciesSearchInput?.addEventListener("keypress", e => { if (e.key === "Enter") performSpeciesSearch(); });
+
+    function renderMultiImageList() {
+        multiImageListArea.innerHTML = '';
+        multiImageIdentifyButton.style.display = selectedMultiFilesData.length > 0 ? 'block' : 'none';
+        if (selectedMultiFilesData.length === 0) multiFileInput.value = '';
+        selectedMultiFilesData.forEach((item, index) => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'image-organ-item';
+            itemDiv.innerHTML = `<span class="file-info"><span class="file-index">Image ${index + 1}:</span> <span>${item.file.name.substring(0, 20)}...</span></span><select data-index="${index}"><option value="leaf">Feuille</option><option value="flower">Fleur</option><option value="fruit">Fruit</option><option value="bark">Écorce</option></select><button type="button" class="delete-file-btn" data-index="${index}" title="Supprimer">✖</button>`;
+            itemDiv.querySelector('select').value = item.organ;
+            multiImageListArea.appendChild(itemDiv);
+        });
+    }
+
+    multiImageListArea?.addEventListener('click', (e) => { if (e.target?.classList.contains('delete-file-btn')) { selectedMultiFilesData.splice(parseInt(e.target.dataset.index, 10), 1); renderMultiImageList(); } });
+    multiImageListArea?.addEventListener('change', (e) => { if (e.target?.tagName === 'SELECT') { selectedMultiFilesData[parseInt(e.target.dataset.index, 10)].organ = e.target.value; } });
+    multiFileInput?.addEventListener("change", (e) => { const files = Array.from(e.target.files), r = MAX_MULTI_IMAGES - selectedMultiFilesData.length; if (r <= 0) return alert(`Limite de ${MAX_MULTI_IMAGES} atteinte.`); files.slice(0, r).forEach(f => { if (!selectedMultiFilesData.some(i => i.file.name === f.name && i.file.size === f.size)) selectedMultiFilesData.push({ file: f, organ: 'leaf' }); }); if (files.length > r) alert(`Limite atteinte. Certaines images n'ont pas été ajoutées.`); renderMultiImageList(); e.target.value = ''; });
+    multiImageIdentifyButton?.addEventListener("click", () => { if (selectedMultiFilesData.length === 0) return alert("Veuillez sélectionner au moins une image."); identifyMultipleImages(selectedMultiFilesData.map(i => i.file), selectedMultiFilesData.map(i => i.organ)); });
+}
+
+// --- Logique pour la page des résultats (organ.html) ---
+const organBoxOnPage = document.getElementById("organ-choice"); 
+if (organBoxOnPage) {
+    const displayResults = async (results, isNameSearch = false) => {
+        const previewEl = document.getElementById("preview");
+        if (previewEl) previewEl.style.display = 'none';
+        if (organBoxOnPage) organBoxOnPage.style.display = 'none';
+        
+        await ready;
+        
+        document.body.classList.remove("home");
+        buildTable(isNameSearch ? [{ score: 1.0, species: { scientificNameWithoutAuthor: results } }] : results);
+        buildCards(isNameSearch ? [{ score: 1.0, species: { scientificNameWithoutAuthor: results } }] : results);
     };
-    organBox.querySelectorAll("button").forEach(btn =>
-      btn.addEventListener("click", handle)
-    );
-  }
+    
+    const speciesQueryName = sessionStorage.getItem("speciesQueryName");
+    const storedImage = sessionStorage.getItem("photoData");
+    const multiImageResults = sessionStorage.getItem("identificationResults");
+
+    if (speciesQueryName) {
+        sessionStorage.removeItem("speciesQueryName");
+        displayResults(speciesQueryName, true);
+    } else if (multiImageResults) {
+        sessionStorage.removeItem("identificationResults");
+        try { displayResults(JSON.parse(multiImageResults)); }
+        catch (e) { location.href = "index.html"; }
+    } else if (storedImage) {
+        const previewElement = document.getElementById("preview");
+        if(previewElement) previewElement.src = storedImage;
+        if (organBoxOnPage) organBoxOnPage.style.display = 'block';
+
+        const toBlob = dataURL => { try { const [m,b] = dataURL.split(','), [,e] = /:(.*?);/.exec(m), B=atob(b), a=new Uint8Array(B.length); for(let i=0;i<B.length;i++)a[i]=B.charCodeAt(i); return new Blob([a],{type:e})}catch(e){return null}};
+        const imageBlob = toBlob(storedImage); 
+        if (imageBlob) {
+            organBoxOnPage.querySelectorAll("button").forEach(b => b.addEventListener("click", (e) => identify(imageBlob, e.currentTarget.dataset.organ)));
+        } else {
+            alert("Erreur lors de la préparation de l'image.");
+        }
+    } else {
+        location.href = "index.html";
+    }
 }
