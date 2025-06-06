@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lecteur de PDF - Flora Gallica</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -12,24 +12,22 @@
             width: 100%;
             overflow: auto; 
             text-align: center;
-            /* Espace en bas pour ne pas que la barre de contrôle cache le contenu */
+            /* L'espace pour la barre de contrôle est conservé */
             padding-bottom: 70px; 
         }
         #pdf-canvas {
             box-shadow: 0 0 10px rgba(0,0,0,0.5);
-            /* L'animation de fondu est conservée */
             transition: opacity 0.15s ease-in-out;
         }
         #pdf-canvas.pdf-turning {
             opacity: 0;
         }
-        /* Barre de contrôle fixée en bas */
         #pdf-controls {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            background-color: rgba(34, 34, 34, 0.95); /* Fond légèrement transparent */
+            background-color: rgba(34, 34, 34, 0.95);
             color: white;
             padding: 10px;
             text-align: center;
@@ -40,18 +38,17 @@
             z-index: 100;
             -webkit-user-select: none;
             user-select: none;
-            gap: 10px; /* Espace entre les éléments */
+            gap: 15px;
         }
         #pdf-controls button {
             background-color: #555;
             color: white;
             border: 1px solid #777;
             border-radius: 6px;
-            padding: 8px 16px;
-            font-size: 1.2rem; /* Boutons plus gros */
+            padding: 8px 18px;
+            font-size: 1.1rem;
             font-weight: bold;
             cursor: pointer;
-            min-width: 50px;
         }
         #pdf-controls button:disabled {
             background-color: #444;
@@ -72,13 +69,11 @@
     </div>
 
     <div id="pdf-controls">
-        <button id="zoom-out-btn" title="Zoom arrière">-</button>
-        <button id="prev-page-btn" title="Page précédente">‹</button>
+        <button id="prev-page-btn" title="Page précédente">Précédent</button>
         <span id="page-info">
             Page <span id="current-page-num">0</span> / <span id="total-page-num">0</span>
         </span>
-        <button id="next-page-btn" title="Page suivante">›</button>
-        <button id="zoom-in-btn" title="Zoom avant">+</button>
+        <button id="next-page-btn" title="Page suivante">Suivant</button>
     </div>
 
     <script src="pdfjs/build/pdf.mjs" type="module"></script>
