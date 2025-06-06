@@ -19,9 +19,9 @@ const CORE_ASSETS = [
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./assets/Bandeau.jpg",
-  // Ajout des fichiers essentiels de la bibliothèque PDF.js
-  "./pdfjs/build/pdf.mjs",
-  "./pdfjs/build/pdf.worker.mjs"
+  // Fichiers essentiels de la bibliothèque PDF.js
+  "./pdfjs/build/pdf.js",
+  "./pdfjs/build/pdf.worker.js"
 ];
 
 // Fichiers de données qui seront aussi pré-cachés

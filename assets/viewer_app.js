@@ -1,6 +1,8 @@
-import * as pdfjsLib from '../pdfjs/build/pdf.mjs';
+// pdf.js est chargé globalement via viewer.html
+const pdfjsLib = window.pdfjsLib;
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = `../pdfjs/build/pdf.worker.mjs`;
+// Configuration du worker pour la version non-modulaire
+pdfjsLib.GlobalWorkerOptions.workerSrc = '../pdfjs/build/pdf.worker.js';
 
 // Récupération des éléments du DOM
 const canvas = document.getElementById('pdf-canvas');
@@ -27,9 +29,9 @@ async function renderPage(num) {
     try {
         const page = await pdfDoc.getPage(currentPageNum);
         
-        const baseScale = 2.0; 
+        const baseScale = 2.0;
         const devicePixelRatio = window.devicePixelRatio || 1;
-        const finalScale = baseScale * devicePixelRatio;
+        const finalScale = Math.min(baseScale * devicePixelRatio, 4);
         
         const viewport = page.getViewport({ scale: finalScale });
         
