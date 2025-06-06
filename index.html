@@ -169,13 +169,14 @@
     }
     body:not(.home) h1 { font-size:1.6rem; color:var(--primary); margin-bottom: 1rem;}
     table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.05);margin-bottom:1.2rem;}
-    th,td{padding:8px 10px;border-bottom:1px solid var(--border);}
+    th,td{padding:8px 10px;border-bottom:1px solid var(--border); word-break: break-word;}
     th{background:#fff;color:#000;font-weight:600;text-align:left}
     tr:last-child td{border-bottom:none}
     
+    /* MODIFICATION: Augmentation significative de la largeur de la colonne Écologie */
     .ecology-column {
-        width: 35%; 
-        min-width: 250px; 
+        width: 45%;
+        min-width: 300px;
     }
     
     td a{color:var(--primary);text-decoration:none}
