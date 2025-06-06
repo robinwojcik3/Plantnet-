@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Lecteur de PDF - Flora Gallica</title>
     <style>
         * {
@@ -33,6 +33,8 @@
             align-items: center;
             box-shadow: 0 2px 5px rgba(0,0,0,0.5);
             z-index: 100;
+            -webkit-user-select: none; /* Désactiver la sélection de texte sur les contrôles */
+            user-select: none;
         }
         #pdf-controls button {
             background-color: #555;
@@ -51,18 +53,24 @@
         #page-info {
             font-family: sans-serif;
             font-size: 1rem;
+            min-width: 100px; /* Empêche le texte de sauter lors du chargement */
         }
         #pdf-canvas-wrapper {
             flex-grow: 1;
-            overflow: auto;
+            overflow: auto; 
             text-align: center;
         }
         #pdf-canvas {
             box-shadow: 0 0 10px rgba(0,0,0,0.5);
-            /* MODIFICATION: Assure que le canvas s'adapte en largeur */
             width: 100%;
-            max-width: 1000px; /* Limite la largeur sur les très grands écrans */
+            max-width: 1000px;
             height: auto;
+            /* MODIFICATION: Ajout d'une transition pour l'animation de fondu */
+            transition: opacity 0.15s ease-in-out;
+        }
+        /* MODIFICATION: Classe pour l'animation de changement de page */
+        #pdf-canvas.pdf-turning {
+            opacity: 0;
         }
     </style>
 </head>
