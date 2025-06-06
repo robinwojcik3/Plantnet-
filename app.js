@@ -27,7 +27,6 @@ const ready = Promise.all([
     alert("Erreur de chargement des fichiers de données locaux : " + err.message);
 });
 
-
 /* ================================================================
    FONCTIONS UTILITAIRES ET HELPERS
    ================================================================ */
@@ -97,20 +96,19 @@ function buildTable(items){
   const headerHtml = `<tr>${headers.map(h => `<th>${h}</th>`).join("")}</tr>`;
   
   // MODIFICATION : Utilisation de <colgroup> pour définir les largeurs de manière fiable
+  // Les pourcentages sont ajustés pour donner la priorité à la colonne Écologie.
   const colgroupHtml = `
     <colgroup>
       <col style="width: 20%;">
+      <col style="width: 9%;">
       <col style="width: 8%;">
       <col style="width: 8%;">
-      <col style="width: 8%;">
-      <col style="width: 32%;">
-      <col style="width: 8%;">
+      <col style="width: 33%;">
       <col style="width: 8%;">
       <col style="width: 8%;">
+      <col style="width: 6%;">
     </colgroup>
   `;
-
-  // Note : La colonne "Info Flora" n'a pas de largeur définie et prendra l'espace restant.
 
   wrap.innerHTML = `<table>${colgroupHtml}<thead>${headerHtml}</thead><tbody>${rows}</tbody></table>`;
 }
