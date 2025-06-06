@@ -27,7 +27,7 @@ const ready = Promise.all([
   fetch("taxref.json").then(r => r.json()).then(j => Object.entries(j).forEach(([k,v]) => taxref[norm(k)] = v)),
   fetch("ecology.json").then(r => r.json()).then(j => Object.entries(j).forEach(([k,v]) => ecology[norm(k.split(';')[0])] = v)),
   fetch("assets/flora_gallica_toc.json").then(r => r.json()).then(j => floraToc = j),
-  fetch("assets/florealpes_index.json").then(r => r.json()).then(j => floreAlpesIndex = j)
+  fetch("assets/florealpes_index.json").then(r => r.json()).then(j => floreAlpesIndex = j),
   fetch("Criteres_herbier.json").then(r => r.json()).then(j => j.forEach(o => criteres[norm(o.species)] = o.description)),
 ]).then(() => console.log("Données prêtes.")).catch(err => alert("Erreur chargement des données: " + err.message));
 
