@@ -2,35 +2,36 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Lecteur de PDF - Flora Gallica</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        html, body {
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; width: 100%; background-color: #333; overflow: hidden; }
+        #pdf-canvas-wrapper {
             height: 100%;
             width: 100%;
-            background-color: #333;
-            overflow: hidden;
+            overflow: auto; 
+            text-align: center;
+            /* Espace en bas pour ne pas que la barre de contrôle cache le contenu */
+            padding-bottom: 70px; 
         }
-        #viewer-container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            width: 100vw;
+        #pdf-canvas {
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            /* L'animation de fondu est conservée */
+            transition: opacity 0.15s ease-in-out;
         }
-        /* MODIFICATION : La barre de contrôles est maintenant fixée en bas de l'écran */
+        #pdf-canvas.pdf-turning {
+            opacity: 0;
+        }
+        /* Barre de contrôle fixée en bas */
         #pdf-controls {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            background-color: #222;
+            background-color: rgba(34, 34, 34, 0.95); /* Fond légèrement transparent */
             color: white;
-            padding: 10px; /* Augmentation du padding pour plus de hauteur */
+            padding: 10px;
             text-align: center;
             display: flex;
             justify-content: center;
@@ -39,18 +40,18 @@
             z-index: 100;
             -webkit-user-select: none;
             user-select: none;
+            gap: 10px; /* Espace entre les éléments */
         }
-        /* MODIFICATION : Agrandissement des boutons */
         #pdf-controls button {
             background-color: #555;
             color: white;
             border: 1px solid #777;
             border-radius: 6px;
-            padding: 8px 18px; /* Plus de padding pour une plus grande zone de clic */
-            margin: 0 15px;
-            font-size: 1.1rem; /* Police plus grande */
+            padding: 8px 16px;
+            font-size: 1.2rem; /* Boutons plus gros */
             font-weight: bold;
             cursor: pointer;
+            min-width: 50px;
         }
         #pdf-controls button:disabled {
             background-color: #444;
@@ -62,23 +63,6 @@
             font-size: 1rem;
             min-width: 100px;
         }
-        #pdf-canvas-wrapper {
-            flex-grow: 1;
-            overflow: auto; 
-            text-align: center;
-            /* MODIFICATION : Ajout d'un espace en bas pour que les contrôles ne masquent pas le contenu */
-            padding-bottom: 70px; 
-        }
-        #pdf-canvas {
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-            width: 100%;
-            max-width: 1000px;
-            height: auto;
-            transition: opacity 0.15s ease-in-out;
-        }
-        #pdf-canvas.pdf-turning {
-            opacity: 0;
-        }
     </style>
 </head>
 <body>
@@ -88,11 +72,13 @@
     </div>
 
     <div id="pdf-controls">
-        <button id="prev-page-btn">Précédent</button>
+        <button id="zoom-out-btn" title="Zoom arrière">-</button>
+        <button id="prev-page-btn" title="Page précédente">‹</button>
         <span id="page-info">
             Page <span id="current-page-num">0</span> / <span id="total-page-num">0</span>
         </span>
-        <button id="next-page-btn">Suivant</button>
+        <button id="next-page-btn" title="Page suivante">›</button>
+        <button id="zoom-in-btn" title="Zoom avant">+</button>
     </div>
 
     <script src="pdfjs/build/pdf.mjs" type="module"></script>
