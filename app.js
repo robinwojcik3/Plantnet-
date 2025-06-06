@@ -27,6 +27,7 @@ const ready = Promise.all([
     alert("Erreur de chargement des fichiers de données locaux : " + err.message);
 });
 
+
 /* ================================================================
    FONCTIONS UTILITAIRES ET HELPERS
    ================================================================ */
@@ -50,6 +51,7 @@ async function identifyMultipleImages(files, organs) { const fd = new FormData()
 function buildTable(items){
   const wrap = document.getElementById("results");
   if (!wrap) return;
+  wrap.innerHTML = "";
 
   const headers = ["Nom latin", "Score (%)", "FloreAlpes", "INPN statut", "Écologie", "Flora Gallica", "OpenObs", "Biodiv'AURA", "Info Flora"];
   const link = (url, label) => url ? `<a href="${url}" target="_blank" rel="noopener">${label}</a>` : "—";
@@ -80,33 +82,37 @@ function buildTable(items){
     }
 
     return `<tr>
-      <td class="col-nom-latin">${sci}</td>
-      <td class="col-score">${pct}</td>
-      <td class="col-link">${floreAlpesLink}</td>
-      <td class="col-link">${link(cd && inpnStatut(cd),"statut")}</td>
-      <td class="col-ecologie">${eco}</td>
-      <td class="col-link">${floraGallicaLink}</td>
-      <td class="col-link">${cd ? link(openObs(cd), "carte") : "—"}</td>
-      <td class="col-link">${link(cd && aura(cd),"atlas")}</td>
-      <td class="col-link">${link(infoFlora(sci),"fiche")}</td>
+      <td>${sci}</td>
+      <td>${pct}</td>
+      <td>${floreAlpesLink}</td>
+      <td>${link(cd && inpnStatut(cd),"statut")}</td>
+      <td>${eco}</td>
+      <td>${floraGallicaLink}</td>
+      <td>${cd ? link(openObs(cd), "carte") : "—"}</td>
+      <td>${link(cd && aura(cd),"atlas")}</td>
+      <td>${link(infoFlora(sci),"fiche")}</td>
     </tr>`;
   }).join("");
 
-  const headerHtml = `
-    <tr>
-      <th class="col-nom-latin">Nom latin</th>
-      <th class="col-score">Score (%)</th>
-      <th class="col-link">FloreAlpes</th>
-      <th class="col-link">INPN statut</th>
-      <th class="col-ecologie">Écologie</th>
-      <th class="col-link">Flora Gallica</th>
-      <th class="col-link">OpenObs</th>
-      <th class="col-link">Biodiv'AURA</th>
-      <th class="col-link">Info Flora</th>
-    </tr>
+  const headerHtml = `<tr>${headers.map(h => `<th>${h}</th>`).join("")}</tr>`;
+  
+  // MODIFICATION : Utilisation de <colgroup> pour définir les largeurs de manière fiable
+  const colgroupHtml = `
+    <colgroup>
+      <col style="width: 20%;">
+      <col style="width: 8%;">
+      <col style="width: 8%;">
+      <col style="width: 8%;">
+      <col style="width: 32%;">
+      <col style="width: 8%;">
+      <col style="width: 8%;">
+      <col style="width: 8%;">
+    </colgroup>
   `;
 
-  wrap.innerHTML = `<table><thead>${headerHtml}</thead><tbody>${rows}</tbody></table>`;
+  // Note : La colonne "Info Flora" n'a pas de largeur définie et prendra l'espace restant.
+
+  wrap.innerHTML = `<table>${colgroupHtml}<thead>${headerHtml}</thead><tbody>${rows}</tbody></table>`;
 }
 
 function buildCards(items){
