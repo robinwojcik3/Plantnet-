@@ -5,26 +5,29 @@ const API_KEY  = "2b10vfT6MvFC2lcAzqG1ZMKO";
 const PROJECT  = "all";
 const ENDPOINT = `https://my-api.plantnet.org/v2/identify/${PROJECT}?api-key=${API_KEY}`;
 const MAX_RESULTS = 5;
+const MAX_MULTI_IMAGES = 5; // Conservé pour la logique multi-images
 
 /* ================================================================
    INITIALISATION ET GESTION DES DONNÉES
    ================================================================ */
+// Variables globales
 let taxref = {};
 let ecology = {};
-let floreAlpesIndex = {}; // Pour l'index des fiches FloreAlpes
+let floraToc = {}; // Pour l'index des PDF Flora Gallica
 
-// Promesse pour s'assurer que toutes les données sont chargées avant de les utiliser
+// Promesse unique pour le chargement de tous les fichiers de données
 const ready = Promise.all([
   fetch("taxref.json").then(r => r.json()).then(j => Object.entries(j).forEach(([k,v]) => taxref[norm(k)] = v)),
   fetch("ecology.json").then(r => r.json()).then(j => Object.entries(j).forEach(([k,v]) => ecology[norm(k.split(';')[0])] = v)),
-  // Chargement du nouvel index FloreAlpes
-  fetch("assets/florealpes_index.json").then(r => r.json()).then(j => floreAlpesIndex = j)
+  // Chargement de l'index de la table des matières que vous avez créé
+  fetch("assets/flora_gallica_toc.json").then(r => r.json()).then(j => floraToc = j)
 ]).then(() => {
-    console.log("Fichiers de données (Taxref, Ecology, FloreAlpes Index) chargés et prêts.");
+    console.log("Fichiers de données (Taxref, Ecology, Flora Gallica TOC) chargés et prêts.");
 }).catch(err => {
     console.error("Erreur critique lors du chargement des fichiers de données:", err);
     alert("Erreur de chargement des fichiers de données locaux : " + err.message);
 });
+
 
 /* ================================================================
    FONCTIONS UTILITAIRES ET HELPERS
@@ -34,7 +37,7 @@ function norm(txt) {
   return txt.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/\s+/g, " ");
 }
 const cdRef = n => taxref[norm(n)];
-const ecolOf = n => ecology[norm(n)] || "—";
+const ecolOf = n => ecology[norm(n)] || "—"; 
 const slug = n => norm(n).replace(/ /g, "-");
 
 const infoFlora  = n => `https://www.infoflora.ch/fr/flore/${slug(n)}.html`;
@@ -46,11 +49,12 @@ const openObs    = c => `https://openobs.mnhn.fr/openobs-hub/occurrences/search?
 const proxyCarte  = c => `/.netlify/functions/inpn-proxy?cd=${c}&type=carte`;
 const proxyStatut = c => `/.netlify/functions/inpn-proxy?cd=${c}&type=statut`;
 
+
 /* ================================================================
    LOGIQUE D'IDENTIFICATION ET D'AFFICHAGE
    ================================================================ */
 async function identify(file, organ) {
-  await ready; // S'assurer que les données JSON sont chargées avant tout
+  await ready;
   const fd = new FormData();
   fd.append("images", file, "photo.jpg");
   fd.append("organs", organ);
@@ -73,8 +77,7 @@ function buildTable(items){
   if (!wrap) return;
   wrap.innerHTML = "";
 
-  // Ajout de la nouvelle colonne "FloreAlpes"
-  const headers = ["Nom latin","Score (%)","InfoFlora","Écologie","INPN carte","INPN statut","Biodiv'AURA","OpenObs", "FloreAlpes"];
+  const headers = ["Nom latin", "Score (%)", "InfoFlora", "Écologie", "INPN carte", "INPN statut", "Biodiv'AURA", "OpenObs", "Flora Gallica"];
   const link = (url, label) => url ? `<a href="${url}" target="_blank" rel="noopener">${label}</a>` : "—";
 
   const rows = items.map(({score,species}) => {
@@ -83,12 +86,16 @@ function buildTable(items){
     const cd   = cdRef(sci);
     const eco  = ecolOf(sci);
     
-    // Logique pour construire le lien FloreAlpes à partir de l'index
-    const normalizedSci = norm(sci);
-    let floreAlpesLink = "—";
-    if (floreAlpesIndex[normalizedSci]) {
-        const floreAlpesUrl = `https://www.florealpes.com/${floreAlpesIndex[normalizedSci]}`;
-        floreAlpesLink = link(floreAlpesUrl, "fiche");
+    // Logique pour le lien Flora Gallica
+    const genus = sci.split(' ')[0].toLowerCase();
+    const tocEntry = floraToc[genus];
+    let floraLink = "—";
+    if (tocEntry && tocEntry.pdfFile && tocEntry.page) {
+      // MODIFICATION : Le lien pointe maintenant vers notre lecteur viewer.html
+      // Il passe le chemin du fichier et le numéro de page en paramètres.
+      const pdfPath = `assets/flora_gallica_pdfs/${tocEntry.pdfFile}`;
+      const viewerUrl = `viewer.html?file=${encodeURIComponent(pdfPath)}&page=${tocEntry.page}`;
+      floraLink = `<a href="${viewerUrl}" target="_blank" rel="noopener" title="Ouvrir Flora Gallica pour le genre ${genus}">Page ${tocEntry.page}</a>`;
     }
 
     return `<tr>
@@ -100,7 +107,7 @@ function buildTable(items){
       <td>${link(cd && proxyStatut(cd),"statut")}</td>
       <td>${link(cd && aura(cd),"atlas")}</td>
       <td>${link(cd && openObs(cd),"carte")}</td>
-      <td>${floreAlpesLink}</td>
+      <td>${floraLink}</td>
     </tr>`;
   }).join("");
 
@@ -127,10 +134,10 @@ function buildCards(items){
       <summary>${sci} — ${pct}%</summary>
       <p style="padding:0 12px 8px;font-style:italic">${ecolOf(sci)}</p>
       <div class="iframe-grid">
-        <iframe src="${proxyCarte(cd)}"  title="Carte INPN"></iframe>
-        <iframe src="${proxyStatut(cd)}" title="Statut INPN"></iframe>
-        <iframe src="${aura(cd)}"        title="Biodiv'AURA"></iframe>
-        <iframe src="${openObs(cd)}"     title="OpenObs"></iframe>
+        <iframe loading="lazy" src="${proxyCarte(cd)}"  title="Carte INPN"></iframe>
+        <iframe loading="lazy" src="${proxyStatut(cd)}" title="Statut INPN"></iframe>
+        <iframe loading="lazy" src="${aura(cd)}"        title="Biodiv'AURA"></iframe>
+        <iframe loading="lazy" src="${openObs(cd)}"     title="OpenObs"></iframe>
       </div>`;
     zone.appendChild(details);
   });
