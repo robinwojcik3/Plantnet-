@@ -2,19 +2,19 @@ import * as pdfjsLib from '../pdfjs/build/pdf.mjs';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `../pdfjs/build/pdf.worker.mjs`;
 
+// Récupération des éléments du DOM
 const canvas = document.getElementById('pdf-canvas');
 const ctx = canvas.getContext('2d');
 const prevBtn = document.getElementById('prev-page-btn');
 const nextBtn = document.getElementById('next-page-btn');
 const currentPageNumSpan = document.getElementById('current-page-num');
 const totalPageNumSpan = document.getElementById('total-page-num');
-const viewerElement = document.getElementById('pdf-canvas-wrapper');
 
+// Variables pour garder l'état du PDF
 let pdfDoc = null;
 let currentPageNum = 1;
 let totalPages = 0;
 let isRendering = false;
-let touchStartX = 0; // Pour la logique de swipe
 
 /**
  * Affiche une page spécifique du PDF sur le canvas avec une haute résolution.
@@ -26,9 +26,11 @@ async function renderPage(num) {
 
     try {
         const page = await pdfDoc.getPage(currentPageNum);
+        
         const baseScale = 2.0; 
         const devicePixelRatio = window.devicePixelRatio || 1;
         const finalScale = baseScale * devicePixelRatio;
+        
         const viewport = page.getViewport({ scale: finalScale });
         
         canvas.height = viewport.height;
@@ -57,14 +59,13 @@ async function goToPage(pageNumber) {
     if (pageNumber < 1 || pageNumber > totalPages) return;
 
     isRendering = true;
-    canvas.classList.add('pdf-turning'); // Déclenche le fondu sortant
+    canvas.classList.add('pdf-turning');
 
-    // Attendre la fin de l'animation avant de dessiner la nouvelle page
     await new Promise(resolve => setTimeout(resolve, 150)); 
     
     await renderPage(pageNumber);
     
-    canvas.classList.remove('pdf-turning'); // Déclenche le fondu entrant
+    canvas.classList.remove('pdf-turning');
     isRendering = false;
 }
 
@@ -76,27 +77,7 @@ function goToNextPage() {
     goToPage(currentPageNum + 1);
 }
 
-// --- GESTION DES GESTES DE SWIPE ---
-function handleTouchStart(event) {
-    // Enregistre la coordonnée X du début du contact
-    touchStartX = event.changedTouches[0].screenX;
-}
-
-function handleTouchEnd(event) {
-    // Calcule la différence entre la fin et le début du contact
-    const touchEndX = event.changedTouches[0].screenX;
-    const deltaX = touchEndX - touchStartX;
-    const swipeThreshold = 50; // Distance minimale en pixels pour considérer un swipe
-
-    // Swipe vers la gauche (doigt va de droite à gauche) -> Page suivante
-    if (deltaX < -swipeThreshold) {
-        goToNextPage();
-    }
-    // Swipe vers la droite (doigt va de gauche à droite) -> Page précédente
-    else if (deltaX > swipeThreshold) {
-        goToPrevPage();
-    }
-}
+// MODIFICATION : Suppression de toute la logique de swipe (handleTouchStart, handleTouchEnd)
 
 /**
  * Fonction principale qui se lance au chargement de la page.
@@ -117,13 +98,11 @@ async function loadPdfViewer() {
         totalPages = pdfDoc.numPages;
         totalPageNumSpan.textContent = totalPages;
 
-        // Écouteurs pour les boutons et les gestes
+        // Écouteurs pour les boutons uniquement
         prevBtn.addEventListener('click', goToPrevPage);
         nextBtn.addEventListener('click', goToNextPage);
-        viewerElement.addEventListener('touchstart', handleTouchStart, false);
-        viewerElement.addEventListener('touchend', handleTouchEnd, false);
+        // MODIFICATION : Les écouteurs pour 'touchstart' et 'touchend' ont été retirés.
 
-        // Afficher la page initiale demandée
         await renderPage(initialPage);
     } catch (error) {
         console.error('Erreur lors du chargement du PDF:', error);
