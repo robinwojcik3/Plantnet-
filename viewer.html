@@ -14,7 +14,7 @@
             height: 100%;
             width: 100%;
             background-color: #333;
-            overflow: hidden; /* Empêche le défilement de la page elle-même */
+            overflow: hidden;
         }
         #viewer-container {
             display: flex;
@@ -54,12 +54,15 @@
         }
         #pdf-canvas-wrapper {
             flex-grow: 1;
-            overflow: auto; /* Permet de faire défiler le contenu du PDF */
-            text-align: center; /* Centre le canvas horizontalement */
+            overflow: auto;
+            text-align: center;
         }
         #pdf-canvas {
             box-shadow: 0 0 10px rgba(0,0,0,0.5);
-            /* Le canvas sera redimensionné par le script */
+            /* MODIFICATION: Assure que le canvas s'adapte en largeur */
+            width: 100%;
+            max-width: 1000px; /* Limite la largeur sur les très grands écrans */
+            height: auto;
         }
     </style>
 </head>
@@ -80,7 +83,6 @@
     </div>
 
     <script src="pdfjs/build/pdf.mjs" type="module"></script>
-
     <script src="assets/viewer_app.js" type="module"></script>
 
 </body>
