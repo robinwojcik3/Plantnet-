@@ -6,6 +6,9 @@ const PROJECT  = "all";
 const ENDPOINT = `https://my-api.plantnet.org/v2/identify/${PROJECT}?api-key=${API_KEY}`;
 const MAX_RESULTS = 5;
 const MAX_MULTI_IMAGES = 5;
+const GEMINI_API_KEY = "AIzaSyDDv4amCchpTXGqz6FGuY8mxPClkw-uwMs";
+const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+
 
 /* ================================================================
    INITIALISATION ET GESTION DES DONNÉES
@@ -14,6 +17,7 @@ let taxref = {};
 let ecology = {};
 let floraToc = {};
 let floreAlpesIndex = {}; 
+let userLocation = { latitude: 45.188529, longitude: 5.724524 };
 
 const ready = Promise.all([
   fetch("taxref.json").then(r => r.json()).then(j => Object.entries(j).forEach(([k,v]) => taxref[norm(k)] = v)),
@@ -21,11 +25,12 @@ const ready = Promise.all([
   fetch("assets/flora_gallica_toc.json").then(r => r.json()).then(j => floraToc = j),
   fetch("assets/florealpes_index.json").then(r => r.json()).then(j => floreAlpesIndex = j)
 ]).then(() => {
-    console.log("Fichiers de données chargés et prêts.");
+    console.log("Fichiers de données (Taxref, Ecology, TOC, FloreAlpes) chargés et prêts.");
 }).catch(err => {
     console.error("Erreur critique lors du chargement des fichiers de données:", err);
     alert("Erreur de chargement des fichiers de données locaux : " + err.message);
 });
+
 
 /* ================================================================
    FONCTIONS UTILITAIRES ET HELPERS
@@ -41,6 +46,52 @@ const aura       = c => `https://atlas.biodiversite-auvergne-rhone-alpes.fr/espe
 const openObs    = c => `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=lsid%3A${c}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&qc=&radius=120.6&lat=45.188529&lon=5.724524#tab_mapView`;
 
 /* ================================================================
+   GESTION DES ACTIONS UTILISATEUR (CLICS, SAUVEGARDES)
+   ================================================================ */
+function getLiveUserLocation() { return new Promise((resolve, reject) => { if (!("geolocation" in navigator)) return reject(new Error("Géolocalisation non supportée.")); navigator.geolocation.getCurrentPosition(resolve, reject); }); }
+window.handleOpenObsClick = async function(event, cd_ref) { event.preventDefault(); const targetLink = event.currentTarget; const originalText = targetLink.textContent; targetLink.textContent = 'Localisation...'; targetLink.style.pointerEvents = 'none'; try { const position = await getLiveUserLocation(); userLocation = { latitude: position.coords.latitude, longitude: position.coords.longitude }; window.open(buildOpenObsUrl(cd_ref, userLocation), '_blank', 'noopener,noreferrer'); } catch (error) { alert("Impossible d'obtenir la localisation. Ouverture de la carte avec une position par défaut."); window.open(buildOpenObsUrl(cd_ref, null), '_blank', 'noopener,noreferrer'); } finally { targetLink.textContent = originalText; targetLink.style.pointerEvents = 'auto'; } }
+
+async function getSynthesisFromGemini(speciesName) {
+    const prompt = `En tant qu'expert botaniste, rédige une fiche de synthèse pour l'espèce "${speciesName}". Le texte doit être fluide et naturel, comme si tu t'adressais à des étudiants, pour une future conversion en audio. N'utilise ni tableau, ni formatage de code, ni listes à puces. Intègre les informations suivantes dans un discours cohérent et structuré :
+
+    1.  **Introduction** : Présente l'espèce par son nom français le plus courant, suivi de son nom latin complet entre parenthèses, et sa famille botanique.
+    2.  **Critères d'identification** : Décris un ou deux critères morphologiques vraiment distinctifs qui permettent de l'identifier facilement sur le terrain et la différencier des espèces du même genre. Sois très succinct et ne mentionne que le "petit truc" qui la rend unique.
+    3.  **Confusions possibles** : Mentionne une ou deux espèces proches avec lesquelles on pourrait la confondre et explique brièvement comment les distinguer (ex: "On pourrait la confondre avec telle espèce, mais cette dernière se distingue par...").
+    4.  **Écologie** : Décris son habitat préférentiel (milieux, type de sol, climat, exposition).
+    5.  **Statut** : Indique brièvement son statut de conservation en France (si elle est protégée ou menacée). Si elle n'a pas de statut particulier, ne le mentionne pas.
+    6.  **Répartition** : Conclus en indiquant ses principales régions de présence en France et son origine géographique générale.
+
+    Pour construire ta réponse, consulte impérativement les informations disponibles sur les sites de référence suivants : FloreAlpes, Tela Botanica, Info Flora, et l'INPN.`;
+
+    const requestBody = {
+        "contents": [{ "parts": [{ "text": prompt }] }],
+        "generationConfig": { "temperature": 0.4, "maxOutputTokens": 800 }
+    };
+
+    try {
+        const response = await fetch(GEMINI_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
+        if (!response.ok) { const errorData = await response.json().catch(() => ({ error: { message: "Réponse non JSON" }})); throw new Error(errorData.error.message || "Réponse non valide de l'API Gemini"); }
+        const responseData = await response.json();
+        if (responseData?.candidates?.[0]?.content?.parts?.[0]?.text) return responseData.candidates[0].content.parts[0].text.trim();
+        if (responseData.promptFeedback?.blockReason) return `Réponse bloquée par le modèle.`;
+        return "Le modèle n'a pas pu générer de synthèse.";
+    } catch (error) {
+        console.error("Erreur lors de l'appel à Gemini:", error);
+        return "Erreur lors de la génération de la fiche.";
+    }
+}
+
+window.handleSynthesisClick = async function(event, element, speciesName) {
+    event.preventDefault();
+    const parentCell = element.parentElement;
+    parentCell.innerHTML = '<i>Génération...</i>';
+    const synthesisText = await getSynthesisFromGemini(speciesName);
+    alert(synthesisText);
+    const escapedSci = speciesName.replace(/'/g, "\\'");
+    parentCell.innerHTML = `<a href="#" onclick="handleSynthesisClick(event, this, '${escapedSci}')">Générer</a>`;
+}
+
+/* ================================================================
    LOGIQUE D'IDENTIFICATION ET D'AFFICHAGE
    ================================================================ */
 async function callPlantNetAPI(formData) { try { const res = await fetch(ENDPOINT, { method: "POST", body: formData }); if (!res.ok) { const errBody = await res.json().catch(() => res.text()); throw new Error(`Erreur API PlantNet (${res.status}): ${typeof errBody === 'object' ? errBody.message : errBody}`); } return (await res.json()).results.slice(0, MAX_RESULTS); } catch (err) { console.error(err); alert(err.message); return null; } }
@@ -50,9 +101,8 @@ async function identifyMultipleImages(files, organs) { const fd = new FormData()
 function buildTable(items){
   const wrap = document.getElementById("results");
   if (!wrap) return;
-  wrap.innerHTML = "";
 
-  const headers = ["Nom latin", "Score (%)", "FloreAlpes", "INPN statut", "Écologie", "Flora Gallica", "OpenObs", "Biodiv'AURA", "Info Flora"];
+  const headers = ["Nom latin", "Score (%)", "FloreAlpes", "INPN statut", "Écologie", "Flora Gallica", "OpenObs", "Biodiv'AURA", "Info Flora", "Fiche synthèse"];
   const link = (url, label) => url ? `<a href="${url}" target="_blank" rel="noopener">${label}</a>` : "—";
 
   const rows = items.map(item => {
@@ -80,33 +130,46 @@ function buildTable(items){
         floreAlpesLink = link(floreAlpesUrl, "fiche");
     }
 
+    const escapedSci = sci.replace(/'/g, "\\'");
+
     return `<tr>
-      <td>${sci}</td>
-      <td>${pct}</td>
-      <td>${floreAlpesLink}</td>
-      <td>${link(cd && inpnStatut(cd),"statut")}</td>
-      <td>${eco}</td>
-      <td>${floraGallicaLink}</td>
-      <td>${cd ? link(openObs(cd), "carte") : "—"}</td>
-      <td>${link(cd && aura(cd),"atlas")}</td>
-      <td>${link(infoFlora(sci),"fiche")}</td>
+      <td class="col-nom-latin">${sci}</td>
+      <td class="col-score">${pct}</td>
+      <td class="col-link">${floreAlpesLink}</td>
+      <td class="col-link">${link(cd && inpnStatut(cd),"statut")}</td>
+      <td class="col-ecologie">${eco}</td>
+      <td class="col-link">${floraGallicaLink}</td>
+      <td class="col-link">${cd ? `<a href="#" onclick="handleOpenObsClick(event, '${cd}')" title="Ouvrir la carte avec votre position actuelle">carte</a>` : "—"}</td>
+      <td class="col-link">${link(cd && aura(cd),"atlas")}</td>
+      <td class="col-link">${link(infoFlora(sci),"fiche")}</td>
+      <td class="col-link"><a href="#" onclick="handleSynthesisClick(event, this, '${escapedSci}')">Générer</a></td>
     </tr>`;
   }).join("");
 
-  const headerHtml = `<tr>${headers.map(h => `<th>${h}</th>`).join("")}</tr>`;
+  const headerHtml = `
+    <tr>
+      <th class="col-nom-latin">Nom latin</th>
+      <th class="col-score">Score (%)</th>
+      <th class="col-link">FloreAlpes</th>
+      <th class="col-link">INPN statut</th>
+      <th class="col-ecologie">Écologie</th>
+      <th class="col-link">Flora Gallica</th>
+      <th class="col-link">OpenObs</th>
+      <th class="col-link">Biodiv'AURA</th>
+      <th class="col-link">Info Flora</th>
+      <th class="col-link">Fiche synthèse</th>
+    </tr>
+  `;
   
-  // MODIFICATION : Utilisation de <colgroup> pour définir les largeurs de manière fiable
-  // Les pourcentages sont ajustés pour donner la priorité à la colonne Écologie.
   const colgroupHtml = `
     <colgroup>
-      <col style="width: 20%;">
-      <col style="width: 9%;">
-      <col style="width: 8%;">
-      <col style="width: 8%;">
-      <col style="width: 33%;">
-      <col style="width: 8%;">
-      <col style="width: 8%;">
-      <col style="width: 6%;">
+      <col style="width: 18%;">
+      <col style="width: 7%;">
+      <col style="width: 7%;">
+      <col style="width: 7%;">
+      <col style="width: 32%;">
+      <col style="width: 7%;">
+      <col style="width: 7%;"><col style="width: 7%;"><col style="width: 8%;">
     </colgroup>
   `;
 
@@ -133,7 +196,7 @@ function buildCards(items){
         <div class="iframe-grid">
             <iframe loading="lazy" src="${inpnStatut(cd)}" title="Statut INPN"></iframe>
             <iframe loading="lazy" src="${aura(cd)}" title="Biodiv'AURA"></iframe>
-            <iframe loading="lazy" src="${openObs(cd)}" title="OpenObs"></iframe>
+            <iframe loading="lazy" src="${buildOpenObsUrl(cd, null)}" title="OpenObs"></iframe>
         </div>`;
     }
 
