@@ -52,16 +52,16 @@ function getLiveUserLocation() { return new Promise((resolve, reject) => { if (!
 window.handleOpenObsClick = async function(event, cd_ref) { event.preventDefault(); const targetLink = event.currentTarget; const originalText = targetLink.textContent; targetLink.textContent = 'Localisation...'; targetLink.style.pointerEvents = 'none'; try { const position = await getLiveUserLocation(); userLocation = { latitude: position.coords.latitude, longitude: position.coords.longitude }; window.open(buildOpenObsUrl(cd_ref, userLocation), '_blank', 'noopener,noreferrer'); } catch (error) { alert("Impossible d'obtenir la localisation. Ouverture de la carte avec une position par défaut."); window.open(buildOpenObsUrl(cd_ref, null), '_blank', 'noopener,noreferrer'); } finally { targetLink.textContent = originalText; targetLink.style.pointerEvents = 'auto'; } }
 
 async function getSynthesisFromGemini(speciesName) {
-    const prompt = `En tant qu'expert botaniste, rédige une fiche de synthèse pour l'espèce "${speciesName}". Le texte doit être fluide et naturel, comme si tu t'adressais à des étudiants, pour une future conversion en audio. N'utilise ni tableau, ni formatage de code, ni listes à puces. Intègre les informations suivantes dans un discours cohérent et structuré :
+    const prompt = `En tant qu'expert botaniste, rédige une fiche de synthèse pour l'espèce "${speciesName}". Le texte doit être fluide et naturel, comme si tu t'adressais à des botanistes experts, pour une future conversion en audio. N'utilise ni tableau, ni formatage de code, ni listes à puces. Intègre les informations suivantes dans un discours cohérent et fluide :
 
-    1.  **Introduction** : Présente l'espèce par son nom français le plus courant, suivi de son nom latin complet entre parenthèses, et sa famille botanique.
-    2.  **Critères d'identification** : Décris un ou deux critères morphologiques vraiment distinctifs qui permettent de l'identifier facilement sur le terrain et la différencier des espèces du même genre. Sois très succinct et ne mentionne que le "petit truc" qui la rend unique.
-    3.  **Confusions possibles** : Mentionne une ou deux espèces proches avec lesquelles on pourrait la confondre et explique brièvement comment les distinguer (ex: "On pourrait la confondre avec telle espèce, mais cette dernière se distingue par...").
-    4.  **Écologie** : Décris son habitat préférentiel (milieux, type de sol, climat, exposition).
-    5.  **Statut** : Indique brièvement son statut de conservation en France (si elle est protégée ou menacée). Si elle n'a pas de statut particulier, ne le mentionne pas.
-    6.  **Répartition** : Conclus en indiquant ses principales régions de présence en France et son origine géographique générale.
+Commence sans introduction par dire "Cette espèce est ... " ou bien "'Nom latin de l'espèce' est ..."
+2.  **Critères d'identification** : Décris un ou deux critères morphologiques vraiment distinctifs qui permettent de l'identifier facilement sur le terrain et la différencier des espèces du même genre. Sois très succinct et ne mentionne que le "petit truc" qui la rend unique.
+3.  **Confusions possibles** : Mentionne une ou deux espèces proches avec lesquelles on pourrait la confondre et explique brièvement comment les distinguer (ex: "On pourrait la confondre avec telle espèce, mais cette dernière se distingue par...").
+4.  **Écologie** : Décris son habitat préférentiel (milieux, type de sol, climat, exposition).
+5.  **Statut** : Indique brièvement son statut de conservation en France (si elle est protégée ou menacée). Si elle n'a pas de statut particulier, ne le mentionne pas.
+6.  **Répartition** : Conclus en indiquant ses principales régions de présence en France et son origine géographique générale.
 
-    Pour construire ta réponse, consulte impérativement les informations disponibles sur les sites de référence suivants : FloreAlpes, Tela Botanica, Info Flora, et l'INPN.`;
+Pour construire ta réponse, consulte impérativement les informations disponibles sur les sites de référence suivants : FloreAlpes, Tela Botanica, Info Flora, et l'INPN.`;
 
     const requestBody = {
         "contents": [{ "parts": [{ "text": prompt }] }],
