@@ -14,7 +14,6 @@ let taxref = {};
 let ecology = {};
 let floraToc = {};
 let floreAlpesIndex = {}; 
-let userLocation = { latitude: 45.188529, longitude: 5.724524 }; // Coordonnées par défaut
 
 const ready = Promise.all([
   fetch("taxref.json").then(r => r.json()).then(j => Object.entries(j).forEach(([k,v]) => taxref[norm(k)] = v)),
@@ -22,7 +21,7 @@ const ready = Promise.all([
   fetch("assets/flora_gallica_toc.json").then(r => r.json()).then(j => floraToc = j),
   fetch("assets/florealpes_index.json").then(r => r.json()).then(j => floreAlpesIndex = j)
 ]).then(() => {
-    console.log("Fichiers de données (Taxref, Ecology, TOC, FloreAlpes) chargés et prêts.");
+    console.log("Fichiers de données chargés et prêts.");
 }).catch(err => {
     console.error("Erreur critique lors du chargement des fichiers de données:", err);
     alert("Erreur de chargement des fichiers de données locaux : " + err.message);
@@ -39,35 +38,7 @@ const slug = n => norm(n).replace(/ /g, "-");
 const infoFlora  = n => `https://www.infoflora.ch/fr/flore/${slug(n)}.html`;
 const inpnStatut = c => `https://inpn.mnhn.fr/espece/cd_nom/${c}/tab/statut`;
 const aura       = c => `https://atlas.biodiversite-auvergne-rhone-alpes.fr/espece/${c}`;
-function buildOpenObsUrl(cd_ref, location = null) { 
-    const lat = location ? location.latitude : userLocation.latitude;
-    const lon = location ? location.longitude : userLocation.longitude;
-    return `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=lsid%3A${cd_ref}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&qc=&radius=120.6&lat=${lat}&lon=${lon}#tab_mapView`; 
-}
-
-/* ================================================================
-   GESTION DES ACTIONS UTILISATEUR (CLICS, SAUVEGARDES)
-   ================================================================ */
-function getLiveUserLocation() { return new Promise((resolve, reject) => { if (!("geolocation" in navigator)) return reject(new Error("Géolocalisation non supportée.")); navigator.geolocation.getCurrentPosition(resolve, reject); }); }
-window.handleOpenObsClick = async function(event, cd_ref) {
-    event.preventDefault(); 
-    const targetLink = event.currentTarget;
-    const originalText = targetLink.textContent;
-    targetLink.textContent = 'Localisation...';
-    targetLink.style.pointerEvents = 'none';
-    try {
-        const position = await getLiveUserLocation();
-        const liveLocation = { latitude: position.coords.latitude, longitude: position.coords.longitude };
-        userLocation = liveLocation; // Mettre à jour la localisation globale
-        window.open(buildOpenObsUrl(cd_ref, liveLocation), '_blank', 'noopener,noreferrer');
-    } catch (error) {
-        alert("Impossible d'obtenir la localisation. Ouverture de la carte avec une position par défaut.");
-        window.open(buildOpenObsUrl(cd_ref, null), '_blank', 'noopener,noreferrer');
-    } finally {
-        targetLink.textContent = originalText;
-        targetLink.style.pointerEvents = 'auto';
-    }
-}
+const openObs    = c => `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=lsid%3A${c}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&qc=&radius=120.6&lat=45.188529&lon=5.724524#tab_mapView`;
 
 /* ================================================================
    LOGIQUE D'IDENTIFICATION ET D'AFFICHAGE
@@ -79,23 +50,27 @@ async function identifyMultipleImages(files, organs) { const fd = new FormData()
 function buildTable(items){
   const wrap = document.getElementById("results");
   if (!wrap) return;
+  wrap.innerHTML = "";
 
-  const headers = ["Nom latin", "Score (%)", "InfoFlora", "Écologie", "INPN statut", "Biodiv'AURA", "OpenObs", "Flora Gallica", "FloreAlpes"];
+  // MODIFICATION : Ordre des colonnes et formatage du score
+  const headers = ["Nom latin", "Score (%)", "FloreAlpes", "INPN statut", "Écologie", "Flora Gallica", "OpenObs", "Biodiv'AURA", "Info Flora"];
   const link = (url, label) => url ? `<a href="${url}" target="_blank" rel="noopener">${label}</a>` : "—";
 
   const rows = items.map(item => {
-    const score = item.score !== undefined ? Math.round(item.score * 100) : "N/A";
     const sci  = item.species.scientificNameWithoutAuthor;
+    const scoreValue = item.score !== undefined ? Math.round(item.score * 100) : "N/A";
+    const pct  = scoreValue !== "N/A" ? `${scoreValue}%` : "N/A";
     const cd   = cdRef(sci); 
     const eco  = ecolOf(sci); 
     
+    // Logique pour les liens (inchangée, juste réutilisée)
     const genus = sci.split(' ')[0].toLowerCase();
     const tocEntry = floraToc[genus];
     let floraGallicaLink = "—";
-    if (tocEntry && tocEntry.pdfFile && tocEntry.page) {
+    if (tocEntry?.pdfFile && tocEntry?.page) {
       const pdfPath = `assets/flora_gallica_pdfs/${tocEntry.pdfFile}`;
       const viewerUrl = `viewer.html?file=${encodeURIComponent(pdfPath)}&page=${tocEntry.page}`;
-      floraGallicaLink = `<a href="${viewerUrl}" target="_blank" rel="noopener" title="Ouvrir Flora Gallica à la page du genre ${genus}">Page ${tocEntry.page}</a>`;
+      floraGallicaLink = `<a href="${viewerUrl}" target="_blank" rel="noopener" title="Ouvrir Flora Gallica pour le genre ${genus}">Page ${tocEntry.page}</a>`;
     }
     
     const normalizedSci = norm(sci);
@@ -107,16 +82,17 @@ function buildTable(items){
         floreAlpesLink = link(floreAlpesUrl, "fiche");
     }
 
+    // MODIFICATION : Ordre des cellules <td> pour correspondre aux nouveaux en-têtes
     return `<tr>
       <td>${sci}</td>
-      <td style="text-align:center">${score}</td>
-      <td>${link(infoFlora(sci),"fiche")}</td>
-      <td class="ecology-column">${eco}</td>
-      <td>${link(cd && inpnStatut(cd),"statut")}</td>
-      <td>${link(cd && aura(cd),"atlas")}</td>
-      <td>${cd ? `<a href="#" onclick="handleOpenObsClick(event, '${cd}')" title="Ouvrir la carte avec votre position actuelle">carte</a>` : "—"}</td>
-      <td>${floraGallicaLink}</td>
+      <td style="text-align:center">${pct}</td>
       <td>${floreAlpesLink}</td>
+      <td>${link(cd && inpnStatut(cd),"statut")}</td>
+      <td class="ecology-column">${eco}</td>
+      <td>${floraGallicaLink}</td>
+      <td>${cd ? link(openObs(cd), "carte") : "—"}</td>
+      <td>${link(cd && aura(cd),"atlas")}</td>
+      <td>${link(infoFlora(sci),"fiche")}</td>
     </tr>`;
   }).join("");
 
@@ -144,7 +120,7 @@ function buildCards(items){
         <div class="iframe-grid">
             <iframe loading="lazy" src="${inpnStatut(cd)}" title="Statut INPN"></iframe>
             <iframe loading="lazy" src="${aura(cd)}" title="Biodiv'AURA"></iframe>
-            <iframe loading="lazy" src="${buildOpenObsUrl(cd)}" title="OpenObs"></iframe>
+            <iframe loading="lazy" src="${openObs(cd)}" title="OpenObs"></iframe>
         </div>`;
     }
 
@@ -157,7 +133,7 @@ function buildCards(items){
 }
 
 /* ================================================================
-   LOGIQUE SPÉCIFIQUE AUX PAGES (ÉCOUTEURS ET HANDLERS)
+   LOGIQUE SPÉCIFIQUE AUX PAGES (ÉCOUTEURS)
    ================================================================ */
 function handleSingleFileSelect(file) { 
   if (!file) return;
