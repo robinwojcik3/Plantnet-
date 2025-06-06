@@ -20,13 +20,16 @@ let taxref = {};
 let ecology = {};
 let floraToc = {};
 let floreAlpesIndex = {}; 
+let criteres = {}; // NOUVEAU : pour les critères physiologiques
 let userLocation = { latitude: 45.188529, longitude: 5.724524 };
 
 const ready = Promise.all([
   fetch("taxref.json").then(r => r.json()).then(j => Object.entries(j).forEach(([k,v]) => taxref[norm(k)] = v)),
   fetch("ecology.json").then(r => r.json()).then(j => Object.entries(j).forEach(([k,v]) => ecology[norm(k.split(';')[0])] = v)),
   fetch("assets/flora_gallica_toc.json").then(r => r.json()).then(j => floraToc = j),
-  fetch("assets/florealpes_index.json").then(r => r.json()).then(j => floreAlpesIndex = j)
+  fetch("assets/florealpes_index.json").then(r => r.json()).then(j => floreAlpesIndex = j),
+  // NOUVEAU : Chargement des critères physiologiques
+  fetch("Criteres_herbier.json").then(r => r.json()).then(j => j.forEach(item => criteres[norm(item.species)] = item.description))
 ]).then(() => console.log("Données prêtes.")).catch(err => alert("Erreur chargement des données: " + err.message));
 
 
@@ -36,6 +39,7 @@ const ready = Promise.all([
 function norm(txt) { if (typeof txt !== 'string') return ""; return txt.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/\s+/g, " "); }
 const cdRef = n => taxref[norm(n)];
 const ecolOf = n => ecology[norm(n)] || "—";
+const criteresOf = n => criteres[norm(n)] || "—"; // NOUVEAU : fonction pour récupérer les critères
 const slug = n => norm(n).replace(/ /g, "-");
 const infoFlora  = n => `https://www.infoflora.ch/fr/flore/${slug(n)}.html`;
 const inpnStatut = c => `https://inpn.mnhn.fr/espece/cd_nom/${c}/tab/statut`;
@@ -134,7 +138,8 @@ function buildTable(items){
   const wrap = document.getElementById("results");
   if (!wrap) return;
 
-  const headers = ['Nom latin (score %)', "FloreAlpes", "INPN statut", "Écologie", "Flora Gallica", "OpenObs", "Biodiv'AURA", "Info Flora", "Fiche synthèse"];
+  // MODIFIÉ : Ajout de la colonne "Critères physiologiques"
+  const headers = ['Nom latin (score %)', "Critères physiologiques", "FloreAlpes", "INPN statut", "Écologie", "Flora Gallica", "OpenObs", "Biodiv'AURA", "Info Flora", "Fiche synthèse"];
   const linkIcon = (url, img, alt) => {
     if (!url) return "—";
     const encoded = img.split('/').map(s => encodeURIComponent(s)).join('/');
@@ -145,7 +150,8 @@ function buildTable(items){
     const pct = item.score !== undefined ? `${Math.round(item.score * 100)}%` : "N/A";
     const sci  = item.species.scientificNameWithoutAuthor;
     const cd   = cdRef(sci); 
-    const eco  = ecolOf(sci); 
+    const eco  = ecolOf(sci);
+    const crit = criteresOf(sci); // NOUVEAU : récupération des critères physiologiques
     const genus = sci.split(' ')[0].toLowerCase();
     const tocEntry = floraToc[genus];
     let floraGallicaLink = "—";
@@ -162,13 +168,17 @@ function buildTable(items){
         floreAlpesLink = linkIcon(`https://www.florealpes.com/${urlPart}`, "FloreAlpes.png", "FloreAlpes");
     }
     const escapedSci = sci.replace(/'/g, "\\'");
-    return `<tr><td class="col-nom-latin">${sci}<br><span class="score">(${pct})</span></td><td class="col-link">${floreAlpesLink}</td><td class="col-link">${linkIcon(cd && inpnStatut(cd), "INPN.png", "INPN")}</td><td class="col-ecologie">${eco}</td><td class="col-link">${floraGallicaLink}</td><td class="col-link">${linkIcon(cd && openObs(cd), "OpenObs.png", "OpenObs")}</td><td class="col-link">${linkIcon(cd && aura(cd), "Biodiv'AURA.png", "Biodiv'AURA")}</td><td class="col-link">${linkIcon(infoFlora(sci), "Info Flora.png", "Info Flora")}</td><td class="col-link"><a href="#" onclick="handleSynthesisClick(event, this, '${escapedSci}')"><img src="assets/Audio.png" alt="Audio" class="logo-icon"></a></td></tr>`;
+    // MODIFIÉ : Ajout de la colonne critères physiologiques dans le tableau
+    return `<tr><td class="col-nom-latin">${sci}<br><span class="score">(${pct})</span></td><td class="col-criteres">${crit}</td><td class="col-link">${floreAlpesLink}</td><td class="col-link">${linkIcon(cd && inpnStatut(cd), "INPN.png", "INPN")}</td><td class="col-ecologie">${eco}</td><td class="col-link">${floraGallicaLink}</td><td class="col-link">${linkIcon(cd && openObs(cd), "OpenObs.png", "OpenObs")}</td><td class="col-link">${linkIcon(cd && aura(cd), "Biodiv'AURA.png", "Biodiv'AURA")}</td><td class="col-link">${linkIcon(infoFlora(sci), "Info Flora.png", "Info Flora")}</td><td class="col-link"><a href="#" onclick="handleSynthesisClick(event, this, '${escapedSci}')"><img src="assets/Audio.png" alt="Audio" class="logo-icon"></a></td></tr>`;
   }).join("");
 
-  const headerHtml = `<tr><th class="col-nom-latin">Nom latin (score %)</th><th class="col-link">FloreAlpes</th><th class="col-link">INPN statut</th><th class="col-ecologie">Écologie</th><th class="col-link">Flora Gallica</th><th class="col-link">OpenObs</th><th class="col-link">Biodiv'AURA</th><th class="col-link">Info Flora</th><th class="col-link">Fiche synthèse</th></tr>`;
-  const colgroupHtml = `<colgroup><col style="width: 25%;"><col style="width: 7%;"><col style="width: 7%;"><col style="width: 32%;"><col style="width: 7%;"><col style="width: 7%;"><col style="width: 8%;"><col style="width: 8%;"></colgroup>`;
+  // MODIFIÉ : Ajout de l'en-tête pour les critères physiologiques
+  const headerHtml = `<tr><th class="col-nom-latin">Nom latin (score %)</th><th class="col-criteres">Critères physiologiques</th><th class="col-link">FloreAlpes</th><th class="col-link">INPN statut</th><th class="col-ecologie">Écologie</th><th class="col-link">Flora Gallica</th><th class="col-link">OpenObs</th><th class="col-link">Biodiv'AURA</th><th class="col-link">Info Flora</th><th class="col-link">Fiche synthèse</th></tr>`;
+  // MODIFIÉ : Ajustement des largeurs de colonnes pour inclure la nouvelle colonne
+  const colgroupHtml = `<colgroup><col style="width: 20%;"><col style="width: 25%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 25%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"></colgroup>`;
   wrap.innerHTML = `<table>${colgroupHtml}<thead>${headerHtml}</thead><tbody>${rows}</tbody></table>`;
 }
+
 function buildCards(items){ const zone = document.getElementById("cards"); if (!zone) return; zone.innerHTML = ""; items.forEach(item => { const sci = item.species.scientificNameWithoutAuthor; const cd = cdRef(sci); if(!cd && !(item.score === 1.00 && items.length === 1)) return; const pct = item.score !== undefined ? Math.round(item.score * 100) : "Info"; const isNameSearchResult = item.score === 1.00 && items.length === 1; const details = document.createElement("details"); let iframeHTML = ''; if (cd) { iframeHTML = `<div class="iframe-grid"><iframe loading="lazy" src="${inpnStatut(cd)}" title="Statut INPN"></iframe><iframe loading="lazy" src="${aura(cd)}" title="Biodiv'AURA"></iframe><iframe loading="lazy" src="${openObs(cd)}" title="OpenObs"></iframe></div>`; } details.innerHTML = `<summary>${sci} — ${pct}${!isNameSearchResult ? '%' : ''}</summary><p style="padding:0 12px 8px;font-style:italic">${ecolOf(sci)}</p>${iframeHTML}`; zone.appendChild(details); }); }
 
 /* ================================================================
