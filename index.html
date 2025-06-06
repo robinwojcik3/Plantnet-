@@ -64,10 +64,10 @@
     body:not(.home) .upload-btn { display:none; }
     body:not(.home) h1 { font-size:1.6rem; color:var(--primary); margin-bottom: 1rem;}
     
-    /* MODIFICATION : Le style de la table est simplifié */
+    /* MODIFICATION : Ajout de 'table-layout: fixed' et 'word-break' pour une meilleure gestion des colonnes */
     table{
       width:100%;
-      table-layout: fixed; /* Règle cruciale pour forcer le respect des largeurs */
+      table-layout: fixed;
       border-collapse:collapse;
       background:var(--card);
       border:1px solid var(--border);
@@ -78,7 +78,7 @@
     th,td{
         padding: 8px 6px;
         border-bottom:1px solid var(--border);
-        word-wrap: break-word; /* Permet au texte de revenir à la ligne proprement */
+        word-break: break-word; /* Permet au texte long de revenir à la ligne */
         vertical-align: top;
     }
     th{background:#fff;color:#000;font-weight:600;text-align:left}
