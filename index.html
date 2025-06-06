@@ -35,9 +35,10 @@
     th,td{ padding: 8px 6px; border-bottom:1px solid var(--border); word-wrap: break-word; vertical-align: top; }
     th{background:#fff;color:#000;font-weight:600;text-align:left}
     tr:last-child td{border-bottom:none}
-    .col-nom-latin { width: 25%; }
+    .col-nom-latin { width: 20%; }
     .col-nom-latin .score { display:block; font-size:0.9em; color:#555; }
-    .col-ecologie { width: 36%; }
+    .col-criteres { width: 25%; font-size: 0.9em; } /* NOUVEAU : Style pour la colonne critères physiologiques */
+    .col-ecologie { width: 25%; } /* MODIFIÉ : Réduit de 36% à 25% */
     .col-link { width: 6%; text-align: center; }
     .logo-icon { width: 24px; height: auto; }
     td a{color:var(--primary);text-decoration:none}
@@ -58,7 +59,7 @@
     #synthesis-modal-body { margin-top: 15px; }
     #synthesis-modal-footer { margin-top: 20px; text-align: center; }
 
-    @media (prefers-color-scheme:dark){ :root{--bg:#181a1b;--card:#262b2f;--border:#333;--text:#ececec} table,details{border-color:#333} th{background:#262b2f;color:#ececec} body.home .upload-btn.logo-btn span { color: var(--text); } .option-container { background-color: rgba(38, 43, 47, 0.8); } #multi-image-list-area .image-organ-item { background-color: var(--card); border-color: var(--border); } #multi-image-list-area select { background-color: #333; color: var(--text); .col-nom-latin .score { color:#ccc; } #multi-image-list-area .delete-file-btn { color: #ff6b6b; } #multi-image-list-area .delete-file-btn:hover { color: #ff8787; } .search-species-container input[type="search"] { background-color: #333; color: var(--text); border-color: #555; } }
+    @media (prefers-color-scheme:dark){ :root{--bg:#181a1b;--card:#262b2f;--border:#333;--text:#ececec} table,details{border-color:#333} th{background:#262b2f;color:#ececec} body.home .upload-btn.logo-btn span { color: var(--text); } .option-container { background-color: rgba(38, 43, 47, 0.8); } #multi-image-list-area .image-organ-item { background-color: var(--card); border-color: var(--border); } #multi-image-list-area select { background-color: #333; color: var(--text); } .col-nom-latin .score { color:#ccc; } .col-criteres { color: #ccc; } /* NOUVEAU : Style dark mode pour critères */ #multi-image-list-area .delete-file-btn { color: #ff6b6b; } #multi-image-list-area .delete-file-btn:hover { color: #ff8787; } .search-species-container input[type="search"] { background-color: #333; color: var(--text); border-color: #555; } }
   </style>
 </head>
 <body class="home">
