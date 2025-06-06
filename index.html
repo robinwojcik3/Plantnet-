@@ -49,22 +49,23 @@
     .iframe-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;padding:12px;}
     iframe{width:100%;height:280px;border:none;border-radius:4px;}
     
-    /* Styles pour la fenêtre modale de la fiche de synthèse */
-    .synthesis-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); display: none; justify-content: center; align-items: center; z-index: 1000; }
-    .synthesis-modal-content { background: var(--card); color: var(--text); padding: 25px; border-radius: 8px; max-width: 90%; width: 600px; max-height: 80vh; overflow-y: auto; position: relative; }
-    .synthesis-modal-close { position: absolute; top: 10px; right: 15px; font-size: 1.5rem; cursor: pointer; border: none; background: none; color: var(--text); }
-    .synthesis-modal-body { white-space: pre-wrap; margin-top: 15px; line-height: 1.6; }
-    .synthesis-modal-footer { margin-top: 20px; text-align: center; }
-    
-    @media (prefers-color-scheme:dark){ :root{--bg:#181a1b;--card:#262b2f;--border:#333;--text:#ececec} table,details{border-color:#333} th{background:#262b2f;color:#ececec} .option-container { background-color: rgba(38, 43, 47, 0.8); } #multi-image-list-area .image-organ-item { background-color: var(--card); border-color: var(--border); } #multi-image-list-area select { background-color: #333; color: var(--text); border-color: #555; } #multi-image-list-area .delete-file-btn { color: #ff6b6b; } #multi-image-list-area .delete-file-btn:hover { color: #ff8787; } .search-species-container input[type="search"] { background-color: #333; color: var(--text); border-color: #555; } }
+    /* NOUVEAU : Styles pour la fenêtre modale de la fiche de synthèse */
+    .synthesis-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 1rem; }
+    .synthesis-modal-content { background: var(--card); color: var(--text); padding: 25px; border-radius: 8px; max-width: 90%; width: 600px; max-height: 85vh; overflow-y: auto; position: relative; line-height: 1.6; }
+    .synthesis-modal-close { position: absolute; top: 10px; right: 15px; font-size: 2rem; font-weight: bold; cursor: pointer; border: none; background: none; color: var(--text); padding: 0; line-height: 1; }
+    #synthesis-modal-title { margin: 0; font-size: 1.4rem; color: var(--primary);}
+    #synthesis-modal-body { margin-top: 15px; }
+    #synthesis-modal-footer { margin-top: 20px; text-align: center; }
+
+    @media (prefers-color-scheme:dark){ :root{--bg:#181a1b;--card:#262b2f;--border:#333;--text:#ececec} table,details{border-color:#333} th{background:#262b2f;color:#ececec} body.home .upload-btn.logo-btn span { color: var(--text); } .option-container { background-color: rgba(38, 43, 47, 0.8); } #multi-image-list-area .image-organ-item { background-color: var(--card); border-color: var(--border); } #multi-image-list-area select { background-color: #333; color: var(--text); border-color: #555; } #multi-image-list-area .delete-file-btn { color: #ff6b6b; } #multi-image-list-area .delete-file-btn:hover { color: #ff8787; } .search-species-container input[type="search"] { background-color: #333; color: var(--text); border-color: #555; } }
   </style>
 </head>
 <body class="home">
     <div id="main-content">
         <h1>Plantouille express</h1>
-        <div class="option-container"><h2>Identification rapide (1 photo)</h2><input type="file" id="file-capture" accept="image/*" capture="environment" style="display:none;"><label for="file-capture" class="upload-btn logo-btn"><img src="logo acceuil.svg" alt="Prendre une photo pour identification"><span>Prendre une photo</span></label></div>
+        <div class="option-container"><h2>Identification rapide (1 photo)</h2><input type="file" id="file-capture" accept="image/*" capture="environment" style="display:none;"><label for="file-capture" class="upload-btn logo-btn"><img src="logo acceuil.svg" alt="Prendre une photo"><span>Prendre une photo</span></label></div>
         <div class="option-container"><h2>Identification depuis galerie (1 photo)</h2><input type="file" id="file-gallery" accept="image/*" style="display:none;"><label for="file-gallery" class="upload-btn">Choisir une image</label></div>
-        <div class="option-container"><h2>Identification avancée (multi-images, max 5)</h2><input type="file" id="multi-file-input" accept="image/*" multiple style="display:none;"><label for="multi-file-input" class="upload-btn">Ajouter des images</label><div id="multi-image-list-area" style="margin-top: 1rem; text-align: left;"></div><button type="button" id="multi-image-identify-button" class="action-button" style="display: none;">Identifier</button></div>
+        <div class="option-container"><h2>Identification avancée (multi-images)</h2><input type="file" id="multi-file-input" accept="image/*" multiple style="display:none;"><label for="multi-file-input" class="upload-btn">Ajouter des images</label><div id="multi-image-list-area" style="margin-top: 1rem; text-align: left;"></div><button type="button" id="multi-image-identify-button" class="action-button" style="display: none;">Identifier</button></div>
         <div class="option-container search-species-container"><h2>Recherche par nom</h2><input type="search" id="species-search-input" placeholder="Nom de l'espèce..."><button type="button" id="species-search-button" class="action-button">Rechercher</button></div>
         <div id="results"></div>
         <div id="cards"></div>
@@ -74,8 +75,8 @@
         <div class="synthesis-modal-content">
             <button id="synthesis-modal-close" class="synthesis-modal-close" title="Fermer">&times;</button>
             <h2 id="synthesis-modal-title">Fiche de synthèse</h2>
-            <div id="synthesis-modal-body" class="synthesis-modal-body"></div>
-            <div id="synthesis-modal-footer" class="synthesis-modal-footer">
+            <div id="synthesis-modal-body"></div>
+            <div id="synthesis-modal-footer">
                 <button id="synthesis-play-btn" class="action-button">Écouter la synthèse</button>
             </div>
         </div>
