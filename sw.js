@@ -1,40 +1,45 @@
 /* ================================================================
-   Service-Worker – PlantID PWA (v2 - Stratégie de cache améliorée)
+   Service-Worker – PlantID PWA (v3 - Avec contexte environnemental)
    ================================================================ */
 
 // Changez ce nom de version à chaque fois que vous mettez à jour les fichiers de l'application
-// Cela forcera le service worker à se mettre à jour et à récupérer les nouveaux fichiers.
-const CACHE_NAME = "plantid-v13";
+const CACHE_NAME = "plantid-v14";
 
-// Fichiers essentiels pour le fonctionnement de base de l'application (le "coeur")
+// Fichiers essentiels pour le fonctionnement de base de l'application
 const CORE_ASSETS = [
   "./",
   "./index.html",
   "./organ.html",
-  "./viewer.html",                 // Ajout de la nouvelle page du lecteur PDF
+  "./viewer.html",
+  "./contexte.html",                // NOUVEAU : page contexte environnemental
   "./app.js",
-  "./assets/viewer_app.js",        // Ajout du script du lecteur PDF
+  "./contexte.js",                   // NOUVEAU : script contexte environnemental
+  "./assets/viewer_app.js",
   "./manifest.json",
-  "./assets/flora_gallica_toc.json", // Ajout de l'index des PDF
+  "./assets/flora_gallica_toc.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./assets/Bandeau.jpg",
-  // Ajout des fichiers essentiels de la bibliothèque PDF.js
+  // Bibliothèque PDF.js
   "./pdfjs/build/pdf.mjs",
-  "./pdfjs/build/pdf.worker.mjs"
+  "./pdfjs/build/pdf.worker.mjs",
+  // NOUVEAU : Leaflet pour la carte interactive (depuis CDN)
+  "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
+  "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
 ];
 
-// Fichiers de données qui seront aussi pré-cachés
+// Fichiers de données
 const DATA_ASSETS = [
     "./taxref.json",
-    "./ecology.json"
+    "./ecology.json",
+    "./assets/florealpes_index.json",
+    "./Criteres_herbier.json"       // NOUVEAU : ajout des critères
 ];
 
 
 /* ---------------- phase INSTALL ---------------- */
-// Cette étape met en cache tous les fichiers de base de l'application
 self.addEventListener("install", event => {
-  self.skipWaiting(); // Force le nouveau service worker à s'activer immédiatement
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
       console.log('Service Worker: Mise en cache des assets de base et des données.');
@@ -44,13 +49,12 @@ self.addEventListener("install", event => {
 });
 
 /* ---------------- phase ACTIVATE --------------- */
-// Cette étape supprime les anciens caches qui ne sont plus utilisés
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys().then(keys => {
       return Promise.all(
         keys
-          .filter(key => key !== CACHE_NAME) // Ne garde que le cache actuel
+          .filter(key => key !== CACHE_NAME)
           .map(key => {
             console.log(`Service Worker: Suppression de l'ancien cache ${key}`);
             return caches.delete(key);
@@ -58,57 +62,76 @@ self.addEventListener("activate", event => {
       );
     }).then(() => {
         console.log('Service Worker: Activation terminée, contrôle des clients.');
-        return self.clients.claim(); // Prend le contrôle des pages ouvertes
+        return self.clients.claim();
     })
   );
 });
 
 /* ---------------- interceptions FETCH ---------- */
-// Cette étape intercepte toutes les requêtes réseau et applique des stratégies de cache intelligentes
 self.addEventListener("fetch", event => {
     const { request } = event;
     const url = new URL(request.url);
 
-    // Ne pas mettre en cache les requêtes vers l'API PlantNet pour toujours avoir des résultats à jour
-    if (request.url.includes("my-api.plantnet.org")) {
+    // Ne pas mettre en cache les requêtes vers les API
+    if (request.url.includes("my-api.plantnet.org") || 
+        request.url.includes("generativelanguage.googleapis.com") ||
+        request.url.includes("texttospeech.googleapis.com")) {
         event.respondWith(fetch(request));
         return;
     }
 
-    // Stratégie "Network First, then Cache" pour les pages HTML et les scripts principaux.
-    // Cela garantit que les utilisateurs ont toujours la dernière version du code s'ils sont en ligne.
-    if (request.destination === 'document' || request.destination === 'script') {
+    // Gérer les ressources externes (Leaflet, OpenStreetMap)
+    if (request.url.includes("unpkg.com") || 
+        request.url.includes("tile.openstreetmap.org")) {
         event.respondWith(
-            fetch(request)
-                .then(networkResponse => {
-                    // Si on a une réponse du réseau, on la met en cache pour le hors-ligne
-                    return caches.open(CACHE_NAME).then(cache => {
-                        cache.put(request, networkResponse.clone());
+            caches.match(request)
+                .then(cachedResponse => {
+                    if (cachedResponse) {
+                        return cachedResponse;
+                    }
+                    return fetch(request).then(networkResponse => {
+                        // Mettre en cache uniquement les fichiers CSS/JS de Leaflet
+                        if (request.url.includes("unpkg.com")) {
+                            return caches.open(CACHE_NAME).then(cache => {
+                                cache.put(request, networkResponse.clone());
+                                return networkResponse;
+                            });
+                        }
                         return networkResponse;
-                    });
-                })
-                .catch(() => {
-                    // Si le réseau échoue (mode hors-ligne), on cherche dans le cache
-                    return caches.match(request).then(cachedResponse => {
-                        return cachedResponse || caches.match('./index.html'); // Page de secours si non trouvée
                     });
                 })
         );
         return;
     }
 
-    // Stratégie "Cache First, then Network" pour toutes les autres ressources (CSS, images, polices, JSON, PDF...).
-    // C'est très rapide car on sert depuis le cache si disponible.
+    // Stratégie "Network First" pour HTML et scripts
+    if (request.destination === 'document' || request.destination === 'script') {
+        event.respondWith(
+            fetch(request)
+                .then(networkResponse => {
+                    return caches.open(CACHE_NAME).then(cache => {
+                        cache.put(request, networkResponse.clone());
+                        return networkResponse;
+                    });
+                })
+                .catch(() => {
+                    return caches.match(request).then(cachedResponse => {
+                        return cachedResponse || caches.match('./index.html');
+                    });
+                })
+        );
+        return;
+    }
+
+    // Stratégie "Cache First" pour les autres ressources
     event.respondWith(
         caches.match(request)
             .then(cachedResponse => {
                 if (cachedResponse) {
-                    return cachedResponse; // Servir depuis le cache
+                    return cachedResponse;
                 }
                 
-                // Si la ressource n'est pas dans le cache, aller la chercher sur le réseau
                 return fetch(request).then(networkResponse => {
-                    // Et la mettre en cache pour les prochaines fois (ex: les gros PDF)
                     return caches.open(CACHE_NAME).then(cache => {
                         cache.put(request, networkResponse.clone());
                         return networkResponse;
