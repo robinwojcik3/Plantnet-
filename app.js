@@ -118,7 +118,11 @@ function buildTable(items){
   if (!wrap) return;
 
   const headers = ['Nom latin (score %)', "FloreAlpes", "INPN statut", "Écologie", "Flora Gallica", "OpenObs", "Biodiv'AURA", "Info Flora", "Fiche synthèse"];
-  const linkIcon = (url, img, alt) => url ? `<a href="${url}" target="_blank" rel="noopener"><img src="assets/${img}" alt="${alt}" class="logo-icon"></a>` : "—";
+  const linkIcon = (url, img, alt) => {
+    if (!url) return "—";
+    const encoded = img.split('/').map(s => encodeURIComponent(s)).join('/');
+    return `<a href="${url}" target="_blank" rel="noopener"><img src="assets/${encoded}" alt="${alt}" class="logo-icon"></a>`;
+  };
 
   const rows = items.map(item => {
     const pct = item.score !== undefined ? `${Math.round(item.score * 100)}%` : "N/A";
