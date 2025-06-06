@@ -12,15 +12,17 @@ const MAX_MULTI_IMAGES = 5;
    ================================================================ */
 let taxref = {};
 let ecology = {};
+let floraToc = {};
 let floreAlpesIndex = {}; 
 let userLocation = { latitude: 45.188529, longitude: 5.724524 };
 
 const ready = Promise.all([
   fetch("taxref.json").then(r => r.json()).then(j => Object.entries(j).forEach(([k,v]) => taxref[norm(k)] = v)),
   fetch("ecology.json").then(r => r.json()).then(j => Object.entries(j).forEach(([k,v]) => ecology[norm(k.split(';')[0])] = v)),
+  fetch("assets/flora_gallica_toc.json").then(r => r.json()).then(j => floraToc = j),
   fetch("assets/florealpes_index.json").then(r => r.json()).then(j => floreAlpesIndex = j)
 ]).then(() => {
-    console.log("Fichiers de données chargés et prêts.");
+    console.log("Fichiers de données (Taxref, Ecology, TOC, FloreAlpes) chargés et prêts.");
 }).catch(err => {
     console.error("Erreur critique lors du chargement des fichiers de données:", err);
     alert("Erreur de chargement des fichiers de données locaux : " + err.message);
@@ -31,13 +33,14 @@ const ready = Promise.all([
    ================================================================ */
 function norm(txt) { if (typeof txt !== 'string') return ""; return txt.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/\s+/g, " "); }
 const cdRef = n => taxref[norm(n)];
-const ecolOf = n => ecology[norm(n)] || "—"; 
+const ecolOf = n => ecology[norm(n)] || "—";
 const slug = n => norm(n).replace(/ /g, "-");
 
 const infoFlora  = n => `https://www.infoflora.ch/fr/flore/${slug(n)}.html`;
 const inpnStatut = c => `https://inpn.mnhn.fr/espece/cd_nom/${c}/tab/statut`;
 const aura       = c => `https://atlas.biodiversite-auvergne-rhone-alpes.fr/espece/${c}`;
-function buildOpenObsUrl(cd_ref, location) { const lat = location ? location.latitude : userLocation.latitude; const lon = location ? location.longitude : userLocation.longitude; return `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=lsid%3A${cd_ref}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&qc=&radius=120.6&lat=${lat}&lon=${lon}#tab_mapView`; }
+function buildOpenObsUrl(cd_ref) { return `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=lsid%3A${cd_ref}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&qc=&radius=120.6&lat=${userLocation.latitude}&lon=${userLocation.longitude}#tab_mapView`; }
+
 
 /* ================================================================
    LOGIQUE D'IDENTIFICATION ET D'AFFICHAGE
@@ -50,30 +53,32 @@ function buildTable(items){
   const wrap = document.getElementById("results");
   if (!wrap) return;
 
-  const headers = ["Nom latin", "Score (%)", "InfoFlora", "Écologie", "INPN statut", "Biodiv'AURA", "OpenObs", "FloreAlpes"];
+  const headers = ["Nom latin", "Score (%)", "InfoFlora", "Écologie", "INPN statut", "Biodiv'AURA", "OpenObs", "Flora Gallica", "FloreAlpes"];
   const link = (url, label) => url ? `<a href="${url}" target="_blank" rel="noopener">${label}</a>` : "—";
 
   const rows = items.map(item => {
     const score = item.score !== undefined ? Math.round(item.score * 100) : "N/A";
     const sci  = item.species.scientificNameWithoutAuthor;
     const cd   = cdRef(sci); 
-    const eco  = ecolOf(sci);
+    const eco  = ecolOf(sci); 
     
-    // Logique pour construire le lien FloreAlpes à partir de votre index
+    // Logique pour le lien Flora Gallica (lecteur PDF interne)
+    const genus = sci.split(' ')[0].toLowerCase();
+    const tocEntry = floraToc[genus];
+    let floraGallicaLink = "—";
+    if (tocEntry && tocEntry.pdfFile && tocEntry.page) {
+      const pdfPath = `assets/flora_gallica_pdfs/${tocEntry.pdfFile}`;
+      const viewerUrl = `viewer.html?file=${encodeURIComponent(pdfPath)}&page=${tocEntry.page}`;
+      floraGallicaLink = `<a href="${viewerUrl}" target="_blank" rel="noopener" title="Ouvrir Flora Gallica à la page du genre ${genus}">Page ${tocEntry.page}</a>`;
+    }
+    
+    // Logique pour le lien FloreAlpes (site externe)
     const normalizedSci = norm(sci);
     let floreAlpesLink = "—";
-    
-    // Recherche une clé correspondante en normalisant aussi les clés de l'index
-    const foundKey = Object.keys(floreAlpesIndex).find(key => {
-        const cleanKey = norm(key.split('(')[0]);
-        return cleanKey === normalizedSci;
-    });
-
+    const foundKey = Object.keys(floreAlpesIndex).find(key => norm(key.split('(')[0]) === normalizedSci);
     if (foundKey) {
-        const urlPart = floreAlpesIndex[foundKey];
-        // Nettoie l'URL pour enlever l'identifiant de session
-        const cleanUrlPart = urlPart.split('?')[0];
-        const floreAlpesUrl = `https://www.florealpes.com/${cleanUrlPart}`;
+        const urlPart = floreAlpesIndex[foundKey].split('?')[0];
+        const floreAlpesUrl = `https://www.florealpes.com/${urlPart}`;
         floreAlpesLink = link(floreAlpesUrl, "fiche");
     }
 
@@ -85,6 +90,7 @@ function buildTable(items){
       <td>${link(cd && inpnStatut(cd),"statut")}</td>
       <td>${link(cd && aura(cd),"atlas")}</td>
       <td>${cd ? `<a href="#" onclick="alert('Fonctionnalité de géolocalisation sur clic non implémentée dans cette version.')" title="Ouvrir la carte">carte</a>` : "—"}</td>
+      <td>${floraGallicaLink}</td>
       <td>${floreAlpesLink}</td>
     </tr>`;
   }).join("");
@@ -113,7 +119,7 @@ function buildCards(items){
         <div class="iframe-grid">
             <iframe loading="lazy" src="${inpnStatut(cd)}" title="Statut INPN"></iframe>
             <iframe loading="lazy" src="${aura(cd)}" title="Biodiv'AURA"></iframe>
-            <iframe loading="lazy" src="${openObs(cd)}" title="OpenObs"></iframe>
+            <iframe loading="lazy" src="${buildOpenObsUrl(cd)}" title="OpenObs"></iframe>
         </div>`;
     }
 
@@ -126,7 +132,7 @@ function buildCards(items){
 }
 
 /* ================================================================
-   LOGIQUE SPÉCIFIQUE AUX PAGES (ÉCOUTEURS ET HANDLERS)
+   LOGIQUE SPÉCIFIQUE AUX PAGES (ÉCOUTEURS)
    ================================================================ */
 function handleSingleFileSelect(file) { 
   if (!file) return;
@@ -228,7 +234,7 @@ if (organBoxOnPage) {
         const toBlob = dataURL => { try { const [m,b] = dataURL.split(','), [,e] = /:(.*?);/.exec(m), B=atob(b), a=new Uint8Array(B.length); for(let i=0;i<B.length;i++)a[i]=B.charCodeAt(i); return new Blob([a],{type:e})}catch(e){return null}};
         const imageBlob = toBlob(storedImage); 
         if (imageBlob) {
-            organBoxOnPage.querySelectorAll("button").forEach(b => b.addEventListener("click", (e) => identify(imageBlob, e.currentTarget.dataset.organ)));
+            organBoxOnPage.querySelectorAll("button").forEach(b => b.addEventListener("click", (e) => identifySingleImage(imageBlob, e.currentTarget.dataset.organ)));
         } else {
             alert("Erreur lors de la préparation de l'image.");
         }
