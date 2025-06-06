@@ -14,7 +14,6 @@ let taxref = {};
 let ecology = {};
 let floraToc = {};
 let floreAlpesIndex = {}; 
-let userLocation = { latitude: 45.188529, longitude: 5.724524 };
 
 const ready = Promise.all([
   fetch("taxref.json").then(r => r.json()).then(j => Object.entries(j).forEach(([k,v]) => taxref[norm(k)] = v)),
@@ -27,7 +26,6 @@ const ready = Promise.all([
     console.error("Erreur critique lors du chargement des fichiers de données:", err);
     alert("Erreur de chargement des fichiers de données locaux : " + err.message);
 });
-
 
 /* ================================================================
    FONCTIONS UTILITAIRES ET HELPERS
@@ -52,7 +50,6 @@ async function identifyMultipleImages(files, organs) { const fd = new FormData()
 function buildTable(items){
   const wrap = document.getElementById("results");
   if (!wrap) return;
-  wrap.innerHTML = "";
 
   const headers = ["Nom latin", "Score (%)", "FloreAlpes", "INPN statut", "Écologie", "Flora Gallica", "OpenObs", "Biodiv'AURA", "Info Flora"];
   const link = (url, label) => url ? `<a href="${url}" target="_blank" rel="noopener">${label}</a>` : "—";
