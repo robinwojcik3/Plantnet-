@@ -47,27 +47,6 @@ const aura       = c => `https://atlas.biodiversite-auvergne-rhone-alpes.fr/espe
 const openObs    = c => `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=lsid%3A${c}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&qc=&radius=120.6&lat=45.188529&lon=5.724524#tab_mapView`;
 const pfaf       = n => `https://pfaf.org/user/Plant.aspx?LatinName=${encodeURIComponent(n).replace(/%20/g, '+')}`;
 const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent);
-
-// Fonction pour gérer l'ouverture du PDF sur iOS
-window.openPdfForIOS = function(pdfPath, page, genus) {
-  // Essayer plusieurs formats d'ancre pour iOS
-  const formats = [
-    `${pdfPath}#page=${page}`,          // Format standard
-    `${pdfPath}#${page}`,               // Format simple (parfois mieux supporté)
-    `${pdfPath}#view=fit&page=${page}`, // Format Adobe
-  ];
-  
-  // Message pour l'utilisateur
-  const message = `Ouverture de Flora Gallica à la page ${page} (genre ${genus}).\n\nSi le PDF s'ouvre au début, recherchez "${genus}".`;
-  
-  // Sur iOS, certains navigateurs répondent mieux à location.href
-  if (confirm(message)) {
-    // Essayer le format le plus susceptible de fonctionner
-    location.href = formats[0];
-  }
-  
-  return false;
-};
 // Enregistre une photo sur l'appareil en declenchant un telechargement
 function savePhotoLocally(blob, name = "photo.jpg") {
   try {
@@ -163,14 +142,9 @@ function buildTable(items){
 
   // MODIFIÉ : Ajout de la colonne "Critères physiologiques" avant l'écologie
   const headers = ['Nom latin (score %)', "FloreAlpes", "INPN statut", "Critères physiologiques", "Écologie", "Flora Gallica", "OpenObs", "Biodiv'AURA", "Info Flora", "Fiche synthèse", "PFAF"];
-  const linkIcon = (url, img, alt, onclick = null) => {
-    const encoded = img.split('/').map(s => encodeURIComponent(s)).join('/');
-    if (onclick) {
-      // Si onclick est fourni, créer un lien avec onclick
-      return `<a href="#" onclick="${onclick}; return false;"><img src="assets/${encoded}" alt="${alt}" class="logo-icon"></a>`;
-    }
+  const linkIcon = (url, img, alt) => {
     if (!url) return "—";
-    // Sinon, créer un lien normal
+    const encoded = img.split('/').map(s => encodeURIComponent(s)).join('/');
     return `<a href="${url}" target="_blank" rel="noopener"><img src="assets/${encoded}" alt="${alt}" class="logo-icon"></a>`;
   };
 
@@ -186,10 +160,9 @@ function buildTable(items){
     if (tocEntry?.pdfFile && tocEntry?.page) {
       const pdfPath = `assets/flora_gallica_pdfs/${tocEntry.pdfFile}`;
       if (isIOS()) {
-        // Sur iOS, utiliser une fonction onclick qui affiche d'abord la page
-        const genusEscaped = genus.replace(/'/g, "\\'").replace(/"/g, '\\"');
-        const onclickHandler = `openPdfForIOS('${pdfPath}', ${tocEntry.page}, '${genusEscaped}')`;
-        floraGallicaLink = linkIcon(null, "Flora Gallica.png", "Flora Gallica", onclickHandler);
+        // Sur iOS, utiliser le format OpenActions qui est parfois mieux supporté
+        const directUrl = `${pdfPath}#view=Fit&page=${tocEntry.page}`;
+        floraGallicaLink = linkIcon(directUrl, "Flora Gallica.png", "Flora Gallica");
       } else {
         // Sur Android et autres plateformes, utiliser le viewer personnalisé
         const viewerUrl = `viewer.html?file=${encodeURIComponent(pdfPath)}&page=${tocEntry.page}`;
