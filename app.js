@@ -47,27 +47,6 @@ const aura       = c => `https://atlas.biodiversite-auvergne-rhone-alpes.fr/espe
 const openObs    = c => `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=lsid%3A${c}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&qc=&radius=120.6&lat=45.188529&lon=5.724524#tab_mapView`;
 const pfaf       = n => `https://pfaf.org/user/Plant.aspx?LatinName=${encodeURIComponent(n).replace(/%20/g, '+')}`;
 const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent);
-
-// Fonction pour gérer l'ouverture du PDF sur iOS
-window.openPdfForIOS = function(pdfPath, page, genus) {
-  // Essayer plusieurs formats d'ancre pour iOS
-  const formats = [
-    `${pdfPath}#page=${page}`,          // Format standard
-    `${pdfPath}#${page}`,               // Format simple (parfois mieux supporté)
-    `${pdfPath}#view=fit&page=${page}`, // Format Adobe
-  ];
-  
-  // Message pour l'utilisateur
-  const message = `Ouverture de Flora Gallica à la page ${page} (genre ${genus}).\n\nSi le PDF s'ouvre au début, recherchez "${genus}".`;
-  
-  // Sur iOS, certains navigateurs répondent mieux à location.href
-  if (confirm(message)) {
-    // Essayer le format le plus susceptible de fonctionner
-    location.href = formats[0];
-  }
-  
-  return false;
-};
 // Enregistre une photo sur l'appareil en declenchant un telechargement
 function savePhotoLocally(blob, name = "photo.jpg") {
   try {
@@ -163,12 +142,9 @@ function buildTable(items){
 
   // MODIFIÉ : Ajout de la colonne "Critères physiologiques" avant l'écologie
   const headers = ['Nom latin (score %)', "FloreAlpes", "INPN statut", "Critères physiologiques", "Écologie", "Flora Gallica", "OpenObs", "Biodiv'AURA", "Info Flora", "Fiche synthèse", "PFAF"];
-  const linkIcon = (url, img, alt, onclick = null) => {
+  const linkIcon = (url, img, alt) => {
     if (!url) return "—";
     const encoded = img.split('/').map(s => encodeURIComponent(s)).join('/');
-    if (onclick) {
-      return `<a href="#" onclick="${onclick}; return false;"><img src="assets/${encoded}" alt="${alt}" class="logo-icon"></a>`;
-    }
     return `<a href="${url}" target="_blank" rel="noopener"><img src="assets/${encoded}" alt="${alt}" class="logo-icon"></a>`;
   };
 
@@ -183,16 +159,8 @@ function buildTable(items){
     let floraGallicaLink = "—";
     if (tocEntry?.pdfFile && tocEntry?.page) {
       const pdfPath = `assets/flora_gallica_pdfs/${tocEntry.pdfFile}`;
-      if (isIOS()) {
-        // Sur iOS, utiliser une fonction onclick qui affiche d'abord la page
-        const genusEscaped = genus.replace(/'/g, "\\'").replace(/"/g, '\\"');
-        const onclickHandler = `openPdfForIOS('${pdfPath}', ${tocEntry.page}, '${genusEscaped}')`;
-        floraGallicaLink = linkIcon(null, "Flora Gallica.png", "Flora Gallica", onclickHandler);
-      } else {
-        // Sur Android et autres plateformes, utiliser le viewer personnalisé
-        const viewerUrl = `viewer.html?file=${encodeURIComponent(pdfPath)}&page=${tocEntry.page}`;
-        floraGallicaLink = linkIcon(viewerUrl, "Flora Gallica.png", "Flora Gallica");
-      }
+      const viewerUrl = `viewer.html?file=${encodeURIComponent(pdfPath)}&page=${tocEntry.page}`;
+      floraGallicaLink = linkIcon(viewerUrl, "Flora Gallica.png", "Flora Gallica");
     }
     const normalizedSci = norm(sci);
     let floreAlpesLink = "—";
@@ -219,8 +187,95 @@ function buildCards(items){ const zone = document.getElementById("cards"); if (!
    LOGIQUE SPÉCIFIQUE AUX PAGES (ÉCOUTEURS)
    ================================================================ */
 function handleSingleFileSelect(file) { if (!file) return; const reader = new FileReader(); reader.onload = () => { sessionStorage.setItem("photoData", reader.result); ["speciesQueryName", "identificationResults"].forEach(k => sessionStorage.removeItem(k)); location.href = "organ.html"; }; reader.onerror = () => alert("Erreur lecture image."); reader.readAsDataURL(file); }
-if (document.getElementById("file-capture")) { const fileCaptureInput = document.getElementById("file-capture"); const fileGalleryInput = document.getElementById("file-gallery"); const speciesSearchInput = document.getElementById("species-search-input"); const speciesSearchButton = document.getElementById("species-search-button"); const multiFileInput = document.getElementById("multi-file-input"); const multiImageListArea = document.getElementById("multi-image-list-area"); const multiImageIdentifyButton = document.getElementById("multi-image-identify-button"); let selectedMultiFilesData = []; fileCaptureInput?.addEventListener("change", e => { const f = e.target.files[0]; if (f) savePhotoLocally(f); handleSingleFileSelect(f); }); fileGalleryInput?.addEventListener("change", e => handleSingleFileSelect(e.target.files[0])); const performSpeciesSearch = async () => { const query = speciesSearchInput.value.trim(); if (!query) return; await ready; const normQuery = norm(query); let taxrefData = await fetch("taxref.json").then(r => r.json()); let foundName = Object.keys(taxrefData).find(k => norm(k) === normQuery); if (foundName) { sessionStorage.setItem("speciesQueryName", foundName); ["photoData", "identificationResults"].forEach(k => sessionStorage.removeItem(k)); location.href = "organ.html"; } else { alert(`Espèce "${query}" non trouvée.`); } }; speciesSearchButton?.addEventListener("click", performSpeciesSearch); speciesSearchInput?.addEventListener("keypress", e => { if (e.key === "Enter") performSpeciesSearch(); }); function renderMultiImageList() { multiImageListArea.innerHTML = ''; multiImageIdentifyButton.style.display = selectedMultiFilesData.length > 0 ? 'block' : 'none'; if (selectedMultiFilesData.length === 0) multiFileInput.value = ''; selectedMultiFilesData.forEach((item, index) => { const itemDiv = document.createElement('div'); itemDiv.className = 'image-organ-item'; itemDiv.innerHTML = `<span class="file-info"><span class="file-index">Image ${index + 1}:</span> <span>${item.file.name.substring(0, 20)}...</span></span><select data-index="${index}"><option value="leaf">Feuille</option><option value="flower">Fleur</option><option value="fruit">Fruit</option><option value="bark">Écorce</option></select><button type="button" class="delete-file-btn" data-index="${index}" title="Supprimer">✖</button>`; itemDiv.querySelector('select').value = item.organ; multiImageListArea.appendChild(itemDiv); }); } multiImageListArea?.addEventListener('click', (e) => { if (e.target?.classList.contains('delete-file-btn')) { selectedMultiFilesData.splice(parseInt(e.target.dataset.index, 10), 1); renderMultiImageList(); } }); multiImageListArea?.addEventListener('change', (e) => { if (e.target?.tagName === 'SELECT') { selectedMultiFilesData[parseInt(e.target.dataset.index, 10)].organ = e.target.value; } }); multiFileInput?.addEventListener("change", (e) => { const files = Array.from(e.target.files), r = MAX_MULTI_IMAGES - selectedMultiFilesData.length; if (r <= 0) return alert(`Limite de ${MAX_MULTI_IMAGES} atteinte.`); files.slice(0, r).forEach(f => { if (!selectedMultiFilesData.some(i => i.file.name === f.name && i.file.size === f.size)) selectedMultiFilesData.push({ file: f, organ: 'leaf' }); }); if (files.length > r) alert(`Limite atteinte.`); renderMultiImageList(); e.target.value = ''; }); multiImageIdentifyButton?.addEventListener("click", () => { if (selectedMultiFilesData.length === 0) return alert("Veuillez sélectionner au moins une image."); identifyMultipleImages(selectedMultiFilesData.map(i => i.file), selectedMultiFilesData.map(i => i.organ)); }); }
-const organBoxOnPage = document.getElementById("organ-choice"); if (organBoxOnPage) { const displayResults = async (results, isNameSearch = false) => { const previewEl = document.getElementById("preview"); if (previewEl) previewEl.style.display = 'none'; if (organBoxOnPage) organBoxOnPage.style.display = 'none'; await ready; document.body.classList.remove("home"); buildTable(isNameSearch ? [{ score: 1.0, species: { scientificNameWithoutAuthor: results } }] : results); buildCards(isNameSearch ? [{ score: 1.0, species: { scientificNameWithoutAuthor: results } }] : results); }; const speciesQueryName = sessionStorage.getItem("speciesQueryName"); const storedImage = sessionStorage.getItem("photoData"); const multiImageResults = sessionStorage.getItem("identificationResults"); if (speciesQueryName) { sessionStorage.removeItem("speciesQueryName"); displayResults(speciesQueryName, true); } else if (multiImageResults) { try { displayResults(JSON.parse(multiImageResults)); } catch (e) { location.href = "index.html"; } } else if (storedImage) { const previewElement = document.getElementById("preview"); if(previewElement) previewElement.src = storedImage; if (organBoxOnPage) organBoxOnPage.style.display = 'block'; const toBlob = dataURL => { try { const [m,b] = dataURL.split(','), [,e] = /:(.*?);/.exec(m), B=atob(b), a=new Uint8Array(B.length); for(let i=0;i<B.length;i++)a[i]=B.charCodeAt(i); return new Blob([a],{type:e})}catch(e){return null}}; const imageBlob = toBlob(storedImage); if (imageBlob) { organBoxOnPage.querySelectorAll("button").forEach(b => b.addEventListener("click", (e) => identifySingleImage(imageBlob, e.currentTarget.dataset.organ))); } else { alert("Erreur lors de la préparation de l'image."); } } else { location.href = "index.html"; } }
+if (document.getElementById("file-capture")) {
+    const fileCaptureInput = document.getElementById("file-capture");
+    const fileGalleryInput = document.getElementById("file-gallery");
+    const speciesSearchInput = document.getElementById("species-search-input");
+    const speciesSearchButton = document.getElementById("species-search-button");
+    const multiFileInput = document.getElementById("multi-file-input");
+    const multiImageListArea = document.getElementById("multi-image-list-area");
+    const multiImageIdentifyButton = document.getElementById("multi-image-identify-button");
+    let selectedMultiFilesData = [];
+
+    fileCaptureInput?.addEventListener("change", e => { const f = e.target.files[0]; if (f) savePhotoLocally(f); handleSingleFileSelect(f); });
+    fileGalleryInput?.addEventListener("change", e => handleSingleFileSelect(e.target.files[0]));
+
+    const performSpeciesSearch = async () => {
+        const query = speciesSearchInput.value.trim();
+        if (!query) return;
+        await ready;
+        const normQuery = norm(query);
+        let taxrefData = await fetch("taxref.json").then(r => r.json());
+        let foundName = Object.keys(taxrefData).find(k => norm(k) === normQuery);
+
+        if (foundName) {
+            const genus = norm(foundName.split(' ')[0]);
+            const tocEntry = floraToc[genus];
+
+            if (tocEntry?.pdfFile && tocEntry?.page) {
+                const pdfPath = `assets/flora_gallica_pdfs/${tocEntry.pdfFile}`;
+                const viewerUrl = `viewer.html?file=${encodeURIComponent(pdfPath)}&page=${tocEntry.page}`;
+                window.location.href = viewerUrl;
+            } else {
+                alert(`Le genre pour l'espèce "${query}" n'a pas été trouvé dans la flore numérisée. Affichage des résultats classiques.`);
+                sessionStorage.setItem("speciesQueryName", foundName);
+                ["photoData", "identificationResults"].forEach(k => sessionStorage.removeItem(k));
+                location.href = "organ.html";
+            }
+        } else {
+            alert(`Espèce "${query}" non trouvée.`);
+        }
+    };
+    speciesSearchButton?.addEventListener("click", performSpeciesSearch);
+    speciesSearchInput?.addEventListener("keypress", e => { if (e.key === "Enter") performSpeciesSearch(); });
+
+    function renderMultiImageList() { multiImageListArea.innerHTML = ''; multiImageIdentifyButton.style.display = selectedMultiFilesData.length > 0 ? 'block' : 'none'; if (selectedMultiFilesData.length === 0) multiFileInput.value = ''; selectedMultiFilesData.forEach((item, index) => { const itemDiv = document.createElement('div'); itemDiv.className = 'image-organ-item'; itemDiv.innerHTML = `<span class="file-info"><span class="file-index">Image ${index + 1}:</span> <span>${item.file.name.substring(0, 20)}...</span></span><select data-index="${index}"><option value="leaf">Feuille</option><option value="flower">Fleur</option><option value="fruit">Fruit</option><option value="bark">Écorce</option></select><button type="button" class="delete-file-btn" data-index="${index}" title="Supprimer">✖</button>`; itemDiv.querySelector('select').value = item.organ; multiImageListArea.appendChild(itemDiv); }); }
+    multiImageListArea?.addEventListener('click', (e) => { if (e.target?.classList.contains('delete-file-btn')) { selectedMultiFilesData.splice(parseInt(e.target.dataset.index, 10), 1); renderMultiImageList(); } });
+    multiImageListArea?.addEventListener('change', (e) => { if (e.target?.tagName === 'SELECT') { selectedMultiFilesData[parseInt(e.target.dataset.index, 10)].organ = e.target.value; } });
+    multiFileInput?.addEventListener("change", (e) => { const files = Array.from(e.target.files), r = MAX_MULTI_IMAGES - selectedMultiFilesData.length; if (r <= 0) return alert(`Limite de ${MAX_MULTI_IMAGES} atteinte.`); files.slice(0, r).forEach(f => { if (!selectedMultiFilesData.some(i => i.file.name === f.name && i.file.size === f.size)) selectedMultiFilesData.push({ file: f, organ: 'leaf' }); }); if (files.length > r) alert(`Limite atteinte.`); renderMultiImageList(); e.target.value = ''; });
+    multiImageIdentifyButton?.addEventListener("click", () => { if (selectedMultiFilesData.length === 0) return alert("Veuillez sélectionner au moins une image."); identifyMultipleImages(selectedMultiFilesData.map(i => i.file), selectedMultiFilesData.map(i => i.organ)); });
+}
+
+const organBoxOnPage = document.getElementById("organ-choice");
+if (organBoxOnPage) {
+    const displayResults = async (results, isNameSearch = false) => {
+        const previewEl = document.getElementById("preview");
+        if (previewEl) previewEl.style.display = 'none';
+        if (organBoxOnPage) organBoxOnPage.style.display = 'none';
+        await ready;
+        document.body.classList.remove("home");
+        buildTable(isNameSearch ? [{ score: 1.0, species: { scientificNameWithoutAuthor: results } }] : results);
+        buildCards(isNameSearch ? [{ score: 1.0, species: { scientificNameWithoutAuthor: results } }] : results);
+    };
+
+    const speciesQueryName = sessionStorage.getItem("speciesQueryName");
+    const storedImage = sessionStorage.getItem("photoData");
+    const multiImageResults = sessionStorage.getItem("identificationResults");
+
+    if (speciesQueryName) {
+        sessionStorage.removeItem("speciesQueryName");
+        displayResults(speciesQueryName, true);
+    } else if (multiImageResults) {
+        try {
+            displayResults(JSON.parse(multiImageResults));
+        } catch (e) {
+            location.href = "index.html";
+        }
+    } else if (storedImage) {
+        const previewElement = document.getElementById("preview");
+        if (previewElement) previewElement.src = storedImage;
+        if (organBoxOnPage) organBoxOnPage.style.display = 'block';
+        const toBlob = dataURL => { try { const [m, b] = dataURL.split(','), [, e] = /:(.*?);/.exec(m), B = atob(b), a = new Uint8Array(B.length); for (let i = 0; i < B.length; i++)a[i] = B.charCodeAt(i); return new Blob([a], { type: e })} catch (e) { return null } };
+        const imageBlob = toBlob(storedImage);
+        if (imageBlob) {
+            organBoxOnPage.querySelectorAll("button").forEach(b => b.addEventListener("click", (e) => identifySingleImage(imageBlob, e.currentTarget.dataset.organ)));
+        } else {
+            alert("Erreur lors de la préparation de l'image.");
+        }
+    } else {
+        location.href = "index.html";
+    }
+}
 
 const genusSearchInput = document.getElementById("genus-search-input");
 const genusSearchButton = document.getElementById("genus-search-button");
@@ -231,9 +286,9 @@ const performGenusSearch = async () => {
   const normQuery = norm(query);
   const tocEntry = floraToc[normQuery];
   if (tocEntry?.pdfFile && tocEntry?.page) {
-    sessionStorage.setItem("speciesQueryName", query);
-    ["photoData", "identificationResults"].forEach(k => sessionStorage.removeItem(k));
-    location.href = "organ.html";
+    const pdfPath = `assets/flora_gallica_pdfs/${tocEntry.pdfFile}`;
+    const viewerUrl = `viewer.html?file=${encodeURIComponent(pdfPath)}&page=${tocEntry.page}`;
+    window.location.href = viewerUrl;
   } else {
     alert(`Genre "${query}" non trouvé.`);
   }
