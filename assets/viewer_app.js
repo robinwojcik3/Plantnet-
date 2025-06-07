@@ -97,9 +97,12 @@ async function loadPdfViewer() {
     const pdfUrl = urlParams.get('file');
     const initialPage = parseInt(urlParams.get('page'), 10) || 1;
 
+    // Sur iOS, si le viewer ne fonctionne pas, rediriger vers le PDF avec ancre
     if (!supportsModuleWorker()) {
         if (pdfUrl) {
-            location.href = `${pdfUrl}#page=${initialPage}`;
+            // Essayer d'ouvrir le PDF natif avec page spécifique
+            const pageHash = initialPage > 1 ? `#page=${initialPage}` : '';
+            location.href = `${pdfUrl}${pageHash}`;
             return;
         }
     }
@@ -123,7 +126,13 @@ async function loadPdfViewer() {
         await renderPage(initialPage);
     } catch (error) {
         console.error('Erreur lors du chargement du PDF:', error);
-        document.body.innerHTML = `<h1>Erreur de chargement du PDF</h1><p>${error.message}</p>`;
+        // En cas d'erreur, essayer d'ouvrir le PDF natif sur iOS
+        if (pdfUrl && /iPad|iPhone|iPod/.test(navigator.userAgent)) {
+            const pageHash = initialPage > 1 ? `#page=${initialPage}` : '';
+            location.href = `${pdfUrl}${pageHash}`;
+        } else {
+            document.body.innerHTML = `<h1>Erreur de chargement du PDF</h1><p>${error.message}</p>`;
+        }
     }
 }
 
