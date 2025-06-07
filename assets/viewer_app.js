@@ -1,6 +1,11 @@
 import * as pdfjsLib from '../pdfjs/build/pdf.mjs';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = `../pdfjs/build/pdf.worker.mjs`;
+// Configuration du worker avec gestion d'erreur pour iOS
+try {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `../pdfjs/build/pdf.worker.mjs`;
+} catch (e) {
+    console.error('Erreur configuration worker:', e);
+}
 
 function supportsModuleWorker() {
     try {
@@ -37,7 +42,9 @@ async function renderPage(num) {
     try {
         const page = await pdfDoc.getPage(currentPageNum);
         
-        const baseScale = 2.0; 
+        // Réduire l'échelle sur iOS pour éviter les problèmes de mémoire
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const baseScale = isIOS ? 1.5 : 2.0; 
         const devicePixelRatio = window.devicePixelRatio || 1;
         const finalScale = baseScale * devicePixelRatio;
         
@@ -87,8 +94,6 @@ function goToNextPage() {
     goToPage(currentPageNum + 1);
 }
 
-// MODIFICATION : Suppression de toute la logique de swipe (handleTouchStart, handleTouchEnd)
-
 /**
  * Fonction principale qui se lance au chargement de la page.
  */
@@ -96,24 +101,37 @@ async function loadPdfViewer() {
     const urlParams = new URLSearchParams(window.location.search);
     const pdfUrl = urlParams.get('file');
     const initialPage = parseInt(urlParams.get('page'), 10) || 1;
-
-    // Sur iOS, si le viewer ne fonctionne pas, rediriger vers le PDF avec ancre
-    if (!supportsModuleWorker()) {
-        if (pdfUrl) {
-            // Essayer d'ouvrir le PDF natif avec page spécifique
-            const pageHash = initialPage > 1 ? `#page=${initialPage}` : '';
-            location.href = `${pdfUrl}${pageHash}`;
-            return;
-        }
-    }
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
     if (!pdfUrl) {
         document.body.innerHTML = '<h1>Erreur : Aucun fichier PDF spécifié.</h1>';
         return;
     }
 
+    // Si iOS et pas de support des module workers, proposer une alternative
+    if (isIOS && !supportsModuleWorker()) {
+        document.body.innerHTML = `
+            <div style="padding: 20px; text-align: center;">
+                <h2>Ouverture du PDF</h2>
+                <p>Le lecteur PDF intégré n'est pas compatible avec votre appareil.</p>
+                <p>Page cible : ${initialPage}</p>
+                <a href="${pdfUrl}" style="display: inline-block; margin: 20px; padding: 10px 20px; background: #388e3c; color: white; text-decoration: none; border-radius: 5px;">
+                    Ouvrir le PDF (recherchez la page ${initialPage})
+                </a>
+            </div>
+        `;
+        return;
+    }
+
     try {
-        const loadingTask = pdfjsLib.getDocument(pdfUrl);
+        // Configuration spéciale pour iOS
+        const loadingOptions = isIOS ? {
+            cMapUrl: '../pdfjs/web/cmaps/',
+            cMapPacked: true,
+            disableWorker: true // Désactiver le worker sur iOS pour éviter les erreurs
+        } : {};
+
+        const loadingTask = pdfjsLib.getDocument(pdfUrl, loadingOptions);
         pdfDoc = await loadingTask.promise;
         totalPages = pdfDoc.numPages;
         totalPageNumSpan.textContent = totalPages;
@@ -121,18 +139,22 @@ async function loadPdfViewer() {
         // Écouteurs pour les boutons uniquement
         prevBtn.addEventListener('click', goToPrevPage);
         nextBtn.addEventListener('click', goToNextPage);
-        // MODIFICATION : Les écouteurs pour 'touchstart' et 'touchend' ont été retirés.
 
         await renderPage(initialPage);
     } catch (error) {
         console.error('Erreur lors du chargement du PDF:', error);
-        // En cas d'erreur, essayer d'ouvrir le PDF natif sur iOS
-        if (pdfUrl && /iPad|iPhone|iPod/.test(navigator.userAgent)) {
-            const pageHash = initialPage > 1 ? `#page=${initialPage}` : '';
-            location.href = `${pdfUrl}${pageHash}`;
-        } else {
-            document.body.innerHTML = `<h1>Erreur de chargement du PDF</h1><p>${error.message}</p>`;
-        }
+        
+        // En cas d'erreur, proposer d'ouvrir le PDF natif
+        document.body.innerHTML = `
+            <div style="padding: 20px; text-align: center;">
+                <h2>Erreur de chargement</h2>
+                <p>Impossible de charger le lecteur PDF intégré.</p>
+                <p>Page recherchée : ${initialPage}</p>
+                <a href="${pdfUrl}" style="display: inline-block; margin: 20px; padding: 10px 20px; background: #388e3c; color: white; text-decoration: none; border-radius: 5px;">
+                    Ouvrir le PDF dans le lecteur natif
+                </a>
+            </div>
+        `;
     }
 }
 
