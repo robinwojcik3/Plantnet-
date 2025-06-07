@@ -159,11 +159,14 @@ function buildTable(items){
     let floraGallicaLink = "—";
     if (tocEntry?.pdfFile && tocEntry?.page) {
       const pdfPath = `assets/flora_gallica_pdfs/${tocEntry.pdfFile}`;
-      // MODIFICATION : Utilisation systématique du viewer interne pour garantir la
-      // compatibilité sur toutes les plateformes, y compris iOS, pour l'ouverture
-      // à une page spécifique.
-      const viewerUrl = `viewer.html?file=${encodeURIComponent(pdfPath)}&page=${tocEntry.page}`;
-      floraGallicaLink = linkIcon(viewerUrl, "Flora Gallica.png", "Flora Gallica");
+      if (isIOS()) {
+        // Sur iOS, utiliser le viewer personnalisé pour garantir l'ouverture à la bonne page
+        const viewerUrl = `viewer.html?file=${encodeURIComponent(pdfPath)}&page=${tocEntry.page}`;
+        floraGallicaLink = linkIcon(viewerUrl, "Flora Gallica.png", "Flora Gallica");
+      } else {
+        const viewerUrl = `viewer.html?file=${encodeURIComponent(pdfPath)}&page=${tocEntry.page}`;
+        floraGallicaLink = linkIcon(viewerUrl, "Flora Gallica.png", "Flora Gallica");
+      }
     }
     const normalizedSci = norm(sci);
     let floreAlpesLink = "—";
