@@ -4,12 +4,18 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = `../pdfjs/build/pdf.worker.mjs`;
 
 function supportsModuleWorker() {
     try {
-        const worker = new Worker(URL.createObjectURL(new Blob([''], {type:'text/javascript'})), {type:'module'});
+        const worker = new Worker(URL.createObjectURL(new Blob([''], { type: 'text/javascript' })), { type: 'module' });
         worker.terminate();
         return true;
     } catch (e) {
         return false;
     }
+}
+
+function isIOS() {
+    const ua = navigator.userAgent;
+    const iPadOS13Up = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+    return /iPad|iPhone|iPod/.test(ua) || iPadOS13Up;
 }
 
 // Récupération des éléments du DOM
@@ -97,7 +103,7 @@ async function loadPdfViewer() {
     const pdfUrl = urlParams.get('file');
     const initialPage = parseInt(urlParams.get('page'), 10) || 1;
 
-    if (!supportsModuleWorker()) {
+    if (isIOS() || !supportsModuleWorker()) {
         if (pdfUrl) {
             location.href = `${pdfUrl}#page=${initialPage}`;
             return;
