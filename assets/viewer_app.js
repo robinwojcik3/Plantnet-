@@ -2,6 +2,16 @@ import * as pdfjsLib from '../pdfjs/build/pdf.mjs';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `../pdfjs/build/pdf.worker.mjs`;
 
+function supportsModuleWorker() {
+    try {
+        const worker = new Worker(URL.createObjectURL(new Blob([''], {type:'text/javascript'})), {type:'module'});
+        worker.terminate();
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
 // Récupération des éléments du DOM
 const canvas = document.getElementById('pdf-canvas');
 const ctx = canvas.getContext('2d');
@@ -86,6 +96,13 @@ async function loadPdfViewer() {
     const urlParams = new URLSearchParams(window.location.search);
     const pdfUrl = urlParams.get('file');
     const initialPage = parseInt(urlParams.get('page'), 10) || 1;
+
+    if (!supportsModuleWorker()) {
+        if (pdfUrl) {
+            location.href = `${pdfUrl}#page=${initialPage}`;
+            return;
+        }
+    }
 
     if (!pdfUrl) {
         document.body.innerHTML = '<h1>Erreur : Aucun fichier PDF spécifié.</h1>';
