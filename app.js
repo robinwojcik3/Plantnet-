@@ -47,6 +47,27 @@ const aura       = c => `https://atlas.biodiversite-auvergne-rhone-alpes.fr/espe
 const openObs    = c => `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=lsid%3A${c}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&qc=&radius=120.6&lat=45.188529&lon=5.724524#tab_mapView`;
 const pfaf       = n => `https://pfaf.org/user/Plant.aspx?LatinName=${encodeURIComponent(n).replace(/%20/g, '+')}`;
 const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+// Fonction pour gérer l'ouverture du PDF sur iOS
+window.openPdfForIOS = function(pdfPath, page, genus) {
+  // Essayer plusieurs formats d'ancre pour iOS
+  const formats = [
+    `${pdfPath}#page=${page}`,          // Format standard
+    `${pdfPath}#${page}`,               // Format simple (parfois mieux supporté)
+    `${pdfPath}#view=fit&page=${page}`, // Format Adobe
+  ];
+  
+  // Message pour l'utilisateur
+  const message = `Ouverture de Flora Gallica à la page ${page} (genre ${genus}).\n\nSi le PDF s'ouvre au début, recherchez "${genus}".`;
+  
+  // Sur iOS, certains navigateurs répondent mieux à location.href
+  if (confirm(message)) {
+    // Essayer le format le plus susceptible de fonctionner
+    location.href = formats[0];
+  }
+  
+  return false;
+};
 // Enregistre une photo sur l'appareil en declenchant un telechargement
 function savePhotoLocally(blob, name = "photo.jpg") {
   try {
@@ -142,9 +163,12 @@ function buildTable(items){
 
   // MODIFIÉ : Ajout de la colonne "Critères physiologiques" avant l'écologie
   const headers = ['Nom latin (score %)', "FloreAlpes", "INPN statut", "Critères physiologiques", "Écologie", "Flora Gallica", "OpenObs", "Biodiv'AURA", "Info Flora", "Fiche synthèse", "PFAF"];
-  const linkIcon = (url, img, alt) => {
+  const linkIcon = (url, img, alt, onclick = null) => {
     if (!url) return "—";
     const encoded = img.split('/').map(s => encodeURIComponent(s)).join('/');
+    if (onclick) {
+      return `<a href="#" onclick="${onclick}; return false;"><img src="assets/${encoded}" alt="${alt}" class="logo-icon"></a>`;
+    }
     return `<a href="${url}" target="_blank" rel="noopener"><img src="assets/${encoded}" alt="${alt}" class="logo-icon"></a>`;
   };
 
@@ -159,8 +183,16 @@ function buildTable(items){
     let floraGallicaLink = "—";
     if (tocEntry?.pdfFile && tocEntry?.page) {
       const pdfPath = `assets/flora_gallica_pdfs/${tocEntry.pdfFile}`;
-      const viewerUrl = `viewer.html?file=${encodeURIComponent(pdfPath)}&page=${tocEntry.page}`;
-      floraGallicaLink = linkIcon(viewerUrl, "Flora Gallica.png", "Flora Gallica");
+      if (isIOS()) {
+        // Sur iOS, utiliser une fonction onclick qui affiche d'abord la page
+        const genusEscaped = genus.replace(/'/g, "\\'").replace(/"/g, '\\"');
+        const onclickHandler = `openPdfForIOS('${pdfPath}', ${tocEntry.page}, '${genusEscaped}')`;
+        floraGallicaLink = linkIcon(null, "Flora Gallica.png", "Flora Gallica", onclickHandler);
+      } else {
+        // Sur Android et autres plateformes, utiliser le viewer personnalisé
+        const viewerUrl = `viewer.html?file=${encodeURIComponent(pdfPath)}&page=${tocEntry.page}`;
+        floraGallicaLink = linkIcon(viewerUrl, "Flora Gallica.png", "Flora Gallica");
+      }
     }
     const normalizedSci = norm(sci);
     let floreAlpesLink = "—";
@@ -199,9 +231,9 @@ const performGenusSearch = async () => {
   const normQuery = norm(query);
   const tocEntry = floraToc[normQuery];
   if (tocEntry?.pdfFile && tocEntry?.page) {
-    const pdfPath = `assets/flora_gallica_pdfs/${tocEntry.pdfFile}`;
-    const viewerUrl = `viewer.html?file=${encodeURIComponent(pdfPath)}&page=${tocEntry.page}`;
-    window.location.href = viewerUrl;
+    sessionStorage.setItem("speciesQueryName", query);
+    ["photoData", "identificationResults"].forEach(k => sessionStorage.removeItem(k));
+    location.href = "organ.html";
   } else {
     alert(`Genre "${query}" non trouvé.`);
   }
