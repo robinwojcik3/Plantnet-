@@ -46,6 +46,7 @@ const inpnStatut = c => `https://inpn.mnhn.fr/espece/cd_nom/${c}/tab/statut`;
 const aura       = c => `https://atlas.biodiversite-auvergne-rhone-alpes.fr/espece/${c}`;
 const openObs    = c => `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=lsid%3A${c}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&qc=&radius=120.6&lat=45.188529&lon=5.724524#tab_mapView`;
 const pfaf       = n => `https://pfaf.org/user/Plant.aspx?LatinName=${encodeURIComponent(n).replace(/%20/g, '+')}`;
+const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent);
 // Enregistre une photo sur l'appareil en declenchant un telechargement
 function savePhotoLocally(blob, name = "photo.jpg") {
   try {
@@ -158,8 +159,13 @@ function buildTable(items){
     let floraGallicaLink = "—";
     if (tocEntry?.pdfFile && tocEntry?.page) {
       const pdfPath = `assets/flora_gallica_pdfs/${tocEntry.pdfFile}`;
-      const viewerUrl = `viewer.html?file=${encodeURIComponent(pdfPath)}&page=${tocEntry.page}`;
-      floraGallicaLink = linkIcon(viewerUrl, "Flora Gallica.png", "Flora Gallica");
+      if (isIOS()) {
+        const directUrl = `${pdfPath}#page=${tocEntry.page}`;
+        floraGallicaLink = linkIcon(directUrl, "Flora Gallica.png", "Flora Gallica");
+      } else {
+        const viewerUrl = `viewer.html?file=${encodeURIComponent(pdfPath)}&page=${tocEntry.page}`;
+        floraGallicaLink = linkIcon(viewerUrl, "Flora Gallica.png", "Flora Gallica");
+      }
     }
     const normalizedSci = norm(sci);
     let floreAlpesLink = "—";
