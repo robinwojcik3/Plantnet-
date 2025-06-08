@@ -17,6 +17,7 @@ const TTS_ENDPOINT = `https://texttospeech.googleapis.com/v1/text:synthesize?key
    INITIALISATION ET GESTION DES DONNÉES
    ================================================================ */
 let taxref = {};
+let taxrefNames = [];
 let ecology = {};
 let floraToc = {};
 let floreAlpesIndex = {}; 
@@ -24,13 +25,13 @@ let criteres = {}; // NOUVEAU : pour les critères physiologiques
 let userLocation = { latitude: 45.188529, longitude: 5.724524 };
 
 const ready = Promise.all([
-  fetch("taxref.json").then(r => r.json()).then(j => Object.entries(j).forEach(([k,v]) => taxref[norm(k)] = v)),
+  fetch("taxref.json").then(r => r.json()).then(j => Object.entries(j).forEach(([k,v]) => { taxrefNames.push(k); taxref[norm(k)] = v; })),
   fetch("ecology.json").then(r => r.json()).then(j => Object.entries(j).forEach(([k,v]) => ecology[norm(k.split(';')[0])] = v)),
   fetch("assets/flora_gallica_toc.json").then(r => r.json()).then(j => floraToc = j),
   fetch("assets/florealpes_index.json").then(r => r.json()).then(j => floreAlpesIndex = j),
   // NOUVEAU : Chargement des critères physiologiques
   fetch("Criteres_herbier.json").then(r => r.json()).then(j => j.forEach(item => criteres[norm(item.species)] = item.description))
-]).then(() => console.log("Données prêtes."))
+]).then(() => { taxrefNames.sort(); console.log("Données prêtes."); })
   .catch(err => showNotification("Erreur chargement des données: " + err.message, 'error'));
 
 
@@ -300,3 +301,12 @@ const performGenusSearch = async () => {
 };
 genusSearchButton?.addEventListener("click", performGenusSearch);
 genusSearchInput?.addEventListener("keypress", e => { if (e.key === "Enter") performGenusSearch(); });
+
+const speciesSuggestions = document.getElementById("species-suggestions");
+speciesSearchInput?.addEventListener("input", e => {
+  if (!speciesSuggestions) return;
+  const q = norm(e.target.value);
+  if (!q) { speciesSuggestions.innerHTML = ""; return; }
+  const matches = taxrefNames.filter(n => norm(n).startsWith(q)).slice(0, 10);
+  speciesSuggestions.innerHTML = matches.map(n => `<option value="${n}">`).join("");
+});
