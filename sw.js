@@ -3,7 +3,7 @@
    ================================================================ */
 
 // Changez ce nom de version à chaque fois que vous mettez à jour les fichiers de l'application
-const CACHE_NAME = "plantid-v14";
+const CACHE_NAME = "plantid-v15";
 
 // Fichiers essentiels pour le fonctionnement de base de l'application
 const CORE_ASSETS = [
@@ -33,7 +33,8 @@ const DATA_ASSETS = [
     "./taxref.json",
     "./ecology.json",
     "./assets/florealpes_index.json",
-    "./Criteres_herbier.json"       // NOUVEAU : ajout des critères
+    "./Criteres_herbier.json",      // NOUVEAU : ajout des critères
+    "./Physionomie.json"            // Nouvelle : descriptions de physionomie
 ];
 
 
