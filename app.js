@@ -194,7 +194,21 @@ window.handleSynthesisClick = async function(event, element, speciesName) {
    ================================================================ */
 async function getComparisonFromGemini(speciesData) {
     const speciesDataString = speciesData.map(s => `Espèce: ${s.species}\nDonnées morphologiques (Physionomie): ${s.physio || 'Non renseignée'}\nDonnées écologiques: ${s.eco || 'Non renseignée'}`).join('\n\n');
-    const promptTemplate = `Pour chaque espèce fournie par l’utilisateur, tu dois identifier et décrire quelques critères morphologiques immédiatement visibles, simples à vérifier sur le terrain ou à partir d’un spécimen, et suffisamment fiables pour permettre de distinguer cette espèce uniquement des autres espèces de la même liste avec lesquelles une confusion est réellement probable. Ces critères doivent présenter un fort pouvoir discriminant, c’est-à-dire qu’ils doivent permettre une différenciation claire sans ambiguïté, en se fondant sur des éléments visuellement évidents et accessibles à l’observation directe. Tu ne dois en aucun cas fournir une description complète de l’espèce ni une clé de détermination exhaustive ; seuls les traits morphologiques essentiels à la discrimination doivent être retenus, formulés de manière concise et rigoureuse. Pour accéder à la page d’une espèce sur ces sites, effectue une recherche Google en combinant le nom scientifique de l’espèce et le nom du site concerné. La réponse devra commencer par une ou deux phrases synthétiques présentant les éléments les plus immédiatement remarquables qui permettent de distinguer l’espèce des autres mentionnées. Ensuite, développe un court paragraphe décrivant précisément les différences morphologiques discriminantes entre l’espèce ciblée et celles avec lesquelles elle est susceptible d’être confondue, en insistant sur les caractères visibles les plus efficaces pour la séparation. Aucun autre contenu ne doit être ajouté : pas de préambule, pas de conclusion, pas de phrase générique du type « voici comment distinguer… », et ne cite pas les sources dans la réponse. Voici les données des espèces sélectionnées à comparer :\n\n---\n\n${speciesDataString}`;
+    
+    // MODIFICATION : Le prompt est mis à jour pour structurer la réponse en 3 parties.
+    const promptTemplate = `En te basant sur les données fournies ci-dessous, rédige une analyse comparative dont l'objectif est de mettre en évidence les points de distinction clairs entre les espèces.
+Données :
+---
+${speciesDataString}
+---
+Ta réponse doit être structurée rigoureusement en trois parties distinctes, sans aucun autre texte ou préambule.
+
+Partie 1 : Commence par une unique phrase de synthèse (1-2 lignes maximum) qui souligne l'élément morphologique le plus remarquable et le plus simple à observer pour distinguer ces espèces les unes des autres.
+
+Partie 2 : Ensuite, rédige un paragraphe (quelques lignes) qui détaille les autres différences morphologiques importantes, en insistant sur les caractères visibles (taille, couleur, forme des feuilles, etc.) qui permettent de les différencier sans ambiguïté.
+
+Partie 3 : Enfin, rédige un second paragraphe (quelques lignes) qui compare les conditions écologiques préférentielles (habitat, type de sol, altitude) de chaque espèce, en mettant en évidence ce qui les distingue.`;
+
     const requestBody = { 
         "contents": [{ "parts": [{ "text": promptTemplate }] }], 
         "generationConfig": { "temperature": 0.3, "maxOutputTokens": 1500 } 
@@ -219,7 +233,6 @@ async function getComparisonFromGemini(speciesData) {
     }
 }
 
-// MODIFICATION : La fonction n'affiche plus de pop-up mais insère le résultat sous le tableau.
 async function handleComparisonClick() {
     const compareBtn = document.getElementById('compare-btn');
     if (!compareBtn) return;
@@ -246,7 +259,7 @@ async function handleComparisonClick() {
 
     const comparisonText = await getComparisonFromGemini(speciesData);
 
-    // Injection du résultat dans le conteneur dédié
+    // MODIFICATION : La structure HTML inclut maintenant le bouton de synthèse vocale.
     resultsContainer.style.cssText = `
         margin-top: 2rem;
         padding: 1.5rem;
@@ -256,11 +269,40 @@ async function handleComparisonClick() {
         box-shadow: 0 2px 6px rgba(0,0,0,.05);
     `;
     resultsContainer.innerHTML = `
-        <h2 style="margin-top:0; color:var(--primary, #388e3c);">Analyse Comparative des Espèces</h2>
-        <p>${comparisonText.replace(/\n/g, '<br>')}</p>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+            <h2 style="margin:0; color:var(--primary, #388e3c);">Analyse Comparative des Espèces</h2>
+            <a href="#" id="comparison-tts-btn" title="Écouter la synthèse" style="flex-shrink: 0;">
+                <img src="assets/Audio.png" alt="Écouter" class="logo-icon" style="height: 32px;">
+            </a>
+        </div>
+        <hr style="border: none; border-top: 1px solid var(--border, #e0e0e0); margin: 1rem 0;">
+        <p id="comparison-text-content">${comparisonText.replace(/\n/g, '<br>')}</p>
     `;
 
-    // Défilement de la page pour afficher le résultat
+    // Ajout de l'écouteur d'événement pour le nouveau bouton de synthèse vocale.
+    document.getElementById('comparison-tts-btn').addEventListener('click', async (e) => {
+        e.preventDefault();
+        const btn = e.currentTarget;
+        const textElement = document.getElementById('comparison-text-content');
+        if (!textElement) return;
+
+        const textToSynthesize = textElement.innerText;
+        
+        btn.innerHTML = '<i>...</i>';
+        btn.style.pointerEvents = 'none';
+
+        const audioData = await synthesizeSpeech(textToSynthesize);
+        if (audioData) {
+            playAudioFromBase64(audioData);
+        } else {
+            showInfoModal("Échec de la synthèse audio", "La conversion du texte en audio a échoué.");
+        }
+
+        // Restaurer le bouton
+        btn.innerHTML = '<img src="assets/Audio.png" alt="Écouter" class="logo-icon" style="height: 32px;">';
+        btn.style.pointerEvents = 'auto';
+    });
+
     resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     compareBtn.disabled = false;
@@ -353,7 +395,6 @@ function buildTable(items){
 
   const headerHtml = `<tr><th>Sél.</th><th>Nom latin (score %)</th><th>FloreAlpes</th><th>INPN statut</th><th>Critères physiologiques</th><th>Écologie</th><th>Physionomie</th><th>Flora Gallica</th><th>OpenObs</th><th>Biodiv'AURA</th><th>Info Flora</th><th>Fiche synthèse</th><th>PFAF</th><th>Carnet</th></tr>`;
   
-  // MODIFICATION : Ajout du conteneur pour les résultats de la comparaison.
   wrap.innerHTML = `<table><thead>${headerHtml}</thead><tbody>${rows}</tbody></table><div id="comparison-footer" style="padding-top: 1rem; text-align: center;"></div><div id="comparison-results-container" style="display:none;"></div>`;
 
   const footer = document.getElementById('comparison-footer');
