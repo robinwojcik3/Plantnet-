@@ -22,6 +22,7 @@ let ecology = {};
 let floraToc = {};
 let floreAlpesIndex = {}; 
 let criteres = {}; // NOUVEAU : pour les critères physiologiques
+let physionomie = {}; // Nouvelle table pour la physionomie
 let userLocation = { latitude: 45.188529, longitude: 5.724524 };
 
 const ready = Promise.all([
@@ -30,7 +31,9 @@ const ready = Promise.all([
   fetch("assets/flora_gallica_toc.json").then(r => r.json()).then(j => floraToc = j),
   fetch("assets/florealpes_index.json").then(r => r.json()).then(j => floreAlpesIndex = j),
   // NOUVEAU : Chargement des critères physiologiques
-  fetch("Criteres_herbier.json").then(r => r.json()).then(j => j.forEach(item => criteres[norm(item.species)] = item.description))
+  fetch("Criteres_herbier.json").then(r => r.json()).then(j => j.forEach(item => criteres[norm(item.species)] = item.description)),
+  // Nouvelle donnée : physionomie des espèces
+  fetch("Physionomie.json").then(r => r.json()).then(j => j.forEach(item => physionomie[norm(item.nom_latin)] = item.physionomie))
 ]).then(() => { taxrefNames.sort(); console.log("Données prêtes."); })
   .catch(err => showNotification("Erreur chargement des données: " + err.message, 'error'));
 
@@ -42,6 +45,7 @@ function norm(txt) { if (typeof txt !== 'string') return ""; return txt.normaliz
 const cdRef = n => taxref[norm(n)];
 const ecolOf = n => ecology[norm(n)] || "—";
 const criteresOf = n => criteres[norm(n)] || "—"; // NOUVEAU : fonction pour récupérer les critères
+const physioOf = n => physionomie[norm(n)] || "—"; // Récupération de la physionomie
 const slug = n => norm(n).replace(/ /g, "-");
 const infoFlora  = n => `https://www.infoflora.ch/fr/flore/${slug(n)}.html`;
 const inpnStatut = c => `https://inpn.mnhn.fr/espece/cd_nom/${c}/tab/statut`;
@@ -164,8 +168,8 @@ function buildTable(items){
   const wrap = document.getElementById("results");
   if (!wrap) return;
 
-  // MODIFIÉ : Ajout de la colonne "Critères physiologiques" avant l'écologie
-  const headers = ['Nom latin (score %)', "FloreAlpes", "INPN statut", "Critères physiologiques", "Écologie", "Flora Gallica", "OpenObs", "Biodiv'AURA", "Info Flora", "Fiche synthèse", "PFAF", "Carnet"];
+  // MODIFIÉ : Ajout des colonnes "Critères physiologiques" et "Physionomie"
+  const headers = ['Nom latin (score %)', 'FloreAlpes', 'INPN statut', 'Critères physiologiques', 'Écologie', 'Physionomie', 'Flora Gallica', 'OpenObs', "Biodiv'AURA", 'Info Flora', 'Fiche synthèse', 'PFAF', 'Carnet'];
   const linkIcon = (url, img, alt) => {
     if (!url) return "—";
     const encoded = img.split('/').map(s => encodeURIComponent(s)).join('/');
@@ -178,6 +182,7 @@ function buildTable(items){
     const cd   = cdRef(sci); 
     const eco  = ecolOf(sci);
     const crit = criteresOf(sci); // NOUVEAU : récupération des critères physiologiques
+    const phys = physioOf(sci); // Nouvelle colonne physionomie
     const genus = sci.split(' ')[0].toLowerCase();
     const tocEntry = floraToc[genus];
     let floraGallicaLink = "—";
@@ -196,13 +201,13 @@ function buildTable(items){
     }
     const escapedSci = sci.replace(/'/g, "\\'");
     // MODIFIÉ : Réorganisation des colonnes - critères physiologiques avant écologie
-    return `<tr><td class="col-nom-latin">${sci}<br><span class="score">(${pct})</span></td><td class="col-link">${floreAlpesLink}</td><td class="col-link">${linkIcon(cd && inpnStatut(cd), "INPN.png", "INPN")}</td><td class="col-criteres">${crit}</td><td class="col-ecologie">${eco}</td><td class="col-link">${floraGallicaLink}</td><td class="col-link">${linkIcon(cd && openObs(cd), "OpenObs.png", "OpenObs")}</td><td class="col-link">${linkIcon(cd && aura(cd), "Biodiv'AURA.png", "Biodiv'AURA")}</td><td class="col-link">${linkIcon(infoFlora(sci), "Info Flora.png", "Info Flora")}</td><td class="col-link"><a href="#" onclick="handleSynthesisClick(event, this, '${escapedSci}')"><img src="assets/Audio.png" alt="Audio" class="logo-icon"></a></td><td class="col-link">${linkIcon(pfaf(sci), "PFAF.png", "PFAF")}</td><td class="col-link"><button onclick="saveObservationPrompt('${escapedSci}')">⭐</button></td></tr>`;
+    return `<tr><td class="col-nom-latin">${sci}<br><span class="score">(${pct})</span></td><td class="col-link">${floreAlpesLink}</td><td class="col-link">${linkIcon(cd && inpnStatut(cd), "INPN.png", "INPN")}</td><td class="col-criteres">${crit}</td><td class="col-ecologie">${eco}</td><td class="col-physionomie">${phys}</td><td class="col-link">${floraGallicaLink}</td><td class="col-link">${linkIcon(cd && openObs(cd), "OpenObs.png", "OpenObs")}</td><td class="col-link">${linkIcon(cd && aura(cd), "Biodiv'AURA.png", "Biodiv'AURA")}</td><td class="col-link">${linkIcon(infoFlora(sci), "Info Flora.png", "Info Flora")}</td><td class="col-link"><a href="#" onclick="handleSynthesisClick(event, this, '${escapedSci}')"><img src="assets/Audio.png" alt="Audio" class="logo-icon"></a></td><td class="col-link">${linkIcon(pfaf(sci), "PFAF.png", "PFAF")}</td><td class="col-link"><button onclick="saveObservationPrompt('${escapedSci}')">⭐</button></td></tr>`;
   }).join("");
 
-  // MODIFIÉ : En-tête avec critères physiologiques avant écologie
-  const headerHtml = `<tr><th class="col-nom-latin">Nom latin (score %)</th><th class="col-link">FloreAlpes</th><th class="col-link">INPN statut</th><th class="col-criteres">Critères physiologiques</th><th class="col-ecologie">Écologie</th><th class="col-link">Flora Gallica</th><th class="col-link">OpenObs</th><th class="col-link">Biodiv'AURA</th><th class="col-link">Info Flora</th><th class="col-link">Fiche synthèse</th><th class="col-link">PFAF</th><th class="col-link">Carnet</th></tr>`;
-  // MODIFIÉ : Ajustement des largeurs avec critères physiologiques avant écologie
-  const colgroupHtml = `<colgroup><col style="width: 20%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 25%;"><col style="width: 25%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"></colgroup>`;
+  // MODIFIÉ : En-tête avec colonnes supplémentaires
+  const headerHtml = `<tr><th class="col-nom-latin">Nom latin (score %)</th><th class="col-link">FloreAlpes</th><th class="col-link">INPN statut</th><th class="col-criteres">Critères physiologiques</th><th class="col-ecologie">Écologie</th><th class="col-physionomie">Physionomie</th><th class="col-link">Flora Gallica</th><th class="col-link">OpenObs</th><th class="col-link">Biodiv'AURA</th><th class="col-link">Info Flora</th><th class="col-link">Fiche synthèse</th><th class="col-link">PFAF</th><th class="col-link">Carnet</th></tr>`;
+  // MODIFIÉ : Ajustement des largeurs des colonnes
+  const colgroupHtml = `<colgroup><col style="width: 20%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 25%;"><col style="width: 25%;"><col style="width: 25%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"></colgroup>`;
   wrap.innerHTML = `<table>${colgroupHtml}<thead>${headerHtml}</thead><tbody>${rows}</tbody></table>`;
 }
 
