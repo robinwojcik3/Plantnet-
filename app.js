@@ -331,7 +331,24 @@ function buildTable(items){
   }).join("");
 
   const headerHtml = `<tr><th>Sél.</th><th>Nom latin (score %)</th><th>FloreAlpes</th><th>INPN statut</th><th>Critères physiologiques</th><th>Écologie</th><th>Physionomie</th><th>Flora Gallica</th><th>OpenObs</th><th>Biodiv'AURA</th><th>Info Flora</th><th>Fiche synthèse</th><th>PFAF</th><th>Carnet</th></tr>`;
-  const colgroupHtml = `<colgroup><col style="width: 4%;"><col style="width: 18%;"><col style="width: 5%;"><col style="width: 5%;"><col style="width: 15%;"><col style="width: 15%;"><col style="width: 10%;"><col style="width: 5%;"><col style="width: 5%;"><col style="width: 5%;"><col style="width: 5%;"><col style="width: 5%;"><col style="width: 5%;"><col style="width: 5%;"></colgroup>`;
+  
+  // MODIFICATION : Ajustement des largeurs de colonnes pour une meilleure lisibilité
+  const colgroupHtml = `<colgroup>
+    <col style="width: 3%;">
+    <col style="width: 16%;">
+    <col style="width: 3.33%;">
+    <col style="width: 3.33%;">
+    <col style="width: 17%;">
+    <col style="width: 17%;">
+    <col style="width: 17%;">
+    <col style="width: 3.33%;">
+    <col style="width: 3.33%;">
+    <col style="width: 3.33%;">
+    <col style="width: 3.33%;">
+    <col style="width: 3.33%;">
+    <col style="width: 3.33%;">
+    <col style="width: 3.33%;">
+  </colgroup>`;
   
   wrap.innerHTML = `<table>${colgroupHtml}<thead>${headerHtml}</thead><tbody>${rows}</tbody></table><div id="comparison-footer" style="padding-top: 1rem; text-align: center;"></div>`;
 
