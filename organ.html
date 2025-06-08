@@ -18,10 +18,13 @@
     #preview{max-width:100%;height:auto;display:block;margin:0 auto 1rem;}
     #organ-choice{text-align:center;margin:1rem 0;}
     #organ-choice button{margin:.25rem;padding:.4rem .8rem;border:1px solid var(--primary);background:var(--primary);color:#fff;border-radius:4px;cursor:pointer;}
-    table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.05);margin-bottom:1.2rem;table-layout:fixed;}
-    th,td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top;word-wrap:break-word;}
+    
+    /* MODIFICATION : Passage à une mise en page automatique pour le tableau */
+    table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.05);margin-bottom:1.2rem;table-layout:auto;}
+    
+    /* MODIFICATION : Alignement vertical au centre pour une meilleure harmonie */
+    th,td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle;word-wrap:break-word;}
     th{background:#fff;color:#000;font-weight:600;text-align:left}
-    tr{height: 70px;} /* Hauteur fixe pour les lignes */
     tr:last-child td{border-bottom:none}
     td a{color:var(--primary);text-decoration:none}
     td a:hover{text-decoration:underline}
@@ -40,17 +43,17 @@
         user-select: none;
     }
     
-    /* MODIFICATION : Centre le contenu des colonnes de liens/logos */
     td.col-link {
         text-align: center;
+        min-width: 50px; /* Largeur minimale pour les colonnes de logo */
     }
-    /* MODIFICATION : Rend les logos responsifs à la taille de la colonne */
+
+    /* MODIFICATION : Augmentation de la taille des icônes pour remplir la hauteur de ligne */
     img.logo-icon {
-        max-width: 100%;
-        height: auto;
+        height: 48px;
+        width: auto;
         display: block;
         margin: 0 auto;
-        min-width: 24px; /* Empêche les logos de devenir trop petits */
     }
 
     details{margin-bottom:1rem;background:var(--card);border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.05);}
