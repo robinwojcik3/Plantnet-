@@ -307,6 +307,6 @@ speciesSearchInput?.addEventListener("input", e => {
   if (!speciesSuggestions) return;
   const q = norm(e.target.value);
   if (!q) { speciesSuggestions.innerHTML = ""; return; }
-  const matches = taxrefNames.filter(n => norm(n).startsWith(q)).slice(0, 10);
+  const matches = taxrefNames.filter(n => norm(n).startsWith(q)).slice(0, 5);
   speciesSuggestions.innerHTML = matches.map(n => `<option value="${n}">`).join("");
 });
