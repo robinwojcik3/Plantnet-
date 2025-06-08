@@ -1,10 +1,14 @@
-import * as pdfjsLib from '../pdfjs/build/pdf.mjs';
-
-// Configuration du worker avec gestion d'erreur pour iOS
-try {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `../pdfjs/build/pdf.worker.mjs`;
-} catch (e) {
-    console.error('Erreur configuration worker:', e);
+let pdfjsLib;
+async function loadPdfLib() {
+    if (!pdfjsLib) {
+        pdfjsLib = await import('../pdfjs/build/pdf.mjs');
+        try {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = `../pdfjs/build/pdf.worker.mjs`;
+        } catch (e) {
+            console.error('Erreur configuration worker:', e);
+        }
+    }
+    return pdfjsLib;
 }
 
 function supportsModuleWorker() {
@@ -131,7 +135,8 @@ async function loadPdfViewer() {
             disableWorker: true // Désactiver le worker sur iOS pour éviter les erreurs
         } : {};
 
-        const loadingTask = pdfjsLib.getDocument(pdfUrl, loadingOptions);
+        const lib = await loadPdfLib();
+        const loadingTask = lib.getDocument(pdfUrl, loadingOptions);
         pdfDoc = await loadingTask.promise;
         totalPages = pdfDoc.numPages;
         totalPageNumSpan.textContent = totalPages;
