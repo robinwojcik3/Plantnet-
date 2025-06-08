@@ -332,25 +332,8 @@ function buildTable(items){
 
   const headerHtml = `<tr><th>Sél.</th><th>Nom latin (score %)</th><th>FloreAlpes</th><th>INPN statut</th><th>Critères physiologiques</th><th>Écologie</th><th>Physionomie</th><th>Flora Gallica</th><th>OpenObs</th><th>Biodiv'AURA</th><th>Info Flora</th><th>Fiche synthèse</th><th>PFAF</th><th>Carnet</th></tr>`;
   
-  // MODIFICATION : Ajustement des largeurs de colonnes pour une meilleure lisibilité
-  const colgroupHtml = `<colgroup>
-    <col style="width: 3%;">
-    <col style="width: 16%;">
-    <col style="width: 3.33%;">
-    <col style="width: 3.33%;">
-    <col style="width: 17%;">
-    <col style="width: 17%;">
-    <col style="width: 17%;">
-    <col style="width: 3.33%;">
-    <col style="width: 3.33%;">
-    <col style="width: 3.33%;">
-    <col style="width: 3.33%;">
-    <col style="width: 3.33%;">
-    <col style="width: 3.33%;">
-    <col style="width: 3.33%;">
-  </colgroup>`;
-  
-  wrap.innerHTML = `<table>${colgroupHtml}<thead>${headerHtml}</thead><tbody>${rows}</tbody></table><div id="comparison-footer" style="padding-top: 1rem; text-align: center;"></div>`;
+  // MODIFICATION : Suppression du colgroup pour laisser le navigateur gérer les largeurs
+  wrap.innerHTML = `<table><thead>${headerHtml}</thead><tbody>${rows}</tbody></table><div id="comparison-footer" style="padding-top: 1rem; text-align: center;"></div>`;
 
   const footer = document.getElementById('comparison-footer');
   if (footer) {
