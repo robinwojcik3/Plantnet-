@@ -83,11 +83,6 @@ function savePhotoLocally(blob, name) {
    NOUVEAU : FENÊTRE MODALE D'INFORMATION GÉNÉRIQUE
    ================================================================ */
 
-/**
- * Affiche une fenêtre modale avec un titre et un contenu.
- * @param {string} title - Le titre de la fenêtre modale.
- * @param {string} content - Le contenu textuel à afficher.
- */
 function showInfoModal(title, content) {
     const existingModal = document.getElementById('info-modal-overlay');
     if (existingModal) {
@@ -172,7 +167,7 @@ window.handleSynthesisClick = async function(event, element, speciesName) {
     event.preventDefault();
     const parentCell = element.parentElement;
     parentCell.innerHTML = '<i>Texte en cours...</i>';
-    element.style.pointerEvents = 'none'; // Empêche les clics multiples
+    element.style.pointerEvents = 'none';
 
     const synthesisText = await getSynthesisFromGemini(speciesName);
     if (synthesisText.startsWith('Erreur') || synthesisText.startsWith('Réponse')) {
@@ -224,12 +219,23 @@ async function getComparisonFromGemini(speciesData) {
     }
 }
 
+// MODIFICATION : La fonction n'affiche plus de pop-up mais insère le résultat sous le tableau.
 async function handleComparisonClick() {
     const compareBtn = document.getElementById('compare-btn');
     if (!compareBtn) return;
     
     compareBtn.disabled = true;
     compareBtn.textContent = 'Analyse en cours...';
+
+    const resultsContainer = document.getElementById('comparison-results-container');
+    if (!resultsContainer) {
+        console.error("Le conteneur de résultats (#comparison-results-container) est introuvable.");
+        compareBtn.disabled = false;
+        compareBtn.textContent = 'Lancer la comparaison';
+        return;
+    }
+    resultsContainer.innerHTML = '<i>Génération de la comparaison en cours...</i>';
+    resultsContainer.style.display = 'block';
 
     const checkedBoxes = document.querySelectorAll('.species-checkbox:checked');
     const speciesData = Array.from(checkedBoxes).map(box => ({
@@ -240,7 +246,22 @@ async function handleComparisonClick() {
 
     const comparisonText = await getComparisonFromGemini(speciesData);
 
-    showInfoModal('Analyse Comparative des Espèces', comparisonText);
+    // Injection du résultat dans le conteneur dédié
+    resultsContainer.style.cssText = `
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background: var(--card, #ffffff);
+        border: 1px solid var(--border, #e0e0e0);
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,.05);
+    `;
+    resultsContainer.innerHTML = `
+        <h2 style="margin-top:0; color:var(--primary, #388e3c);">Analyse Comparative des Espèces</h2>
+        <p>${comparisonText.replace(/\n/g, '<br>')}</p>
+    `;
+
+    // Défilement de la page pour afficher le résultat
+    resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     compareBtn.disabled = false;
     compareBtn.textContent = 'Lancer la comparaison';
@@ -332,8 +353,8 @@ function buildTable(items){
 
   const headerHtml = `<tr><th>Sél.</th><th>Nom latin (score %)</th><th>FloreAlpes</th><th>INPN statut</th><th>Critères physiologiques</th><th>Écologie</th><th>Physionomie</th><th>Flora Gallica</th><th>OpenObs</th><th>Biodiv'AURA</th><th>Info Flora</th><th>Fiche synthèse</th><th>PFAF</th><th>Carnet</th></tr>`;
   
-  // MODIFICATION : Suppression du colgroup pour laisser le navigateur gérer les largeurs
-  wrap.innerHTML = `<table><thead>${headerHtml}</thead><tbody>${rows}</tbody></table><div id="comparison-footer" style="padding-top: 1rem; text-align: center;"></div>`;
+  // MODIFICATION : Ajout du conteneur pour les résultats de la comparaison.
+  wrap.innerHTML = `<table><thead>${headerHtml}</thead><tbody>${rows}</tbody></table><div id="comparison-footer" style="padding-top: 1rem; text-align: center;"></div><div id="comparison-results-container" style="display:none;"></div>`;
 
   const footer = document.getElementById('comparison-footer');
   if (footer) {
@@ -349,9 +370,7 @@ function buildTable(items){
       compareBtn.addEventListener('click', handleComparisonClick);
   }
 
-  // Écouteurs d'événements pour le conteneur des résultats
   wrap.addEventListener('change', (e) => {
-      // Gère le changement d'état des cases à cocher pour la comparaison
       if (e.target.classList.contains('species-checkbox')) {
           const checkedCount = wrap.querySelectorAll('.species-checkbox:checked').length;
           const compareBtn = document.getElementById('compare-btn');
@@ -362,7 +381,6 @@ function buildTable(items){
   });
 
   wrap.addEventListener('click', (e) => {
-      // Gère le clic sur le texte tronqué pour afficher la pop-up
       const targetCell = e.target.closest('.text-popup-trigger');
       if (targetCell) {
           e.preventDefault();
