@@ -203,11 +203,13 @@ ${speciesDataString}
 ---
 Ta réponse doit être structurée rigoureusement en trois parties distinctes, sans aucun autre texte ou préambule.
 
-Partie 1 : Commence par une unique phrase de synthèse (1-2 lignes maximum) qui souligne l'élément morphologique le plus remarquable et le plus simple à observer pour distinguer ces espèces les unes des autres.
+Commence par une unique phrase de synthèse (1-2 lignes maximum) qui souligne l'élément morphologique le plus remarquable et le plus simple à observer pour distinguer ces espèces les unes des autres.
 
-Partie 2 : Ensuite, rédige un paragraphe (quelques lignes) qui détaille les autres différences morphologiques importantes, en insistant sur les caractères visibles (taille, couleur, forme des feuilles, etc.) qui permettent de les différencier sans ambiguïté.
+Ensuite, rédige un paragraphe (quelques lignes) qui détaille les autres différences morphologiques importantes, en insistant sur les caractères visibles (taille, couleur, forme des feuilles, etc.) qui permettent de les différencier sans ambiguïté, basé sur le texte descriptif de la colonne 'Physionomie'.
 
-Partie 3 : Enfin, rédige un second paragraphe (quelques lignes) qui compare les conditions écologiques préférentielles (habitat, type de sol, altitude) de chaque espèce, en mettant en évidence ce qui les distingue.`;
+Enfin, rédige un second paragraphe (quelques lignes) qui compare les conditions écologiques préférentielles (habitat, type de sol, altitude) de chaque espèce, en mettant en évidence ce qui les distingue, basé sur le texte descriptif de la colonne 'écologie'.
+
+Ta réponse doit être fluide et de comporter aucun "*" ou "/" ou caractère de formatage de markdown, juste du texte non formater`;
 
     const requestBody = { 
         "contents": [{ "parts": [{ "text": promptTemplate }] }], 
