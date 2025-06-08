@@ -12,17 +12,24 @@
   <style>
     :root{ --primary:#388e3c; --bg:#f6f9fb; --card:#ffffff; --border:#e0e0e0; --text:#202124; }
     *{box-sizing:border-box;}
-    body{ background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; margin:0 auto; padding:1.2rem; max-width:800px; }
-    h1{ margin:0 0 1rem; font-size:1.6rem; color:var(--primary); }
-    ul{ list-style:none; padding:0; }
-    li{ background:var(--card); margin-bottom:.5rem; padding:.5rem .8rem; border:1px solid var(--border); border-radius:4px; }
-    form{ display:flex; flex-direction:column; gap:.5rem; margin-bottom:1rem; }
-    input{ padding:.4rem .6rem; }
-    button{ padding:.4rem .6rem; cursor:pointer; }
+    body{ background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; margin:0; padding:0; display:flex; flex-direction:column; min-height:100vh; }
     .tabs-container{ background:var(--card); box-shadow:0 2px 4px rgba(0,0,0,0.1); position:sticky; top:0; z-index:100; }
     .tabs{ display:flex; border-bottom:2px solid var(--border); }
-    .tab{ flex:1; padding:1rem; text-align:center; cursor:pointer; background:none; border:none; font-size:1rem; color:var(--text); }
+    .tab{ flex:1; padding:1rem; text-align:center; cursor:pointer; background:none; border:none; font-size:1rem; color:var(--text); transition:all 0.3s; position:relative; }
+    .tab:hover{ background:rgba(56,142,60,0.1); }
     .tab.active{ color:var(--primary); font-weight:600; }
+    .tab.active::after{ content:''; position:absolute; bottom:-2px; left:0; right:0; height:2px; background:var(--primary); }
+
+    .main-content{ flex:1; padding:1.5rem; max-width:900px; margin:0 auto; width:100%; }
+    h1{ margin:0 0 1.5rem; font-size:1.6rem; color:var(--primary); text-align:center; }
+    ul{ list-style:none; padding:0; }
+    li{ background:var(--card); margin-bottom:.5rem; padding:.5rem .8rem; border:1px solid var(--border); border-radius:4px; }
+    form{ display:flex; flex-direction:column; gap:.75rem; margin-bottom:1rem; background:var(--card); padding:1.5rem; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
+    input{ padding:.6rem .8rem; border:1px solid var(--border); border-radius:4px; }
+    button{ padding:.6rem 1rem; cursor:pointer; border:none; border-radius:6px; font-size:1rem; }
+    .action-button{ background:var(--primary); color:#fff; transition:all 0.3s; }
+    .action-button:hover{ background:#2e7d32; transform:scale(1.02); }
+    #logout-btn{ margin-bottom:1rem; }
   </style>
 </head>
 <body>
@@ -33,18 +40,21 @@
       <button class="tab active">Carnet</button>
     </div>
   </nav>
-  <h1>Carnet d'observations</h1>
-  <div id="auth-section">
-    <form id="login-form">
-      <input type="email" id="email" placeholder="Email" required>
-      <input type="password" id="password" placeholder="Mot de passe" required>
-      <button type="submit">Connexion</button>
-      <button type="button" id="signup-btn">Créer un compte</button>
-    </form>
-  </div>
-  <div id="notebook-section" style="display:none">
-    <button id="logout-btn" style="margin-bottom:1rem">Déconnexion</button>
-    <ul id="entries"></ul>
+
+  <div class="main-content">
+    <h1>Carnet d'observations</h1>
+    <div id="auth-section">
+      <form id="login-form">
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="password" id="password" placeholder="Mot de passe" required>
+        <button type="submit" class="action-button">Connexion</button>
+        <button type="button" id="signup-btn" class="action-button">Créer un compte</button>
+      </form>
+    </div>
+    <div id="notebook-section" style="display:none">
+      <button id="logout-btn" class="action-button">Déconnexion</button>
+      <ul id="entries"></ul>
+    </div>
   </div>
 </body>
 </html>

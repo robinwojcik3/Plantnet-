@@ -18,6 +18,10 @@ async function login(e){
   e.preventDefault();
   const email=document.getElementById('email').value;
   const password=document.getElementById('password').value;
+  if(SUPABASE_URL.startsWith('YOUR') || SUPABASE_KEY.startsWith('YOUR')){
+    showNotification('Configuration Supabase manquante', 'error');
+    return;
+  }
   const { error } = await sb.auth.signInWithPassword({ email, password });
   if(error) return showNotification(error.message,'error');
   checkAuth();
@@ -27,6 +31,10 @@ async function signup(e){
   e.preventDefault();
   const email=document.getElementById('email').value;
   const password=document.getElementById('password').value;
+  if(SUPABASE_URL.startsWith('YOUR') || SUPABASE_KEY.startsWith('YOUR')){
+    showNotification('Configuration Supabase manquante', 'error');
+    return;
+  }
   const { error } = await sb.auth.signUp({ email, password });
   if(error) return showNotification(error.message,'error');
   showNotification('Vérifiez vos mails pour confirmer votre compte.');

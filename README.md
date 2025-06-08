@@ -39,6 +39,10 @@ const TTS_API_KEY    = "your-text-to-speech-key";
 
 These keys are required for PlantNet image identification, Gemini summaries and Google TTS audio synthesis.
 
+## Configuring Supabase
+
+The notebook feature relies on a Supabase backend for authentication and storage. Edit `notebook.js` and replace the placeholder values of `SUPABASE_URL` and `SUPABASE_KEY` with your own project credentials. Without these keys, creating an account or logging in will display a configuration error.
+
 ## Running the application locally
 
 1. Serve the project from a local HTTP server (for example using `npx serve` or `python3 -m http.server`).
