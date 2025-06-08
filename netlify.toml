@@ -2,8 +2,17 @@
 
 # Section principale pour le 'build' de votre site
 [build]
+  # Le dossier contenant les fonctions serverless
+  functions = "netlify/functions/"
   # Le dossier à publier pour le site statique (la racine dans votre cas)
   publish = "."
+
+# Section pour configurer spécifiquement les fonctions
+[functions]
+  # Cette directive est cruciale. Elle force Netlify à inclure 
+  # le dossier contenant vos PDF dans le paquet de la fonction.
+  # "/**" signifie "tous les fichiers et sous-dossiers à l'intérieur".
+  included_files = ["netlify/functions/flora_gallica_pdfs/**"]
 
 # Section pour définir l'environnement de build
 [build.environment]
