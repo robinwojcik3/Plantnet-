@@ -8,6 +8,8 @@
   <link rel="icon" href="icons/icon-192.png">
   <script defer src="ui.js"></script>
   <script defer src="app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="notebook.js"></script>
   <style>
     :root{ --primary:#388e3c; --bg:#f6f9fb; --card:#ffffff; --border:#e0e0e0; --text:#202124; }
     *{box-sizing:border-box;}
@@ -87,6 +89,7 @@
         <div class="tabs">
             <button class="tab active">Identification</button>
             <button class="tab" onclick="window.location.href='contexte.html'">Contexte environnemental</button>
+            <button class="tab" onclick="window.location.href='notebook.html'">Carnet</button>
         </div>
     </nav>
 
