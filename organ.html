@@ -13,16 +13,15 @@
   <style>
     :root{--primary:#388e3c;--bg:#f6f9fb;--card:#ffffff;--border:#e0e0e0;--text:#202124}
     *{box-sizing:border-box;}
-    body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;margin:0 auto;padding:1.2rem;max-width:1100px;}
+    /* MODIFICATION : Le body prend toute la largeur, suppression de max-width et margin:auto */
+    body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;margin:0;padding:1.2rem;}
     h1{margin:0 0 1rem;font-size:1.6rem;color:var(--primary)}
     #preview{max-width:100%;height:auto;display:block;margin:0 auto 1rem;}
     #organ-choice{text-align:center;margin:1rem 0;}
     #organ-choice button{margin:.25rem;padding:.4rem .8rem;border:1px solid var(--primary);background:var(--primary);color:#fff;border-radius:4px;cursor:pointer;}
     
-    /* MODIFICATION : Passage à une mise en page automatique pour le tableau */
     table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.05);margin-bottom:1.2rem;table-layout:auto;}
     
-    /* MODIFICATION : Alignement vertical au centre pour une meilleure harmonie */
     th,td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle;word-wrap:break-word;}
     th{background:#fff;color:#000;font-weight:600;text-align:left}
     tr:last-child td{border-bottom:none}
@@ -45,10 +44,9 @@
     
     td.col-link {
         text-align: center;
-        min-width: 50px; /* Largeur minimale pour les colonnes de logo */
+        min-width: 50px; 
     }
 
-    /* MODIFICATION : Augmentation de la taille des icônes pour remplir la hauteur de ligne */
     img.logo-icon {
         height: 48px;
         width: auto;
