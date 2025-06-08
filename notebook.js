@@ -30,6 +30,7 @@ async function signup(e){
   const { error } = await sb.auth.signUp({ email, password });
   if(error) return showNotification(error.message,'error');
   showNotification('Vérifiez vos mails pour confirmer votre compte.');
+  checkAuth();
 }
 
 async function logout(){
