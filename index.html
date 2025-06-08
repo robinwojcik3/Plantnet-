@@ -52,13 +52,22 @@
     th,td{ padding: 8px 6px; border-bottom:1px solid var(--border); word-wrap: break-word; vertical-align: top; }
     th{background:#fff;color:#000;font-weight:600;text-align:left}
     tr:last-child td{border-bottom:none}
-    .col-nom-latin { width: 20%; }
+    .col-checkbox { width: 4%; text-align: center; }
+    .col-nom-latin { width: 14%; }
     .col-nom-latin .score { display:block; font-size:0.9em; color:#555; }
-    .col-criteres { width: 22%; font-size: 0.9em; }
-    .col-ecologie { width: 22%; }
-    .col-physionomie { width: 22%; font-size: 0.9em; }
-    .col-link { width: 6%; text-align: center; }
+    .col-criteres { width: 18%; font-size: 0.9em; }
+    .col-ecologie { width: 18%; }
+    .col-physionomie { width: 18%; font-size: 0.9em; }
+    .col-link { width: 4%; text-align: center; }
     .logo-icon { width: 24px; height: auto; }
+    .species-checkbox { cursor: pointer; transform: scale(1.2); }
+    #comparison-button-container { text-align: center; margin-top: 1rem; }
+    #comparison-button { padding: 12px 24px; font-size: 1.1rem; }
+    .loading-comparison { text-align: center; padding: 2rem; }
+    .loading-comparison::after { content: ''; display: inline-block; width: 30px; height: 30px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-left: 10px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .comparison-result { white-space: pre-wrap; }
+    .comparison-error { color: #e53935; text-align: center; padding: 2rem; }
     td a{color:var(--primary);text-decoration:none}
     td a:hover{text-decoration:underline}
     details{margin-bottom:1rem;background:var(--card);border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.05);}
@@ -81,6 +90,8 @@
       .tabs-container { background: var(--card); }
       .tab:hover { background: rgba(56, 142, 60, 0.2); }
       table,details{border-color:#333} th{background:#262b2f;color:#ececec} body.home .upload-btn.logo-btn span { color: var(--text); } .option-container { background-color: rgba(38, 43, 47, 0.8); } #multi-image-list-area .image-organ-item { background-color: var(--card); border-color: var(--border); } #multi-image-list-area select { background-color: #333; color: var(--text); } .col-nom-latin .score { color:#ccc; } .col-criteres { color: #ccc; } .col-physionomie { color:#ccc; } #multi-image-list-area .delete-file-btn { color: #ff6b6b; } #multi-image-list-area .delete-file-btn:hover { color: #ff8787; } .search-species-container input[type="search"] { background-color: #333; color: var(--text); border-color: #555; }
+      .comparison-modal-content { background: var(--card); }
+      .species-checkbox { accent-color: var(--primary); }
     }
   </style>
 </head>
