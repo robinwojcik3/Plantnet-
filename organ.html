@@ -18,12 +18,29 @@
     #preview{max-width:100%;height:auto;display:block;margin:0 auto 1rem;}
     #organ-choice{text-align:center;margin:1rem 0;}
     #organ-choice button{margin:.25rem;padding:.4rem .8rem;border:1px solid var(--primary);background:var(--primary);color:#fff;border-radius:4px;cursor:pointer;}
-    table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.05);margin-bottom:1.2rem;}
-    th,td{padding:8px 10px;border-bottom:1px solid var(--border);}
+    table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.05);margin-bottom:1.2rem;table-layout:fixed;}
+    th,td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top;word-wrap:break-word;}
     th{background:#fff;color:#000;font-weight:600;text-align:left}
+    tr{height: 70px;} /* Hauteur fixe pour les lignes */
     tr:last-child td{border-bottom:none}
     td a{color:var(--primary);text-decoration:none}
     td a:hover{text-decoration:underline}
+    
+    /* MODIFICATION : Style pour le texte tronqué et cliquable */
+    .text-popup-trigger {
+        display: -webkit-box;
+        -webkit-line-clamp: 3; /* Limite à 3 lignes */
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        cursor: zoom-in;
+        max-height: 4.8em; /* Hauteur max pour env. 3 lignes (ajuster si la police/hauteur de ligne change) */
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
     details{margin-bottom:1rem;background:var(--card);border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.05);}
     summary{padding:10px 12px;cursor:pointer;font-weight:500;color:var(--primary);list-style:none;}
     summary::after{content:"▸";float:right;transition:transform .2s;}
