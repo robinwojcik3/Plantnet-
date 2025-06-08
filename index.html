@@ -38,25 +38,13 @@
     body:not(.home) .upload-btn { display:none; }
     body:not(.home) h1 { font-size:1.6rem; color:var(--primary); margin-bottom: 1rem;}
     body:not(.home) .tabs-container { position: static; }
-    table{ width:100%; table-layout: fixed; border-collapse:collapse; background:var(--card); border:1px solid var(--border); border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,.05); margin-bottom:1.2rem; }
-    th,td{ padding: 8px 6px; border-bottom:1px solid var(--border); word-wrap: break-word; vertical-align: top; }
-    th{background:#fff;color:#000;font-weight:600;text-align:left}
-    tr:last-child td{border-bottom:none}
+    table{ table-layout: fixed; }
     .col-nom-latin { width: 20%; }
     .col-nom-latin .score { display:block; font-size:0.9em; color:#555; }
     .col-criteres { width: 22%; font-size: 0.9em; }
     .col-ecologie { width: 22%; }
     .col-link { width: 6%; text-align: center; }
-    .logo-icon { width: 24px; height: auto; }
-    td a{color:var(--primary);text-decoration:none}
-    td a:hover{text-decoration:underline}
-    details{margin-bottom:1rem;background:var(--card);border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.05);}
-    summary{padding:10px 12px;cursor:pointer;font-weight:500;color:var(--primary);list-style:none;}
-    summary::after{content:"▸";float:right;transition:transform .2s;}
-    details[open] summary::after{transform:rotate(90deg);}
-    summary:hover{background:rgba(0,0,0,.04);}
-    .iframe-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;padding:12px;}
-    iframe{width:100%;height:280px;border:none;border-radius:4px;}
+    /* Table and accordion styles are now global */
     
     .synthesis-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 1rem; }
     .synthesis-modal-content { background: var(--card); color: var(--text); padding: 25px; border-radius: 8px; max-width: 90%; width: 600px; max-height: 85vh; overflow-y: auto; position: relative; line-height: 1.6; }
