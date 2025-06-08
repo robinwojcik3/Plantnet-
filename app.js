@@ -123,7 +123,7 @@ window.handleSynthesisClick = async function(event, element, speciesName) {
     const synthesisText = await getSynthesisFromGemini(speciesName);
     if (synthesisText.startsWith('Erreur') || synthesisText.startsWith('Réponse')) {
         showModal(synthesisText);
-        parentCell.innerHTML = `<a href="#" onclick="handleSynthesisClick(event, this, '${speciesName.replace(/'/g, "\\'")}')">Générer</a>`;
+        parentCell.innerHTML = `<a href="#" aria-label="Générer la synthèse audio" onclick="handleSynthesisClick(event, this, '${speciesName.replace(/'/g, "\\'")}')">Générer</a>`;
         return;
     }
     
@@ -136,15 +136,29 @@ window.handleSynthesisClick = async function(event, element, speciesName) {
         showModal("La synthèse audio a échoué. Le texte généré était :\n\n" + synthesisText);
     }
 
-    parentCell.innerHTML = `<a href="#" onclick="handleSynthesisClick(event, this, '${speciesName.replace(/'/g, "\\'")}')">Générer</a>`;
+    parentCell.innerHTML = `<a href="#" aria-label="Générer la synthèse audio" onclick="handleSynthesisClick(event, this, '${speciesName.replace(/'/g, "\\'")}')">Générer</a>`;
 };
 
 
 /* ================================================================
    LOGIQUE D'IDENTIFICATION ET D'AFFICHAGE
    ================================================================ */
-async function callPlantNetAPI(formData) { try { const res = await fetch(ENDPOINT, { method: "POST", body: formData }); if (!res.ok) { const errBody = await res.json().catch(() => res.text()); throw new Error(`Erreur API PlantNet (${res.status}): ${typeof errBody === 'object' ? errBody.message : errBody}`); } return (await res.json()).results.slice(0, MAX_RESULTS); } catch (err) { console.error(err); showNotification(err.message, 'error'); return null; } }
-async function identifySingleImage(fileBlob, organ) {
+async function callPlantNetAPI(formData){
+  const s=document.getElementById("loading-spinner");
+  if(s) s.style.display="block";
+  try{
+    const res=await fetch(ENDPOINT,{method:"POST",body:formData});
+    if(!res.ok){
+      const b=await res.json().catch(()=>res.text());
+      throw new Error(`Erreur API PlantNet (${res.status}): ${typeof b==="object"?b.message:b}`);
+    }
+    return (await res.json()).results.slice(0,MAX_RESULTS);
+  }catch(e){
+    console.error(e);
+    showNotification(e.message,"error");
+    return null;
+  }finally{ if(s) s.style.display="none"; }
+}
   await ready;
   const fd = new FormData();
   fd.append("images", fileBlob, fileBlob.name || "photo.jpg");
@@ -196,7 +210,7 @@ function buildTable(items){
     }
     const escapedSci = sci.replace(/'/g, "\\'");
     // MODIFIÉ : Réorganisation des colonnes - critères physiologiques avant écologie
-    return `<tr><td class="col-nom-latin">${sci}<br><span class="score">(${pct})</span></td><td class="col-link">${floreAlpesLink}</td><td class="col-link">${linkIcon(cd && inpnStatut(cd), "INPN.png", "INPN")}</td><td class="col-criteres">${crit}</td><td class="col-ecologie">${eco}</td><td class="col-link">${floraGallicaLink}</td><td class="col-link">${linkIcon(cd && openObs(cd), "OpenObs.png", "OpenObs")}</td><td class="col-link">${linkIcon(cd && aura(cd), "Biodiv'AURA.png", "Biodiv'AURA")}</td><td class="col-link">${linkIcon(infoFlora(sci), "Info Flora.png", "Info Flora")}</td><td class="col-link"><a href="#" onclick="handleSynthesisClick(event, this, '${escapedSci}')"><img src="assets/Audio.png" alt="Audio" class="logo-icon"></a></td><td class="col-link">${linkIcon(pfaf(sci), "PFAF.png", "PFAF")}</td><td class="col-link"><button onclick="saveObservationPrompt('${escapedSci}')">⭐</button></td></tr>`;
+    return `<tr><td class="col-nom-latin">${sci}<br><span class="score">(${pct})</span></td><td class="col-link">${floreAlpesLink}</td><td class="col-link">${linkIcon(cd && inpnStatut(cd), "INPN.png", "INPN")}</td><td class="col-criteres">${crit}</td><td class="col-ecologie">${eco}</td><td class="col-link">${floraGallicaLink}</td><td class="col-link">${linkIcon(cd && openObs(cd), "OpenObs.png", "OpenObs")}</td><td class="col-link">${linkIcon(cd && aura(cd), "Biodiv'AURA.png", "Biodiv'AURA")}</td><td class="col-link">${linkIcon(infoFlora(sci), "Info Flora.png", "Info Flora")}</td><td class="col-link"><a href="#" aria-label="Générer la synthèse audio" onclick="handleSynthesisClick(event, this, '${escapedSci}')"><img src="assets/Audio.png" alt="Audio" class="logo-icon"></a></td><td class="col-link">${linkIcon(pfaf(sci), "PFAF.png", "PFAF")}</td><td class="col-link"><button onclick="saveObservationPrompt('${escapedSci}')">⭐</button></td></tr>`;
   }).join("");
 
   // MODIFIÉ : En-tête avec critères physiologiques avant écologie

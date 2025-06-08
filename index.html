@@ -6,21 +6,12 @@
   <title>Plantouille express</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
   <script defer src="ui.js"></script>
   <script defer src="app.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="notebook.js"></script>
   <style>
-    :root{ --primary:#388e3c; --bg:#f6f9fb; --card:#ffffff; --border:#e0e0e0; --text:#202124; }
-    *{box-sizing:border-box;}
-    
-    /* NOUVEAU : Styles pour la navigation par onglets */
-    .tabs-container { background: var(--card); box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
-    .tabs { display: flex; border-bottom: 2px solid var(--border); }
-    .tab { flex: 1; padding: 1rem; text-align: center; cursor: pointer; background: none; border: none; font-size: 1rem; color: var(--text); transition: all 0.3s; position: relative; }
-    .tab:hover { background: rgba(56, 142, 60, 0.1); }
-    .tab.active { color: var(--primary); font-weight: 600; }
-    .tab.active::after { content: ''; position: absolute; bottom: -2px; left: 0; right: 0; height: 2px; background: var(--primary); }
     
     /* Ajustement du body pour les onglets */
     body.home::before{ content:""; position:fixed; inset:0; background:url("assets/Bandeau.jpg") center/cover no-repeat fixed; z-index:-1; opacity:.30; }
@@ -76,7 +67,6 @@
     #synthesis-modal-footer { margin-top: 20px; text-align: center; }
 
     @media (prefers-color-scheme:dark){ 
-      :root{--bg:#181a1b;--card:#262b2f;--border:#333;--text:#ececec} 
       .tabs-container { background: var(--card); }
       .tab:hover { background: rgba(56, 142, 60, 0.2); }
       table,details{border-color:#333} th{background:#262b2f;color:#ececec} body.home .upload-btn.logo-btn span { color: var(--text); } .option-container { background-color: rgba(38, 43, 47, 0.8); } #multi-image-list-area .image-organ-item { background-color: var(--card); border-color: var(--border); } #multi-image-list-area select { background-color: #333; color: var(--text); } .col-nom-latin .score { color:#ccc; } .col-criteres { color: #ccc; } #multi-image-list-area .delete-file-btn { color: #ff6b6b; } #multi-image-list-area .delete-file-btn:hover { color: #ff8787; } .search-species-container input[type="search"] { background-color: #333; color: var(--text); border-color: #555; } 
@@ -87,11 +77,12 @@
     <!-- NOUVEAU : Navigation par onglets -->
     <nav class="tabs-container">
         <div class="tabs">
-            <button class="tab active">Identification</button>
-            <button class="tab" onclick="window.location.href='contexte.html'">Contexte environnemental</button>
-            <button class="tab" onclick="window.location.href='notebook.html'">Carnet</button>
+            <button class="tab active"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" data-slot="icon">   <path fill-rule="evenodd" d="M1.5 6a2.25 2.25 0 0 1 2.25-2.25h16.5A2.25 2.25 0 0 1 22.5 6v12a2.25 2.25 0 0 1-2.25 2.25H3.75A2.25 2.25 0 0 1 1.5 18V6ZM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0 0 21 18v-1.94l-2.69-2.689a1.5 1.5 0 0 0-2.12 0l-.88.879.97.97a.75.75 0 1 1-1.06 1.06l-5.16-5.159a1.5 1.5 0 0 0-2.12 0L3 16.061Zm10.125-7.81a1.125 1.125 0 1 1 2.25 0 1.125 1.125 0 0 1-2.25 0Z" clip-rule="evenodd"/> </svg>  <span>Identification</span></button>
+            <button class="tab" onclick="window.location.href='contexte.html'"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" data-slot="icon">   <path d="M21.721 12.752a9.711 9.711 0 0 0-.945-5.003 12.754 12.754 0 0 1-4.339 2.708 18.991 18.991 0 0 1-.214 4.772 17.165 17.165 0 0 0 5.498-2.477ZM14.634 15.55a17.324 17.324 0 0 0 .332-4.647c-.952.227-1.945.347-2.966.347-1.021 0-2.014-.12-2.966-.347a17.515 17.515 0 0 0 .332 4.647 17.385 17.385 0 0 0 5.268 0ZM9.772 17.119a18.963 18.963 0 0 0 4.456 0A17.182 17.182 0 0 1 12 21.724a17.18 17.18 0 0 1-2.228-4.605ZM7.777 15.23a18.87 18.87 0 0 1-.214-4.774 12.753 12.753 0 0 1-4.34-2.708 9.711 9.711 0 0 0-.944 5.004 17.165 17.165 0 0 0 5.498 2.477ZM21.356 14.752a9.765 9.765 0 0 1-7.478 6.817 18.64 18.64 0 0 0 1.988-4.718 18.627 18.627 0 0 0 5.49-2.098ZM2.644 14.752c1.682.971 3.53 1.688 5.49 2.099a18.64 18.64 0 0 0 1.988 4.718 9.765 9.765 0 0 1-7.478-6.816ZM13.878 2.43a9.755 9.755 0 0 1 6.116 3.986 11.267 11.267 0 0 1-3.746 2.504 18.63 18.63 0 0 0-2.37-6.49ZM12 2.276a17.152 17.152 0 0 1 2.805 7.121c-.897.23-1.837.353-2.805.353-.968 0-1.908-.122-2.805-.353A17.151 17.151 0 0 1 12 2.276ZM10.122 2.43a18.629 18.629 0 0 0-2.37 6.49 11.266 11.266 0 0 1-3.746-2.504 9.754 9.754 0 0 1 6.116-3.985Z"/> </svg>  <span>Contexte environnemental</span></button>
+            <button class="tab" onclick="window.location.href='notebook.html'"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" data-slot="icon">   <path d="M11.25 4.533A9.707 9.707 0 0 0 6 3a9.735 9.735 0 0 0-3.25.555.75.75 0 0 0-.5.707v14.25a.75.75 0 0 0 1 .707A8.237 8.237 0 0 1 6 18.75c1.995 0 3.823.707 5.25 1.886V4.533ZM12.75 20.636A8.214 8.214 0 0 1 18 18.75c.966 0 1.89.166 2.75.47a.75.75 0 0 0 1-.708V4.262a.75.75 0 0 0-.5-.707A9.735 9.735 0 0 0 18 3a9.707 9.707 0 0 0-5.25 1.533v16.103Z"/> </svg>  <span>Carnet</span></button>
         </div>
     </nav>
+    <div id="loading-spinner" class="loading-spinner"></div>
 
     <div id="main-content">
         <h1>Plantouille express</h1>
