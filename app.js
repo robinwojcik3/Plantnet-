@@ -79,6 +79,56 @@ function savePhotoLocally(blob, name) {
   }
 }
 
+/* ================================================================
+   NOUVEAU : FENÊTRE MODALE D'INFORMATION GÉNÉRIQUE
+   ================================================================ */
+
+/**
+ * Affiche une fenêtre modale avec un titre et un contenu.
+ * @param {string} title - Le titre de la fenêtre modale.
+ * @param {string} content - Le contenu textuel à afficher.
+ */
+function showInfoModal(title, content) {
+    const existingModal = document.getElementById('info-modal-overlay');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    const modalOverlay = document.createElement('div');
+    modalOverlay.id = 'info-modal-overlay';
+    modalOverlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 1rem;';
+
+    const modalContainer = document.createElement('div');
+    modalContainer.style.cssText = 'background: var(--card, #ffffff); color: var(--text, #202124); padding: 2rem; border-radius: 8px; max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 5px 15px rgba(0,0,0,0.3);';
+
+    const modalTitle = document.createElement('h2');
+    modalTitle.textContent = title;
+    modalTitle.style.marginTop = '0';
+    modalTitle.style.color = 'var(--primary, #388e3c)';
+
+    const modalText = document.createElement('div');
+    modalText.innerHTML = content.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, '<br>');
+    modalText.style.lineHeight = '1.6';
+
+    const closeButton = document.createElement('button');
+    closeButton.textContent = 'Fermer';
+    closeButton.className = 'action-button';
+    closeButton.style.display = 'block';
+    closeButton.style.margin = '1.5rem auto 0';
+    
+    closeButton.onclick = () => modalOverlay.remove();
+    modalOverlay.onclick = (e) => {
+        if (e.target === modalOverlay) {
+            modalOverlay.remove();
+        }
+    };
+    
+    modalContainer.appendChild(modalTitle);
+    modalContainer.appendChild(modalText);
+    modalContainer.appendChild(closeButton);
+    modalOverlay.appendChild(modalContainer);
+    document.body.appendChild(modalOverlay);
+}
 
 
 /* ================================================================
@@ -126,7 +176,7 @@ window.handleSynthesisClick = async function(event, element, speciesName) {
 
     const synthesisText = await getSynthesisFromGemini(speciesName);
     if (synthesisText.startsWith('Erreur') || synthesisText.startsWith('Réponse')) {
-        showModal(synthesisText);
+        showInfoModal('Erreur de Synthèse',synthesisText);
         parentCell.innerHTML = `<a href="#" onclick="handleSynthesisClick(event, this, '${speciesName.replace(/'/g, "\\'")}')">Générer</a>`;
         return;
     }
@@ -137,11 +187,64 @@ window.handleSynthesisClick = async function(event, element, speciesName) {
     if (audioData) {
         playAudioFromBase64(audioData);
     } else {
-        showModal("La synthèse audio a échoué. Le texte généré était :\n\n" + synthesisText);
+        showInfoModal("Échec de la synthèse audio", "La synthèse audio a échoué. Le texte généré était :\n\n" + synthesisText);
     }
 
     parentCell.innerHTML = `<a href="#" onclick="handleSynthesisClick(event, this, '${speciesName.replace(/'/g, "\\'")}')">Générer</a>`;
 };
+
+
+/* ================================================================
+   NOUVEAU : FONCTIONS POUR L'ANALYSE COMPARATIVE
+   ================================================================ */
+async function getComparisonFromGemini(speciesData) {
+    const speciesDataString = speciesData.map(s => `Espèce: ${s.species}\nDonnées morphologiques (Physionomie): ${s.physio || 'Non renseignée'}\nDonnées écologiques: ${s.eco || 'Non renseignée'}`).join('\n\n');
+    const promptTemplate = `Pour chaque espèce fournie par l’utilisateur, tu dois identifier et décrire quelques critères morphologiques immédiatement visibles, simples à vérifier sur le terrain ou à partir d’un spécimen, et suffisamment fiables pour permettre de distinguer cette espèce uniquement des autres espèces de la même liste avec lesquelles une confusion est réellement probable. Ces critères doivent présenter un fort pouvoir discriminant, c’est-à-dire qu’ils doivent permettre une différenciation claire sans ambiguïté, en se fondant sur des éléments visuellement évidents et accessibles à l’observation directe. Tu ne dois en aucun cas fournir une description complète de l’espèce ni une clé de détermination exhaustive ; seuls les traits morphologiques essentiels à la discrimination doivent être retenus, formulés de manière concise et rigoureuse. Pour accéder à la page d’une espèce sur ces sites, effectue une recherche Google en combinant le nom scientifique de l’espèce et le nom du site concerné. La réponse devra commencer par une ou deux phrases synthétiques présentant les éléments les plus immédiatement remarquables qui permettent de distinguer l’espèce des autres mentionnées. Ensuite, développe un court paragraphe décrivant précisément les différences morphologiques discriminantes entre l’espèce ciblée et celles avec lesquelles elle est susceptible d’être confondue, en insistant sur les caractères visibles les plus efficaces pour la séparation. Aucun autre contenu ne doit être ajouté : pas de préambule, pas de conclusion, pas de phrase générique du type « voici comment distinguer… », et ne cite pas les sources dans la réponse. Voici les données des espèces sélectionnées à comparer :\n\n---\n\n${speciesDataString}`;
+    const requestBody = { 
+        "contents": [{ "parts": [{ "text": promptTemplate }] }], 
+        "generationConfig": { "temperature": 0.3, "maxOutputTokens": 1500 } 
+    };
+    try {
+        const response = await fetch(GEMINI_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: { message: "Réponse non JSON" } }));
+            throw new Error(errorData.error.message || `Erreur API Gemini (${response.status})`);
+        }
+        const responseData = await response.json();
+        if (responseData?.candidates?.[0]?.content?.parts?.[0]?.text) {
+            return responseData.candidates[0].content.parts[0].text.trim();
+        }
+        if (responseData.promptFeedback?.blockReason) {
+            return `Réponse bloquée par le modèle (${responseData.promptFeedback.blockReason}). Vérifiez le contenu du prompt.`;
+        }
+        return "Le modèle n'a pas pu générer de comparaison. La réponse était vide.";
+    } catch (error) {
+        console.error("Erreur Gemini (comparaison):", error);
+        return `Erreur technique lors de la génération de la comparaison: ${error.message}`;
+    }
+}
+
+async function handleComparisonClick() {
+    const compareBtn = document.getElementById('compare-btn');
+    if (!compareBtn) return;
+    
+    compareBtn.disabled = true;
+    compareBtn.textContent = 'Analyse en cours...';
+
+    const checkedBoxes = document.querySelectorAll('.species-checkbox:checked');
+    const speciesData = Array.from(checkedBoxes).map(box => ({
+        species: box.dataset.species,
+        physio: decodeURIComponent(box.dataset.physio),
+        eco: decodeURIComponent(box.dataset.eco)
+    }));
+
+    const comparisonText = await getComparisonFromGemini(speciesData);
+
+    showInfoModal('Analyse Comparative des Espèces', comparisonText);
+
+    compareBtn.disabled = false;
+    compareBtn.textContent = 'Lancer la comparaison';
+}
 
 
 /* ================================================================
@@ -168,8 +271,7 @@ function buildTable(items){
   const wrap = document.getElementById("results");
   if (!wrap) return;
 
-  // MODIFIÉ : Ajout des colonnes "Critères physiologiques" et "Physionomie"
-  const headers = ['Nom latin (score %)', 'FloreAlpes', 'INPN statut', 'Critères physiologiques', 'Écologie', 'Physionomie', 'Flora Gallica', 'OpenObs', "Biodiv'AURA", 'Info Flora', 'Fiche synthèse', 'PFAF', 'Carnet'];
+  const headers = ['Sél.', 'Nom latin (score %)', 'FloreAlpes', 'INPN statut', 'Critères physiologiques', 'Écologie', 'Physionomie', 'Flora Gallica', 'OpenObs', "Biodiv'AURA", 'Info Flora', 'Fiche synthèse', 'PFAF', 'Carnet'];
   const linkIcon = (url, img, alt) => {
     if (!url) return "—";
     const encoded = img.split('/').map(s => encodeURIComponent(s)).join('/');
@@ -181,14 +283,13 @@ function buildTable(items){
     const sci  = item.species.scientificNameWithoutAuthor;
     const cd   = cdRef(sci); 
     const eco  = ecolOf(sci);
-    const crit = criteresOf(sci); // NOUVEAU : récupération des critères physiologiques
-    const phys = physioOf(sci); // Nouvelle colonne physionomie
+    const crit = criteresOf(sci);
+    const phys = physioOf(sci);
     const genus = sci.split(' ')[0].toLowerCase();
     const tocEntry = floraToc[genus];
     let floraGallicaLink = "—";
     if (tocEntry?.pdfFile && tocEntry?.page) {
       const pdfPath = `assets/flora_gallica_pdfs/${tocEntry.pdfFile}`;
-      // Utiliser le viewer personnalisé sur toutes les plateformes
       const viewerUrl = `viewer.html?file=${encodeURIComponent(pdfPath)}&page=${tocEntry.page}`;
       floraGallicaLink = linkIcon(viewerUrl, "Flora Gallica.png", "Flora Gallica");
     }
@@ -200,15 +301,76 @@ function buildTable(items){
         floreAlpesLink = linkIcon(`https://www.florealpes.com/${urlPart}`, "FloreAlpes.png", "FloreAlpes");
     }
     const escapedSci = sci.replace(/'/g, "\\'");
-    // MODIFIÉ : Réorganisation des colonnes - critères physiologiques avant écologie
-    return `<tr><td class="col-nom-latin">${sci}<br><span class="score">(${pct})</span></td><td class="col-link">${floreAlpesLink}</td><td class="col-link">${linkIcon(cd && inpnStatut(cd), "INPN.png", "INPN")}</td><td class="col-criteres">${crit}</td><td class="col-ecologie">${eco}</td><td class="col-physionomie">${phys}</td><td class="col-link">${floraGallicaLink}</td><td class="col-link">${linkIcon(cd && openObs(cd), "OpenObs.png", "OpenObs")}</td><td class="col-link">${linkIcon(cd && aura(cd), "Biodiv'AURA.png", "Biodiv'AURA")}</td><td class="col-link">${linkIcon(infoFlora(sci), "Info Flora.png", "Info Flora")}</td><td class="col-link"><a href="#" onclick="handleSynthesisClick(event, this, '${escapedSci}')"><img src="assets/Audio.png" alt="Audio" class="logo-icon"></a></td><td class="col-link">${linkIcon(pfaf(sci), "PFAF.png", "PFAF")}</td><td class="col-link"><button onclick="saveObservationPrompt('${escapedSci}')">⭐</button></td></tr>`;
+    return `<tr>
+              <td class="col-checkbox">
+                <input type="checkbox" class="species-checkbox" 
+                       data-species="${escapedSci}" 
+                       data-physio="${encodeURIComponent(phys)}" 
+                       data-eco="${encodeURIComponent(eco)}">
+              </td>
+              <td class="col-nom-latin">${sci}<br><span class="score">(${pct})</span></td>
+              <td class="col-link">${floreAlpesLink}</td>
+              <td class="col-link">${linkIcon(cd && inpnStatut(cd), "INPN.png", "INPN")}</td>
+              <td class="col-criteres">
+                <div class="text-popup-trigger" data-title="Critères physiologiques" data-fulltext="${encodeURIComponent(crit)}">${crit}</div>
+              </td>
+              <td class="col-ecologie">
+                 <div class="text-popup-trigger" data-title="Écologie" data-fulltext="${encodeURIComponent(eco)}">${eco}</div>
+              </td>
+              <td class="col-physionomie">
+                <div class="text-popup-trigger" data-title="Physionomie" data-fulltext="${encodeURIComponent(phys)}">${phys}</div>
+              </td>
+              <td class="col-link">${floraGallicaLink}</td>
+              <td class="col-link">${linkIcon(cd && openObs(cd), "OpenObs.png", "OpenObs")}</td>
+              <td class="col-link">${linkIcon(cd && aura(cd), "Biodiv'AURA.png", "Biodiv'AURA")}</td>
+              <td class="col-link">${linkIcon(infoFlora(sci), "Info Flora.png", "Info Flora")}</td>
+              <td class="col-link"><a href="#" onclick="handleSynthesisClick(event, this, '${escapedSci}')"><img src="assets/Audio.png" alt="Audio" class="logo-icon"></a></td>
+              <td class="col-link">${linkIcon(pfaf(sci), "PFAF.png", "PFAF")}</td>
+              <td class="col-link"><button onclick="saveObservationPrompt('${escapedSci}')">⭐</button></td>
+            </tr>`;
   }).join("");
 
-  // MODIFIÉ : En-tête avec colonnes supplémentaires
-  const headerHtml = `<tr><th class="col-nom-latin">Nom latin (score %)</th><th class="col-link">FloreAlpes</th><th class="col-link">INPN statut</th><th class="col-criteres">Critères physiologiques</th><th class="col-ecologie">Écologie</th><th class="col-physionomie">Physionomie</th><th class="col-link">Flora Gallica</th><th class="col-link">OpenObs</th><th class="col-link">Biodiv'AURA</th><th class="col-link">Info Flora</th><th class="col-link">Fiche synthèse</th><th class="col-link">PFAF</th><th class="col-link">Carnet</th></tr>`;
-  // MODIFIÉ : Ajustement des largeurs des colonnes
-  const colgroupHtml = `<colgroup><col style="width: 20%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 25%;"><col style="width: 25%;"><col style="width: 25%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"></colgroup>`;
-  wrap.innerHTML = `<table>${colgroupHtml}<thead>${headerHtml}</thead><tbody>${rows}</tbody></table>`;
+  const headerHtml = `<tr><th>Sél.</th><th>Nom latin (score %)</th><th>FloreAlpes</th><th>INPN statut</th><th>Critères physiologiques</th><th>Écologie</th><th>Physionomie</th><th>Flora Gallica</th><th>OpenObs</th><th>Biodiv'AURA</th><th>Info Flora</th><th>Fiche synthèse</th><th>PFAF</th><th>Carnet</th></tr>`;
+  const colgroupHtml = `<colgroup><col style="width: 4%;"><col style="width: 18%;"><col style="width: 5%;"><col style="width: 5%;"><col style="width: 15%;"><col style="width: 15%;"><col style="width: 10%;"><col style="width: 5%;"><col style="width: 5%;"><col style="width: 5%;"><col style="width: 5%;"><col style="width: 5%;"><col style="width: 5%;"><col style="width: 5%;"></colgroup>`;
+  
+  wrap.innerHTML = `<table>${colgroupHtml}<thead>${headerHtml}</thead><tbody>${rows}</tbody></table><div id="comparison-footer" style="padding-top: 1rem; text-align: center;"></div>`;
+
+  const footer = document.getElementById('comparison-footer');
+  if (footer) {
+      const compareBtn = document.createElement('button');
+      compareBtn.id = 'compare-btn';
+      compareBtn.textContent = 'Lancer la comparaison';
+      compareBtn.className = 'action-button';
+      compareBtn.style.display = 'none';
+      compareBtn.style.padding = '0.8rem 1.5rem';
+      
+      footer.appendChild(compareBtn);
+
+      compareBtn.addEventListener('click', handleComparisonClick);
+  }
+
+  // Écouteurs d'événements pour le conteneur des résultats
+  wrap.addEventListener('change', (e) => {
+      // Gère le changement d'état des cases à cocher pour la comparaison
+      if (e.target.classList.contains('species-checkbox')) {
+          const checkedCount = wrap.querySelectorAll('.species-checkbox:checked').length;
+          const compareBtn = document.getElementById('compare-btn');
+          if(compareBtn) {
+            compareBtn.style.display = (checkedCount >= 2) ? 'inline-block' : 'none';
+          }
+      }
+  });
+
+  wrap.addEventListener('click', (e) => {
+      // Gère le clic sur le texte tronqué pour afficher la pop-up
+      const targetCell = e.target.closest('.text-popup-trigger');
+      if (targetCell) {
+          e.preventDefault();
+          const title = targetCell.dataset.title || 'Détails';
+          const fullText = decodeURIComponent(targetCell.dataset.fulltext);
+          showInfoModal(title, fullText);
+      }
+  });
 }
 
 function buildCards(items){ const zone = document.getElementById("cards"); if (!zone) return; zone.innerHTML = ""; items.forEach(item => { const sci = item.species.scientificNameWithoutAuthor; const cd = cdRef(sci); if(!cd && !(item.score === 1.00 && items.length === 1)) return; const pct = item.score !== undefined ? Math.round(item.score * 100) : "Info"; const isNameSearchResult = item.score === 1.00 && items.length === 1; const details = document.createElement("details"); let iframeHTML = ''; if (cd) { iframeHTML = `<div class="iframe-grid"><iframe loading="lazy" src="${inpnStatut(cd)}" title="Statut INPN"></iframe><iframe loading="lazy" src="${aura(cd)}" title="Biodiv'AURA"></iframe><iframe loading="lazy" src="${openObs(cd)}" title="OpenObs"></iframe></div>`; } details.innerHTML = `<summary>${sci} — ${pct}${!isNameSearchResult ? '%' : ''}</summary><p style="padding:0 12px 8px;font-style:italic">${ecolOf(sci)}</p>${iframeHTML}`; zone.appendChild(details); }); }
