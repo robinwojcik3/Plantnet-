@@ -209,7 +209,7 @@ Ensuite, rédige un paragraphe (quelques lignes) qui détaille les autres diffé
 
 Enfin, rédige un second paragraphe (quelques lignes) qui compare les conditions écologiques préférentielles (habitat, type de sol, altitude) de chaque espèce, en mettant en évidence ce qui les distingue, basé sur le texte descriptif de la colonne 'écologie'.
 
-Ta réponse doit être fluide et de comporter aucun "*" ou "/" ou caractère de formatage de markdown, juste du texte non formater`;
+Ta réponse doit être fluide et de comporter aucun "*" ou "/" ou caractère de formatage de markdown, juste du texte non formaté. Pas d'italique, pas de gras, pas de ssousligné.`;
 
     const requestBody = { 
         "contents": [{ "parts": [{ "text": promptTemplate }] }], 
