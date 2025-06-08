@@ -212,11 +212,13 @@ function buildCards(items){ const zone = document.getElementById("cards"); if (!
    LOGIQUE SPÉCIFIQUE AUX PAGES (ÉCOUTEURS)
    ================================================================ */
 function handleSingleFileSelect(file) { if (!file) return; const reader = new FileReader(); reader.onload = () => { sessionStorage.setItem("photoData", reader.result); ["speciesQueryName", "identificationResults"].forEach(k => sessionStorage.removeItem(k)); location.href = "organ.html"; }; reader.onerror = () => showNotification("Erreur lecture image.", 'error'); reader.readAsDataURL(file); }
+const speciesSearchInput = document.getElementById("species-search-input");
+const speciesSearchButton = document.getElementById("species-search-button");
+const speciesSuggestions = document.getElementById("species-suggestions");
+
 if (document.getElementById("file-capture")) {
   const fileCaptureInput = document.getElementById("file-capture");
   const fileGalleryInput = document.getElementById("file-gallery");
-  const speciesSearchInput = document.getElementById("species-search-input");
-  const speciesSearchButton = document.getElementById("species-search-button");
   const multiFileInput = document.getElementById("multi-file-input");
   const multiImageListArea = document.getElementById("multi-image-list-area");
   const multiImageIdentifyButton = document.getElementById("multi-image-identify-button");
@@ -231,8 +233,11 @@ if (document.getElementById("file-capture")) {
     if (!query) return;
     await ready;
     const normQuery = norm(query);
-    let taxrefData = await fetch("taxref.json").then(r => r.json());
-    let foundName = Object.keys(taxrefData).find(k => norm(k) === normQuery);
+    let foundName = taxrefNames.find(n => norm(n) === normQuery);
+    if (!foundName) {
+      const partial = taxrefNames.filter(n => norm(n).startsWith(normQuery));
+      if (partial.length === 1) foundName = partial[0];
+    }
     if (foundName) {
       sessionStorage.setItem("speciesQueryName", foundName);
       ["photoData", "identificationResults"].forEach(k => sessionStorage.removeItem(k));
@@ -302,11 +307,10 @@ const performGenusSearch = async () => {
 genusSearchButton?.addEventListener("click", performGenusSearch);
 genusSearchInput?.addEventListener("keypress", e => { if (e.key === "Enter") performGenusSearch(); });
 
-const speciesSuggestions = document.getElementById("species-suggestions");
 speciesSearchInput?.addEventListener("input", e => {
   if (!speciesSuggestions) return;
   const q = norm(e.target.value);
   if (!q) { speciesSuggestions.innerHTML = ""; return; }
-  const matches = taxrefNames.filter(n => norm(n).startsWith(q)).slice(0, 10);
+  const matches = taxrefNames.filter(n => norm(n).startsWith(q)).slice(0, 5);
   speciesSuggestions.innerHTML = matches.map(n => `<option value="${n}">`).join("");
 });
