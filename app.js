@@ -149,7 +149,7 @@ function buildTable(items){
   if (!wrap) return;
 
   // MODIFIÉ : Ajout de la colonne "Critères physiologiques" avant l'écologie
-  const headers = ['Nom latin (score %)', "FloreAlpes", "INPN statut", "Critères physiologiques", "Écologie", "Flora Gallica", "OpenObs", "Biodiv'AURA", "Info Flora", "Fiche synthèse", "PFAF"];
+  const headers = ['Nom latin (score %)', "FloreAlpes", "INPN statut", "Critères physiologiques", "Écologie", "Flora Gallica", "OpenObs", "Biodiv'AURA", "Info Flora", "Fiche synthèse", "PFAF", "Carnet"];
   const linkIcon = (url, img, alt) => {
     if (!url) return "—";
     const encoded = img.split('/').map(s => encodeURIComponent(s)).join('/');
@@ -180,13 +180,13 @@ function buildTable(items){
     }
     const escapedSci = sci.replace(/'/g, "\\'");
     // MODIFIÉ : Réorganisation des colonnes - critères physiologiques avant écologie
-    return `<tr><td class="col-nom-latin">${sci}<br><span class="score">(${pct})</span></td><td class="col-link">${floreAlpesLink}</td><td class="col-link">${linkIcon(cd && inpnStatut(cd), "INPN.png", "INPN")}</td><td class="col-criteres">${crit}</td><td class="col-ecologie">${eco}</td><td class="col-link">${floraGallicaLink}</td><td class="col-link">${linkIcon(cd && openObs(cd), "OpenObs.png", "OpenObs")}</td><td class="col-link">${linkIcon(cd && aura(cd), "Biodiv'AURA.png", "Biodiv'AURA")}</td><td class="col-link">${linkIcon(infoFlora(sci), "Info Flora.png", "Info Flora")}</td><td class="col-link"><a href="#" onclick="handleSynthesisClick(event, this, '${escapedSci}')"><img src="assets/Audio.png" alt="Audio" class="logo-icon"></a></td><td class="col-link">${linkIcon(pfaf(sci), "PFAF.png", "PFAF")}</td></tr>`;
+    return `<tr><td class="col-nom-latin">${sci}<br><span class="score">(${pct})</span></td><td class="col-link">${floreAlpesLink}</td><td class="col-link">${linkIcon(cd && inpnStatut(cd), "INPN.png", "INPN")}</td><td class="col-criteres">${crit}</td><td class="col-ecologie">${eco}</td><td class="col-link">${floraGallicaLink}</td><td class="col-link">${linkIcon(cd && openObs(cd), "OpenObs.png", "OpenObs")}</td><td class="col-link">${linkIcon(cd && aura(cd), "Biodiv'AURA.png", "Biodiv'AURA")}</td><td class="col-link">${linkIcon(infoFlora(sci), "Info Flora.png", "Info Flora")}</td><td class="col-link"><a href="#" onclick="handleSynthesisClick(event, this, '${escapedSci}')"><img src="assets/Audio.png" alt="Audio" class="logo-icon"></a></td><td class="col-link">${linkIcon(pfaf(sci), "PFAF.png", "PFAF")}</td><td class="col-link"><button onclick="saveObservationPrompt('${escapedSci}')">⭐</button></td></tr>`;
   }).join("");
 
   // MODIFIÉ : En-tête avec critères physiologiques avant écologie
-  const headerHtml = `<tr><th class="col-nom-latin">Nom latin (score %)</th><th class="col-link">FloreAlpes</th><th class="col-link">INPN statut</th><th class="col-criteres">Critères physiologiques</th><th class="col-ecologie">Écologie</th><th class="col-link">Flora Gallica</th><th class="col-link">OpenObs</th><th class="col-link">Biodiv'AURA</th><th class="col-link">Info Flora</th><th class="col-link">Fiche synthèse</th><th class="col-link">PFAF</th></tr>`;
+  const headerHtml = `<tr><th class="col-nom-latin">Nom latin (score %)</th><th class="col-link">FloreAlpes</th><th class="col-link">INPN statut</th><th class="col-criteres">Critères physiologiques</th><th class="col-ecologie">Écologie</th><th class="col-link">Flora Gallica</th><th class="col-link">OpenObs</th><th class="col-link">Biodiv'AURA</th><th class="col-link">Info Flora</th><th class="col-link">Fiche synthèse</th><th class="col-link">PFAF</th><th class="col-link">Carnet</th></tr>`;
   // MODIFIÉ : Ajustement des largeurs avec critères physiologiques avant écologie
-  const colgroupHtml = `<colgroup><col style="width: 20%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 25%;"><col style="width: 25%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"></colgroup>`;
+  const colgroupHtml = `<colgroup><col style="width: 20%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 25%;"><col style="width: 25%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"><col style="width: 6%;"></colgroup>`;
   wrap.innerHTML = `<table>${colgroupHtml}<thead>${headerHtml}</thead><tbody>${rows}</tbody></table>`;
 }
 
