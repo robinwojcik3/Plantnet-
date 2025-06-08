@@ -49,11 +49,13 @@ const openObs    = c => `https://openobs.mnhn.fr/openobs-hub/occurrences/search?
 const pfaf       = n => `https://pfaf.org/user/Plant.aspx?LatinName=${encodeURIComponent(n).replace(/%20/g, '+')}`;
 const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent);
 // Génère un nom de fichier basé sur la date et l'heure courantes
-function makeTimestampedName() {
+function makeTimestampedName(prefix = "") {
   const d = new Date();
   const pad = n => n.toString().padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_` +
-         `${pad(d.getHours())}h${pad(d.getMinutes())}.jpg`;
+  const timestamp = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ` +
+                    `${pad(d.getHours())}h${pad(d.getMinutes())}`;
+  const safePrefix = prefix ? prefix.replace(/[\\/:*?"<>|]/g, "_").trim() + " " : "";
+  return `${safePrefix}${timestamp}.jpg`;
 }
 // Enregistre une photo sur l'appareil en déclenchant un téléchargement
 function savePhotoLocally(blob, name) {
@@ -62,7 +64,7 @@ function savePhotoLocally(blob, name) {
     const a = document.createElement("a");
     a.style.display = "none";
     a.href = url;
-    a.download = name || makeTimestampedName();
+    a.download = makeTimestampedName(name);
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -141,7 +143,20 @@ window.handleSynthesisClick = async function(event, element, speciesName) {
    LOGIQUE D'IDENTIFICATION ET D'AFFICHAGE
    ================================================================ */
 async function callPlantNetAPI(formData) { try { const res = await fetch(ENDPOINT, { method: "POST", body: formData }); if (!res.ok) { const errBody = await res.json().catch(() => res.text()); throw new Error(`Erreur API PlantNet (${res.status}): ${typeof errBody === 'object' ? errBody.message : errBody}`); } return (await res.json()).results.slice(0, MAX_RESULTS); } catch (err) { console.error(err); showNotification(err.message, 'error'); return null; } }
-async function identifySingleImage(fileBlob, organ) { await ready; const fd = new FormData(); fd.append("images", fileBlob, fileBlob.name || "photo.jpg"); fd.append("organs", organ); const results = await callPlantNetAPI(fd); if (results) { document.body.classList.remove("home"); buildTable(results); buildCards(results); } }
+async function identifySingleImage(fileBlob, organ) {
+  await ready;
+  const fd = new FormData();
+  fd.append("images", fileBlob, fileBlob.name || "photo.jpg");
+  fd.append("organs", organ);
+  const results = await callPlantNetAPI(fd);
+  if (results) {
+    document.body.classList.remove("home");
+    buildTable(results);
+    buildCards(results);
+    const latin = results[0]?.species?.scientificNameWithoutAuthor;
+    if (latin) savePhotoLocally(fileBlob, latin);
+  }
+}
 async function identifyMultipleImages(files, organs) { await ready; const fd = new FormData(); files.forEach((f, i) => fd.append("images", f, f.name || `photo_${i}.jpg`)); organs.forEach(o => fd.append("organs", o)); if (!fd.has("images")) return showNotification("Aucune image valide.", 'error'); const results = await callPlantNetAPI(fd); if (results) { sessionStorage.setItem("identificationResults", JSON.stringify(results)); ["photoData", "speciesQueryName"].forEach(k => sessionStorage.removeItem(k)); location.href = "organ.html"; } }
 
 function buildTable(items){
@@ -196,7 +211,75 @@ function buildCards(items){ const zone = document.getElementById("cards"); if (!
    LOGIQUE SPÉCIFIQUE AUX PAGES (ÉCOUTEURS)
    ================================================================ */
 function handleSingleFileSelect(file) { if (!file) return; const reader = new FileReader(); reader.onload = () => { sessionStorage.setItem("photoData", reader.result); ["speciesQueryName", "identificationResults"].forEach(k => sessionStorage.removeItem(k)); location.href = "organ.html"; }; reader.onerror = () => showNotification("Erreur lecture image.", 'error'); reader.readAsDataURL(file); }
-if (document.getElementById("file-capture")) { const fileCaptureInput = document.getElementById("file-capture"); const fileGalleryInput = document.getElementById("file-gallery"); const speciesSearchInput = document.getElementById("species-search-input"); const speciesSearchButton = document.getElementById("species-search-button"); const multiFileInput = document.getElementById("multi-file-input"); const multiImageListArea = document.getElementById("multi-image-list-area"); const multiImageIdentifyButton = document.getElementById("multi-image-identify-button"); let selectedMultiFilesData = []; fileCaptureInput?.addEventListener("change", e => { const f = e.target.files[0]; if (f) savePhotoLocally(f); handleSingleFileSelect(f); }); fileGalleryInput?.addEventListener("change", e => handleSingleFileSelect(e.target.files[0])); const performSpeciesSearch = async () => { const query = speciesSearchInput.value.trim(); if (!query) return; await ready; const normQuery = norm(query); let taxrefData = await fetch("taxref.json").then(r => r.json()); let foundName = Object.keys(taxrefData).find(k => norm(k) === normQuery); if (foundName) { sessionStorage.setItem("speciesQueryName", foundName); ["photoData", "identificationResults"].forEach(k => sessionStorage.removeItem(k)); location.href = "organ.html"; } else { showNotification(`Espèce "${query}" non trouvée.`, "error"); } }; speciesSearchButton?.addEventListener("click", performSpeciesSearch); speciesSearchInput?.addEventListener("keypress", e => { if (e.key === "Enter") performSpeciesSearch(); }); function renderMultiImageList() { multiImageListArea.innerHTML = ''; multiImageIdentifyButton.style.display = selectedMultiFilesData.length > 0 ? 'block' : 'none'; if (selectedMultiFilesData.length === 0) multiFileInput.value = ''; selectedMultiFilesData.forEach((item, index) => { const itemDiv = document.createElement('div'); itemDiv.className = 'image-organ-item'; itemDiv.innerHTML = `<span class="file-info"><span class="file-index">Image ${index + 1}:</span> <span>${item.file.name.substring(0, 20)}...</span></span><select data-index="${index}"><option value="leaf">Feuille</option><option value="flower">Fleur</option><option value="fruit">Fruit</option><option value="bark">Écorce</option></select><button type="button" class="delete-file-btn" data-index="${index}" title="Supprimer">✖</button>`; itemDiv.querySelector('select').value = item.organ; multiImageListArea.appendChild(itemDiv); }); } multiImageListArea?.addEventListener('click', (e) => { if (e.target?.classList.contains('delete-file-btn')) { selectedMultiFilesData.splice(parseInt(e.target.dataset.index, 10), 1); renderMultiImageList(); } }); multiImageListArea?.addEventListener('change', (e) => { if (e.target?.tagName === 'SELECT') { selectedMultiFilesData[parseInt(e.target.dataset.index, 10)].organ = e.target.value; } }); multiFileInput?.addEventListener("change", (e) => { const files = Array.from(e.target.files), r = MAX_MULTI_IMAGES - selectedMultiFilesData.length; if (r <= 0) return showNotification(`Limite de ${MAX_MULTI_IMAGES} atteinte.`, "error"); files.slice(0, r).forEach(f => { if (!selectedMultiFilesData.some(i => i.file.name === f.name && i.file.size === f.size)) selectedMultiFilesData.push({ file: f, organ: 'leaf' }); }); if (files.length > r) showNotification(`Limite atteinte.`, "error"); renderMultiImageList(); e.target.value = ''; }); multiImageIdentifyButton?.addEventListener("click", () => { if (selectedMultiFilesData.length === 0) return showNotification("Veuillez sélectionner au moins une image.", "error"); identifyMultipleImages(selectedMultiFilesData.map(i => i.file), selectedMultiFilesData.map(i => i.organ)); }); }
+if (document.getElementById("file-capture")) {
+  const fileCaptureInput = document.getElementById("file-capture");
+  const fileGalleryInput = document.getElementById("file-gallery");
+  const speciesSearchInput = document.getElementById("species-search-input");
+  const speciesSearchButton = document.getElementById("species-search-button");
+  const multiFileInput = document.getElementById("multi-file-input");
+  const multiImageListArea = document.getElementById("multi-image-list-area");
+  const multiImageIdentifyButton = document.getElementById("multi-image-identify-button");
+  let selectedMultiFilesData = [];
+  fileCaptureInput?.addEventListener("change", e => {
+    const f = e.target.files[0];
+    if (f) handleSingleFileSelect(f);
+  });
+  fileGalleryInput?.addEventListener("change", e => handleSingleFileSelect(e.target.files[0]));
+  const performSpeciesSearch = async () => {
+    const query = speciesSearchInput.value.trim();
+    if (!query) return;
+    await ready;
+    const normQuery = norm(query);
+    let taxrefData = await fetch("taxref.json").then(r => r.json());
+    let foundName = Object.keys(taxrefData).find(k => norm(k) === normQuery);
+    if (foundName) {
+      sessionStorage.setItem("speciesQueryName", foundName);
+      ["photoData", "identificationResults"].forEach(k => sessionStorage.removeItem(k));
+      location.href = "organ.html";
+    } else {
+      showNotification(`Espèce "${query}" non trouvée.`, "error");
+    }
+  };
+  speciesSearchButton?.addEventListener("click", performSpeciesSearch);
+  speciesSearchInput?.addEventListener("keypress", e => { if (e.key === "Enter") performSpeciesSearch(); });
+  function renderMultiImageList() {
+    multiImageListArea.innerHTML = '';
+    multiImageIdentifyButton.style.display = selectedMultiFilesData.length > 0 ? 'block' : 'none';
+    if (selectedMultiFilesData.length === 0) multiFileInput.value = '';
+    selectedMultiFilesData.forEach((item, index) => {
+      const itemDiv = document.createElement('div');
+      itemDiv.className = 'image-organ-item';
+      itemDiv.innerHTML = `<span class="file-info"><span class="file-index">Image ${index + 1}:</span> <span>${item.file.name.substring(0, 20)}...</span></span><select data-index="${index}"><option value="leaf">Feuille</option><option value="flower">Fleur</option><option value="fruit">Fruit</option><option value="bark">Écorce</option></select><button type="button" class="delete-file-btn" data-index="${index}" title="Supprimer">✖</button>`;
+      itemDiv.querySelector('select').value = item.organ;
+      multiImageListArea.appendChild(itemDiv);
+    });
+  }
+  multiImageListArea?.addEventListener('click', (e) => {
+    if (e.target?.classList.contains('delete-file-btn')) {
+      selectedMultiFilesData.splice(parseInt(e.target.dataset.index, 10), 1);
+      renderMultiImageList();
+    }
+  });
+  multiImageListArea?.addEventListener('change', (e) => {
+    if (e.target?.tagName === 'SELECT') {
+      selectedMultiFilesData[parseInt(e.target.dataset.index, 10)].organ = e.target.value;
+    }
+  });
+  multiFileInput?.addEventListener("change", (e) => {
+    const files = Array.from(e.target.files), r = MAX_MULTI_IMAGES - selectedMultiFilesData.length;
+    if (r <= 0) return showNotification(`Limite de ${MAX_MULTI_IMAGES} atteinte.`, "error");
+    files.slice(0, r).forEach(f => {
+      if (!selectedMultiFilesData.some(i => i.file.name === f.name && i.file.size === f.size)) selectedMultiFilesData.push({ file: f, organ: 'leaf' });
+    });
+    if (files.length > r) showNotification(`Limite atteinte.`, "error");
+    renderMultiImageList();
+    e.target.value = '';
+  });
+  multiImageIdentifyButton?.addEventListener("click", () => {
+    if (selectedMultiFilesData.length === 0) return showNotification("Veuillez sélectionner au moins une image.", "error");
+    identifyMultipleImages(selectedMultiFilesData.map(i => i.file), selectedMultiFilesData.map(i => i.organ));
+  });
+}
 const organBoxOnPage = document.getElementById("organ-choice"); if (organBoxOnPage) { const displayResults = async (results, isNameSearch = false) => { const previewEl = document.getElementById("preview"); if (previewEl) previewEl.style.display = 'none'; if (organBoxOnPage) organBoxOnPage.style.display = 'none'; await ready; document.body.classList.remove("home"); buildTable(isNameSearch ? [{ score: 1.0, species: { scientificNameWithoutAuthor: results } }] : results); buildCards(isNameSearch ? [{ score: 1.0, species: { scientificNameWithoutAuthor: results } }] : results); }; const speciesQueryName = sessionStorage.getItem("speciesQueryName"); const storedImage = sessionStorage.getItem("photoData"); const multiImageResults = sessionStorage.getItem("identificationResults"); if (speciesQueryName) { sessionStorage.removeItem("speciesQueryName"); displayResults(speciesQueryName, true); } else if (multiImageResults) { try { displayResults(JSON.parse(multiImageResults)); } catch (e) { location.href = "index.html"; } } else if (storedImage) { const previewElement = document.getElementById("preview"); if(previewElement) previewElement.src = storedImage; if (organBoxOnPage) organBoxOnPage.style.display = 'block'; const toBlob = dataURL => { try { const [m,b] = dataURL.split(','), [,e] = /:(.*?);/.exec(m), B=atob(b), a=new Uint8Array(B.length); for(let i=0;i<B.length;i++)a[i]=B.charCodeAt(i); return new Blob([a],{type:e})}catch(e){return null}}; const imageBlob = toBlob(storedImage); if (imageBlob) { organBoxOnPage.querySelectorAll("button").forEach(b => b.addEventListener("click", (e) => identifySingleImage(imageBlob, e.currentTarget.dataset.organ))); } else { showNotification("Erreur lors de la préparation de l'image.", 'error'); } } else { location.href = "index.html"; } }
 
 const genusSearchInput = document.getElementById("genus-search-input");
