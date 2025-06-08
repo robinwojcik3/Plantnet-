@@ -78,7 +78,7 @@ async function useGeolocation() {
   button.textContent = 'Récupération de la position...';
   
   if (!navigator.geolocation) {
-    alert('La géolocalisation n\'est pas supportée par votre navigateur');
+    showNotification('La géolocalisation n\'est pas supportée par votre navigateur', 'error');
     button.disabled = false;
     button.textContent = 'Utiliser ma localisation';
     return;
@@ -108,7 +108,7 @@ async function useGeolocation() {
           message = 'La demande de position a expiré';
           break;
       }
-      alert(message);
+      showNotification(message, 'error');
       button.disabled = false;
       button.textContent = 'Utiliser ma localisation';
     },
@@ -255,7 +255,7 @@ function validateLocation() {
 // Fonction pour afficher les résultats
 function showResults() {
   if (!selectedLat || !selectedLon) {
-    alert('Aucune localisation sélectionnée');
+    showNotification('Aucune localisation sélectionnée', 'error');
     return;
   }
   
