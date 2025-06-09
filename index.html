@@ -107,8 +107,8 @@
             <input type="file" id="file-capture" accept="image/*" capture="environment" style="display:none;">
             <label for="file-capture" class="upload-btn logo-btn"><img src="logo acceuil.svg" alt="Prendre une photo"><span>Prendre une photo</span></label>
 
-            <input type="file" id="file-gallery" accept="image/*" style="display:none;">
-            <label for="file-gallery" class="upload-btn">Choisir une image</label>
+            <input type="file" id="multi-file-input" accept="image/*" multiple style="display:none;">
+            <label for="multi-file-input" class="upload-btn">Choisir image(s)</label>
 
             <div class="search-inline">
                 <input type="search" id="name-search-input" placeholder="Nom d'espèce ou de genre" list="species-suggestions">
@@ -116,7 +116,11 @@
                 <button type="button" id="name-search-button" class="action-button">Rechercher</button>
             </div>
         </div>
-        <div class="option-container"><h2>Identification avancée (multi-images)</h2><input type="file" id="multi-file-input" accept="image/*" multiple style="display:none;"><label for="multi-file-input" class="upload-btn">Ajouter des images</label><div id="multi-image-list-area" style="margin-top: 1rem; text-align: left;"></div><button type="button" id="multi-image-identify-button" class="action-button" style="display: none;">Identifier</button></div>
+        <div id="multi-image-section" class="option-container" style="display:none;">
+            <h2>Images sélectionnées</h2>
+            <div id="multi-image-list-area" style="margin-top: 1rem; text-align: left;"></div>
+            <button type="button" id="multi-image-identify-button" class="action-button" style="display: none;">Identifier</button>
+        </div>
         <div id="results"></div>
     </div>
 
