@@ -47,7 +47,8 @@ The notebook feature relies on a Supabase backend for authentication and storage
 
 1. Serve the project from a local HTTP server (for example using `npx serve` or `python3 -m http.server`).
 2. Open `http://localhost:PORT/index.html` in your browser. Service workers require an HTTP context, so opening the file directly will not work.
-3. For serverless functions, install Netlify CLI and run:
+3. The application automatically registers `sw.js` via `sw-register.js` to cache core assets for offline use.
+4. For serverless functions, install Netlify CLI and run:
 
 ```bash
 npm install -g netlify-cli
