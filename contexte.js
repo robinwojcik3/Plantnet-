@@ -69,6 +69,12 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Bouton validation
   document.getElementById('validate-location').addEventListener('click', validateLocation);
+
+  // Bouton recherche d'adresse
+  document.getElementById('search-address').addEventListener('click', searchAddress);
+  document.getElementById('address-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') searchAddress();
+  });
 });
 
 // Fonction pour utiliser la géolocalisation
@@ -249,6 +255,41 @@ function initializeMap() {
 function validateLocation() {
   if (selectedLat && selectedLon) {
     showResults();
+  }
+}
+
+// Fonction pour rechercher une adresse
+async function searchAddress() {
+  const input = document.getElementById('address-input');
+  const address = input.value.trim();
+  if (!address) {
+    showNotification('Veuillez entrer une adresse', 'error');
+    return;
+  }
+
+  const button = document.getElementById('search-address');
+  button.disabled = true;
+  button.textContent = 'Recherche en cours...';
+
+  try {
+    const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+    if (!resp.ok) throw new Error('Service indisponible');
+    const data = await resp.json();
+    if (!data.length) {
+      showNotification('Adresse introuvable', 'error');
+      return;
+    }
+    selectedLat = parseFloat(data[0].lat);
+    selectedLon = parseFloat(data[0].lon);
+    document.getElementById('coordinates-display').style.display = 'block';
+    document.getElementById('selected-coords').textContent = `${selectedLat.toFixed(6)}°, ${selectedLon.toFixed(6)}°`;
+    document.getElementById('validate-location').style.display = 'block';
+    showResults();
+  } catch (err) {
+    showNotification('Erreur pendant la recherche', 'error');
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Rechercher';
   }
 }
 

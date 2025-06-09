@@ -103,14 +103,22 @@
           <div id="map"></div>
         </div>
         
-        <div class="coordinates-display" id="coordinates-display">
-          Coordonnées sélectionnées : 
-          <span id="selected-coords">--</span>
-        </div>
-        
-        <button class="action-button" id="validate-location" style="display:none; margin-top:1rem;">
-          Valider cette localisation
-        </button>
+      <div class="coordinates-display" id="coordinates-display">
+        Coordonnées sélectionnées :
+        <span id="selected-coords">--</span>
+      </div>
+
+      <button class="action-button" id="validate-location" style="display:none; margin-top:1rem;">
+        Valider cette localisation
+      </button>
+      </div>
+
+      <!-- Option 3: Recherche par adresse -->
+      <div class="location-card">
+        <h2>🔎 Rechercher une adresse</h2>
+        <input type="text" id="address-input" placeholder="Saisissez une adresse"
+               style="padding:8px;border:1px solid var(--border);border-radius:4px;width:100%;margin-bottom:.5rem;">
+        <button class="action-button" id="search-address">Rechercher</button>
       </div>
     </div>
     
