@@ -1,145 +1,54 @@
-// Function to create and add the species table to the DOM
-const createSpeciesTable = (speciesList) => {
-  const table = document.createElement('table');
-  const thead = document.createElement('thead');
-  const tbody = document.createElement('tbody');
+(function(){
+  const style = document.createElement('style');
+  style.textContent = `
+#notification-container{position:fixed;top:1rem;right:1rem;z-index:2000;display:flex;flex-direction:column;align-items:flex-end;}
+.notification{padding:10px 15px;margin-top:.5rem;border-radius:4px;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.3);font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;}
+.notification.success{background:#4caf50;}
+.notification.error{background:#e53935;}
+#modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:3000;padding:1rem;}
+#modal-overlay.show{display:flex;}
+#modal-overlay .modal-content{background:var(--card,#fff);color:var(--text,#000);padding:1rem 1.5rem;border-radius:6px;max-width:500px;width:100%;}
+#modal-overlay .modal-close{float:right;cursor:pointer;background:none;border:none;font-size:1.5rem;}
+#spinner-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,.7);display:none;align-items:center;justify-content:center;z-index:4000;}
+#spinner-overlay.show{display:flex;}
+#spinner-overlay .spinner{border:4px solid #f3f3f3;border-top:4px solid #4caf50;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;}
+@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+`; 
+  document.head.appendChild(style);
+  document.addEventListener('DOMContentLoaded',()=>{
+    const n=document.createElement('div');
+    n.id='notification-container';
+    document.body.appendChild(n);
+    const m=document.createElement('div');
+    m.id='modal-overlay';
+    m.innerHTML='<div class="modal-content"><button class="modal-close" aria-label="Fermer">&times;</button><div class="modal-body"></div></div>';
+    document.body.appendChild(m);
+  const s=document.createElement("div");
+  s.id="spinner-overlay";
+    s.innerHTML='<div class="spinner"></div>';
+  document.body.appendChild(s);
+    m.querySelector('.modal-close').addEventListener('click',()=>m.classList.remove('show'));
 
-  // Create table header
-  const headerRow = document.createElement('tr');
-  const headers = [
-    'Nom scientifique',
-    'Nom commun',
-    'Famille',
-    'Milieu',
-    'Flora Gallica',
-    'FloreAlpes',
-    'OPEN Ops',
-    'INPN',
-    'Ajouter au carnet',
-  ];
-  headers.forEach((headerText) => {
-    const th = document.createElement('th');
-    th.textContent = headerText;
-    headerRow.appendChild(th);
+    const themeBtn=document.getElementById('theme-toggle');
+    if(themeBtn){
+      const apply=t=>{document.documentElement.dataset.theme=t;localStorage.setItem('theme',t);themeBtn.textContent=t==='dark'?'☀️':'🌙';};
+      const saved=localStorage.getItem('theme');
+      if(saved)apply(saved);
+      themeBtn.addEventListener('click',()=>{
+        const next=document.documentElement.dataset.theme==='dark'?'light':'dark';
+        apply(next);
+      });
+    }
   });
-  thead.appendChild(headerRow);
-
-  // Create table rows for each species
-  speciesList.forEach((taxon) => {
-    const tr = document.createElement('tr');
-    tr.appendChild(td(taxon.scientificName, 'scientific-name'));
-    tr.appendChild(td(taxon.commonName));
-    tr.appendChild(td(taxon.family));
-
-    // Create a cell for the ecology
-    const ecologyCell = document.createElement('td');
-    const ecologyList = document.createElement('ul');
-    taxon.ecology.forEach((eco) => {
-      const ecologyItem = document.createElement('li');
-      ecologyItem.textContent = eco;
-      ecologyList.appendChild(ecologyItem);
-    });
-    ecologyCell.appendChild(ecologyList);
-    tr.appendChild(ecologyCell);
-
-    // Links
-    tr.appendChild(
-      tdLink(
-        'page ' + taxon.floraGallicaPage,
-        './viewer.html?pdf=assets/flora_gallica_pdfs/' +
-          taxon.floraGallicaPdf +
-          '&page=' +
-          taxon.floraGallicaPage,
-        null
-      )
-    );
-
-    tr.appendChild(
-      tdLink(
-        'lien',
-        'https://www.florealpes.com/fiche' +
-          taxon.scientificName.toLowerCase().replace(/ /g, '') +
-          '.php',
-        null
-      )
-    );
-
-    tr.appendChild(
-      tdLink(
-        'OPEN Obs',
-        `https://openobs.mnhn.fr/projects/16/species/${taxon.scientificName}`,
-        './assets/openobs.png'
-      )
-    );
-    tr.appendChild(
-      tdLink(
-        'INPN',
-        `https://inpn.mnhn.fr/espece/cd_nom/${taxon.cdNom}`,
-        './assets/inpn.png'
-      )
-    );
-
-    // Add to notebook button
-    const addButtonCell = document.createElement('td');
-    const addButton = document.createElement('button');
-    addButton.textContent = '+';
-    addButton.classList.add('add-button');
-    addButton.onclick = () => addToNotebook(taxon);
-    addButtonCell.appendChild(addButton);
-    tr.appendChild(addButtonCell);
-
-    tbody.appendChild(tr);
-  });
-
-  table.appendChild(thead);
-  table.appendChild(tbody);
-
-  // Add the table to the container
-  const tableContainer = document.getElementById('table-container');
-  tableContainer.innerHTML = ''; // Clear previous table
-  tableContainer.appendChild(table);
-};
-
-// Helper function to create a table cell
-const td = (text, className) => {
-  const td = document.createElement('td');
-  if (text) {
-    td.textContent = text;
-  }
-  if (className) {
-    td.className = className;
-  }
-  return td;
-};
-
-// Helper function to create a table cell with a link
-const tdLink = (text, url, imgSrc) => {
-  const td = document.createElement('td');
-  const a = document.createElement('a');
-  a.href = url;
-  a.target = '_blank';
-  a.rel = 'noopener noreferrer';
-  if (imgSrc) {
-    const img = document.createElement('img');
-    img.src = imgSrc;
-    img.alt = text;
-    img.classList.add('table-icon');
-    a.appendChild(img);
-  } else {
-    a.textContent = text;
-  }
-  td.appendChild(a);
-  return td;
-};
-
-// Function to add a species to the notebook
-const addToNotebook = (taxon) => {
-  const notebook = JSON.parse(localStorage.getItem('notebook')) || [];
-  if (!notebook.find((item) => item.cdNom === taxon.cdNom)) {
-    notebook.push(taxon);
-    localStorage.setItem('notebook', JSON.stringify(notebook));
-    alert(`${taxon.scientificName} a été ajouté au carnet.`);
-  } else {
-    alert(`${taxon.scientificName} est déjà dans le carnet.`);
-  }
-};
+  window.showNotification=function(message,type='info'){
+    const c=document.getElementById('notification-container');
+    if(!c)return;const d=document.createElement('div');
+    d.className='notification '+(type==='error'?'error':'success');
+    d.textContent=message;c.appendChild(d);setTimeout(()=>d.remove(),4000);
+  };
+  window.showModal=function(message){
+    const o=document.getElementById('modal-overlay');
+    if(!o)return;o.querySelector('.modal-body').textContent=message;o.classList.add('show');
+  };
+  window.toggleSpinner=function(show){const s=document.getElementById("spinner-overlay");if(s)s.classList.toggle("show",!!show);};
+})();
