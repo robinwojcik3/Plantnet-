@@ -6,26 +6,13 @@
   <title>Plantouille express</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
   <script defer src="ui.js"></script>
   <script defer src="app.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="notebook.js"></script>
   <script defer src="sw-register.js"></script>
   <style>
-    :root{ --primary:#388e3c; --bg:#f6f9fb; --card:#ffffff; --border:#e0e0e0; --text:#202124; }
-    html[data-theme="dark"]{ --bg:#181a1b; --card:#262b2f; --border:#333; --text:#ececec; }
-    *{box-sizing:border-box;}
-    
-    /* NOUVEAU : Styles pour la navigation par onglets */
-    .tabs-container { background: var(--card); box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; display:flex; align-items:center; justify-content:space-between; }
-    .tabs { display: flex; border-bottom: 2px solid var(--border); flex-grow:1; }
-    .tab { flex: 1; padding: 1rem; text-align: center; cursor: pointer; background: none; border: none; font-size: 1rem; color: var(--text); transition: all 0.3s; position: relative; }
-    .tab:hover { background: rgba(56, 142, 60, 0.1); }
-    .tab.active { color: var(--primary); font-weight: 600; }
-    .tab.active::after { content: ''; position: absolute; bottom: -2px; left: 0; right: 0; height: 2px; background: var(--primary); }
-
-    #theme-toggle{ background:none; border:none; cursor:pointer; font-size:1.2rem; color:var(--text); padding:0 1rem; }
-    #theme-toggle:hover{ transform:scale(1.1); }
     
     /* Ajustement du body pour les onglets */
     body.home::before{ content:""; position:fixed; inset:0; background:url("assets/Bandeau.jpg") center/cover no-repeat fixed; z-index:-1; opacity:.30; }
@@ -37,11 +24,6 @@
     h1{margin:0 0 1.5rem;font-size:1.8rem;color:var(--primary)}
     .option-container { margin-bottom: 1.5rem; padding: 1rem; background-color: rgba(255, 255, 255, 0.8); border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 90vw; max-width: 450px; }
     .option-container h2 { font-size: 1.2rem; color: var(--primary); margin-top: 0; margin-bottom: 0.8rem; }
-    .upload-btn, .action-button { display:block; width:100%; padding: 10px 15px; margin-top: 0.5rem; cursor:pointer; border: 1px solid var(--primary); background-color: var(--primary); color: white; border-radius: 6px; font-size: 1rem; text-align: center; transition: background-color .15s, transform .15s; }
-    .upload-btn:hover, .action-button:hover { background-color: #2e7d32; transform: scale(1.03); }
-    .upload-btn.logo-btn { background-color: transparent; border: none; padding: 0; }
-    .upload-btn.logo-btn img { width: 100%; max-width: 220px; height: auto; display: block; margin: 0 auto 0.5rem auto; }
-    .upload-btn.logo-btn span { display: block; margin-top: 0.3rem; font-size: 0.9rem; color: var(--text); }
     body.home .upload-btn.logo-btn:hover img { transform:scale(1.05); }
     .search-species-container input[type="search"] { width: calc(100% - 22px); padding: 10px; margin-bottom: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; }
     #multi-image-list-area .image-organ-item { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem; padding: 0.6rem; border: 1px solid var(--border); border-radius: 4px; background-color: var(--card); font-size: 0.9rem; }
@@ -83,7 +65,6 @@
     #synthesis-modal-footer { margin-top: 20px; text-align: center; }
 
     @media (prefers-color-scheme:dark){ 
-      :root{--bg:#181a1b;--card:#262b2f;--border:#333;--text:#ececec} 
       .tabs-container { background: var(--card); }
       .tab:hover { background: rgba(56, 142, 60, 0.2); }
       table,details{border-color:#333} th{background:#262b2f;color:#ececec} body.home .upload-btn.logo-btn span { color: var(--text); } .option-container { background-color: rgba(38, 43, 47, 0.8); } #multi-image-list-area .image-organ-item { background-color: var(--card); border-color: var(--border); } #multi-image-list-area select { background-color: #333; color: var(--text); } .col-nom-latin .score { color:#ccc; } .col-criteres { color: #ccc; } .col-physionomie { color:#ccc; } #multi-image-list-area .delete-file-btn { color: #ff6b6b; } #multi-image-list-area .delete-file-btn:hover { color: #ff8787; } .search-species-container input[type="search"] { background-color: #333; color: var(--text); border-color: #555; }
