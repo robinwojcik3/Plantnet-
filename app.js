@@ -53,6 +53,16 @@ const aura       = c => `https://atlas.biodiversite-auvergne-rhone-alpes.fr/espe
 const openObs    = c => `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=lsid%3A${c}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&qc=&radius=120.6&lat=45.188529&lon=5.724524#tab_mapView`;
 const pfaf       = n => `https://pfaf.org/user/Plant.aspx?LatinName=${encodeURIComponent(n).replace(/%20/g, '+')}`;
 const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent);
+// Wrapper d'appel API avec indicateur de chargement
+async function apiFetch(url, options = {}) {
+  toggleSpinner(true);
+  try {
+    const res = await fetch(url, options);
+    return res;
+  } finally {
+    toggleSpinner(false);
+  }
+}
 // Génère un nom de fichier basé sur la date et l'heure courantes
 function makeTimestampedName(prefix = "") {
   const d = new Date();
@@ -134,7 +144,7 @@ async function getSynthesisFromGemini(speciesName) {
     const prompt = `En tant qu'expert botaniste, rédige une fiche de synthèse narrative et fluide pour l'espèce "${speciesName}". Le style doit être oral, comme si tu t'adressais à des étudiants, pour une future conversion en audio. N'utilise ni tableau, ni formatage de code, ni listes à puces. Structure ta réponse en couvrant les points suivants de manière conversationnelle, sans utiliser de titres : commence par une introduction (nom commun, nom latin, famille), puis décris un ou deux critères d'identification clés pour la distinguer d'espèces proches. Mentionne ces espèces sources de confusion et comment les différencier. Ensuite, décris son écologie et habitat préférentiel. Termine par son statut de conservation en France (si pertinent) et sa répartition générale. Dans ta réponse, ne met aucun caractères qui ne soit pas du text directement. Je ne veux pas que tu mette de '*' ou de ":" ou de "/", met juste du texte conventionelle comme on écrirait naturellement quoi. Utilise ton savoir encyclopédique pour générer cette fiche.`;
     const requestBody = { "contents": [{ "parts": [{ "text": prompt }] }], "generationConfig": { "temperature": 0.4, "maxOutputTokens": 800 } };
     try {
-        const response = await fetch(GEMINI_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
+        const response = await apiFetch(GEMINI_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
         if (!response.ok) { const errorData = await response.json().catch(() => ({ error: { message: "Réponse non JSON" }})); throw new Error(errorData.error.message || "Réponse non valide de l'API Gemini"); }
         const responseData = await response.json();
         if (responseData?.candidates?.[0]?.content?.parts?.[0]?.text) return responseData.candidates[0].content.parts[0].text.trim();
@@ -150,7 +160,7 @@ async function synthesizeSpeech(text) {
         audioConfig: { audioEncoding: 'MP3' }
     };
     try {
-        const response = await fetch(TTS_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
+        const response = await apiFetch(TTS_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
         if (!response.ok) { const errorData = await response.json().catch(() => ({ error: { message: "Réponse non JSON" }})); throw new Error(errorData.error.message || "Réponse non valide de l'API TTS"); }
         const responseData = await response.json();
         return responseData.audioContent; // Renvoie la chaîne base64
@@ -216,7 +226,7 @@ Ta réponse doit être fluide et de comporter aucun "*" ou "/" ou caractère de 
         "generationConfig": { "temperature": 0.3, "maxOutputTokens": 1500 } 
     };
     try {
-        const response = await fetch(GEMINI_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
+        const response = await apiFetch(GEMINI_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ error: { message: "Réponse non JSON" } }));
             throw new Error(errorData.error.message || `Erreur API Gemini (${response.status})`);
@@ -315,7 +325,20 @@ async function handleComparisonClick() {
 /* ================================================================
    LOGIQUE D'IDENTIFICATION ET D'AFFICHAGE
    ================================================================ */
-async function callPlantNetAPI(formData) { try { const res = await fetch(ENDPOINT, { method: "POST", body: formData }); if (!res.ok) { const errBody = await res.json().catch(() => res.text()); throw new Error(`Erreur API PlantNet (${res.status}): ${typeof errBody === 'object' ? errBody.message : errBody}`); } return (await res.json()).results.slice(0, MAX_RESULTS); } catch (err) { console.error(err); showNotification(err.message, 'error'); return null; } }
+async function callPlantNetAPI(formData) {
+  try {
+    const res = await apiFetch(ENDPOINT, { method: 'POST', body: formData });
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => res.text());
+      throw new Error(`Erreur API PlantNet (${res.status}): ${typeof errBody === 'object' ? errBody.message : errBody}`);
+    }
+    return (await res.json()).results.slice(0, MAX_RESULTS);
+  } catch (err) {
+    console.error(err);
+    showNotification(err.message, 'error');
+    return null;
+  }
+}
 async function identifySingleImage(fileBlob, organ) {
   await ready;
   const fd = new FormData();
