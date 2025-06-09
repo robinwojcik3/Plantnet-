@@ -490,15 +490,23 @@ function buildCards(items){ const zone = document.getElementById("cards"); if (!
 /* ================================================================
    LOGIQUE SPÉCIFIQUE AUX PAGES (ÉCOUTEURS)
    ================================================================ */
+function handleSingleFileSelect(file) { if (!file) return; const reader = new FileReader(); reader.onload = () => { sessionStorage.setItem("photoData", reader.result); ["speciesQueryNames", "identificationResults"].forEach(k => sessionStorage.removeItem(k)); location.href = "organ.html"; }; reader.onerror = () => showNotification("Erreur lecture image.", 'error'); reader.readAsDataURL(file); }
 const speciesSearchInput = document.getElementById("species-search-input");
 const speciesSearchButton = document.getElementById("species-search-button");
 const speciesSuggestions = document.getElementById("species-suggestions");
 
-if (document.getElementById("multi-file-input")) {
+if (document.getElementById("file-capture")) {
+  const fileCaptureInput = document.getElementById("file-capture");
+  const fileGalleryInput = document.getElementById("file-gallery");
   const multiFileInput = document.getElementById("multi-file-input");
   const multiImageListArea = document.getElementById("multi-image-list-area");
   const multiImageIdentifyButton = document.getElementById("multi-image-identify-button");
   let selectedMultiFilesData = [];
+  fileCaptureInput?.addEventListener("change", e => {
+    const f = e.target.files[0];
+    if (f) handleSingleFileSelect(f);
+  });
+  fileGalleryInput?.addEventListener("change", e => handleSingleFileSelect(e.target.files[0]));
   const performSpeciesSearch = async () => {
     const raw = speciesSearchInput.value.trim();
     if (!raw) return;
