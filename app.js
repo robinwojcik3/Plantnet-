@@ -495,11 +495,18 @@ const nameSearchInput = document.getElementById("name-search-input");
 const nameSearchButton = document.getElementById("name-search-button");
 const speciesSuggestions = document.getElementById("species-suggestions");
 
-if (document.getElementById("file-input")) {
-  const fileInput = document.getElementById("file-input");
+if (document.getElementById("file-capture")) {
+  const fileCaptureInput = document.getElementById("file-capture");
+  const fileGalleryInput = document.getElementById("file-gallery");
+  const multiFileInput = document.getElementById("multi-file-input");
   const multiImageListArea = document.getElementById("multi-image-list-area");
-  const multiImageIdentifyButton = document.getElementById("identify-button");
+  const multiImageIdentifyButton = document.getElementById("multi-image-identify-button");
   let selectedMultiFilesData = [];
+  fileCaptureInput?.addEventListener("change", e => {
+    const f = e.target.files[0];
+    if (f) handleSingleFileSelect(f);
+  });
+  fileGalleryInput?.addEventListener("change", e => handleSingleFileSelect(e.target.files[0]));
   const performNameSearch = async () => {
     const raw = nameSearchInput.value.trim();
     if (!raw) return;
@@ -559,7 +566,7 @@ if (document.getElementById("file-input")) {
   function renderMultiImageList() {
     multiImageListArea.innerHTML = '';
     multiImageIdentifyButton.style.display = selectedMultiFilesData.length > 0 ? 'block' : 'none';
-    if (selectedMultiFilesData.length === 0) fileInput.value = '';
+    if (selectedMultiFilesData.length === 0) multiFileInput.value = '';
     selectedMultiFilesData.forEach((item, index) => {
       const itemDiv = document.createElement('div');
       itemDiv.className = 'image-organ-item';
@@ -579,21 +586,14 @@ if (document.getElementById("file-input")) {
       selectedMultiFilesData[parseInt(e.target.dataset.index, 10)].organ = e.target.value;
     }
   });
-  fileInput?.addEventListener("change", (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 1 && selectedMultiFilesData.length === 0) {
-      handleSingleFileSelect(files[0]);
-    } else {
-      const r = MAX_MULTI_IMAGES - selectedMultiFilesData.length;
-      if (r <= 0) return showNotification(`Limite de ${MAX_MULTI_IMAGES} atteinte.`, "error");
-      files.slice(0, r).forEach(f => {
-        if (!selectedMultiFilesData.some(i => i.file.name === f.name && i.file.size === f.size)) {
-          selectedMultiFilesData.push({ file: f, organ: 'leaf' });
-        }
-      });
-      if (files.length > r) showNotification(`Limite atteinte.`, "error");
-      renderMultiImageList();
-    }
+  multiFileInput?.addEventListener("change", (e) => {
+    const files = Array.from(e.target.files), r = MAX_MULTI_IMAGES - selectedMultiFilesData.length;
+    if (r <= 0) return showNotification(`Limite de ${MAX_MULTI_IMAGES} atteinte.`, "error");
+    files.slice(0, r).forEach(f => {
+      if (!selectedMultiFilesData.some(i => i.file.name === f.name && i.file.size === f.size)) selectedMultiFilesData.push({ file: f, organ: 'leaf' });
+    });
+    if (files.length > r) showNotification(`Limite atteinte.`, "error");
+    renderMultiImageList();
     e.target.value = '';
   });
   multiImageIdentifyButton?.addEventListener("click", () => {

@@ -100,7 +100,9 @@
 
     <div id="main-content">
         <h1>Plantouille express</h1>
-        <div class="option-container"><h2>Identifier photo(s)</h2><input type="file" id="file-input" accept="image/*" capture="environment" multiple style="display:none;"><label for="file-input" class="upload-btn logo-btn"><img src="logo acceuil.svg" alt="Choisir ou prendre des photos"><span>Choisir / prendre des photos</span></label><div id="multi-image-list-area" style="margin-top: 1rem; text-align: left;"></div><button type="button" id="identify-button" class="action-button" style="display: none;">Identifier</button></div>
+        <div class="option-container"><h2>Identification rapide (1 photo)</h2><input type="file" id="file-capture" accept="image/*" capture="environment" style="display:none;"><label for="file-capture" class="upload-btn logo-btn"><img src="logo acceuil.svg" alt="Prendre une photo"><span>Prendre une photo</span></label></div>
+        <div class="option-container"><h2>Identification depuis galerie (1 photo)</h2><input type="file" id="file-gallery" accept="image/*" style="display:none;"><label for="file-gallery" class="upload-btn">Choisir une image</label></div>
+        <div class="option-container"><h2>Identification avancée (multi-images)</h2><input type="file" id="multi-file-input" accept="image/*" multiple style="display:none;"><label for="multi-file-input" class="upload-btn">Ajouter des images</label><div id="multi-image-list-area" style="margin-top: 1rem; text-align: left;"></div><button type="button" id="multi-image-identify-button" class="action-button" style="display: none;">Identifier</button></div>
         <div class="option-container search-species-container"><h2>Recherche par nom ou genre</h2><input type="search" id="name-search-input" placeholder="Nom d'espèce ou de genre" list="species-suggestions"><datalist id="species-suggestions"></datalist><button type="button" id="name-search-button" class="action-button">Rechercher</button></div>
         <div id="results"></div>
     </div>
