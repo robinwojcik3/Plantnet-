@@ -18,6 +18,8 @@ const TTS_ENDPOINT = `https://texttospeech.googleapis.com/v1/text:synthesize?key
    ================================================================ */
 let taxref = {};
 let taxrefNames = [];
+let trigramIndex = {};
+let nameTrigram = {};
 let ecology = {};
 let floraToc = {};
 let floreAlpesIndex = {}; 
@@ -26,7 +28,14 @@ let physionomie = {}; // Nouvelle table pour la physionomie
 let userLocation = { latitude: 45.188529, longitude: 5.724524 };
 
 const ready = Promise.all([
-  fetch("taxref.json").then(r => r.json()).then(j => Object.entries(j).forEach(([k,v]) => { taxrefNames.push(k); taxref[norm(k)] = v; })),
+  fetch("taxref.json").then(r => r.json()).then(j => Object.entries(j).forEach(([k,v]) => {
+    taxrefNames.push(k);
+    taxref[norm(k)] = v;
+    const tri = makeTrigram(k);
+    nameTrigram[k] = tri;
+    if (!trigramIndex[tri]) trigramIndex[tri] = [];
+    trigramIndex[tri].push(k);
+  })),
   fetch("ecology.json").then(r => r.json()).then(j => Object.entries(j).forEach(([k,v]) => ecology[norm(k.split(';')[0])] = v)),
   fetch("assets/flora_gallica_toc.json").then(r => r.json()).then(j => floraToc = j),
   fetch("assets/florealpes_index.json").then(r => r.json()).then(j => floreAlpesIndex = j),
@@ -41,7 +50,21 @@ const ready = Promise.all([
 /* ================================================================
    FONCTIONS UTILITAIRES ET HELPERS
    ================================================================ */
-function norm(txt) { if (typeof txt !== 'string') return ""; return txt.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/\s+/g, " "); }
+function norm(txt) {
+  if (typeof txt !== 'string') return "";
+  return txt.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/\s+/g, "");
+}
+function makeTrigram(name) {
+  const tokens = name.toLowerCase().split(/\s+/);
+  if (tokens.length < 2) return "";
+  let tri = tokens[0].slice(0, 3) + tokens[1].slice(0, 3);
+  if (tokens[2] && tokens[2].startsWith("subsp")) {
+    tri += "subsp" + (tokens[3] ? tokens[3].slice(0, 3) : "");
+  } else if (tokens[2] && tokens[2].startsWith("var")) {
+    tri += "var" + (tokens[3] ? tokens[3].slice(0, 3) : "");
+  }
+  return norm(tri);
+}
 const cdRef = n => taxref[norm(n)];
 const ecolOf = n => ecology[norm(n)] || "—";
 const criteresOf = n => criteres[norm(n)] || "—"; // NOUVEAU : fonction pour récupérer les critères
@@ -485,8 +508,16 @@ if (document.getElementById("file-capture")) {
       const normQuery = norm(q);
       let foundName = taxrefNames.find(n => norm(n) === normQuery);
       if (!foundName) {
-        const partial = taxrefNames.filter(n => norm(n).startsWith(normQuery));
-        if (partial.length === 1) foundName = partial[0];
+        const triList = trigramIndex[normQuery];
+        if (triList && triList.length === 1) {
+          foundName = triList[0];
+        } else {
+          const partial = taxrefNames.filter(n => {
+            const nk = norm(n);
+            return nk.startsWith(normQuery) || (nameTrigram[n] && nameTrigram[n].startsWith(normQuery));
+          });
+          if (partial.length === 1) foundName = partial[0];
+        }
       }
       if (foundName) {
         found.push(foundName);
@@ -618,6 +649,9 @@ speciesSearchInput?.addEventListener("input", e => {
   const parts = e.target.value.split(/[;,\n]+/);
   const q = norm(parts[parts.length - 1]);
   if (!q) { speciesSuggestions.innerHTML = ""; return; }
-  const matches = taxrefNames.filter(n => norm(n).startsWith(q)).slice(0, 5);
+  const matches = taxrefNames.filter(n => {
+    const nk = norm(n);
+    return nk.startsWith(q) || (nameTrigram[n] && nameTrigram[n].startsWith(q));
+  }).slice(0, 5);
   speciesSuggestions.innerHTML = matches.map(n => `<option value="${n}">`).join("");
 });
