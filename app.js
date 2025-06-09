@@ -78,6 +78,24 @@ function savePhotoLocally(blob, name) {
     console.error("Erreur sauvegarde photo:", e);
   }
 }
+async function apiFetch(url, options = {}) {
+  toggleSpinner(true);
+  try {
+    const res = await fetch(url, options);
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => res.text());
+      throw new Error(typeof errBody === "object" ? errBody.error?.message || errBody.message : errBody);
+    }
+    return await res.json();
+  } catch (e) {
+    console.error(e);
+    showNotification(e.message || "Erreur lors de la requête", 'error');
+    return null;
+  } finally {
+    toggleSpinner(false);
+  }
+}
+
 
 /* ================================================================
    NOUVEAU : FENÊTRE MODALE D'INFORMATION GÉNÉRIQUE
@@ -134,10 +152,9 @@ async function getSynthesisFromGemini(speciesName) {
     const prompt = `En tant qu'expert botaniste, rédige une fiche de synthèse narrative et fluide pour l'espèce "${speciesName}". Le style doit être oral, comme si tu t'adressais à des étudiants, pour une future conversion en audio. N'utilise ni tableau, ni formatage de code, ni listes à puces. Structure ta réponse en couvrant les points suivants de manière conversationnelle, sans utiliser de titres : commence par une introduction (nom commun, nom latin, famille), puis décris un ou deux critères d'identification clés pour la distinguer d'espèces proches. Mentionne ces espèces sources de confusion et comment les différencier. Ensuite, décris son écologie et habitat préférentiel. Termine par son statut de conservation en France (si pertinent) et sa répartition générale. Dans ta réponse, ne met aucun caractères qui ne soit pas du text directement. Je ne veux pas que tu mette de '*' ou de ":" ou de "/", met juste du texte conventionelle comme on écrirait naturellement quoi. Utilise ton savoir encyclopédique pour générer cette fiche.`;
     const requestBody = { "contents": [{ "parts": [{ "text": prompt }] }], "generationConfig": { "temperature": 0.4, "maxOutputTokens": 800 } };
     try {
-        const response = await fetch(GEMINI_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
-        if (!response.ok) { const errorData = await response.json().catch(() => ({ error: { message: "Réponse non JSON" }})); throw new Error(errorData.error.message || "Réponse non valide de l'API Gemini"); }
-        const responseData = await response.json();
-        if (responseData?.candidates?.[0]?.content?.parts?.[0]?.text) return responseData.candidates[0].content.parts[0].text.trim();
+        const responseData = await apiFetch(GEMINI_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(requestBody) });
+        if (!responseData) return "Erreur lors de la génération du texte.";
+        if (responseData.candidates?.[0]?.content?.parts?.[0]?.text) return responseData.candidates[0].content.parts[0].text.trim();
         if (responseData.promptFeedback?.blockReason) return `Réponse bloquée par le modèle (${responseData.promptFeedback.blockReason}).`;
         return "Le modèle n'a pas pu générer de synthèse.";
     } catch (error) { console.error("Erreur Gemini:", error); return "Erreur lors de la génération du texte."; }
@@ -147,21 +164,17 @@ async function synthesizeSpeech(text) {
     const requestBody = {
         input: { text: text },
         voice: { languageCode: 'fr-FR', name: 'fr-FR-Wavenet-D' },
-        audioConfig: { audioEncoding: 'MP3' }
+        audioConfig: { audioEncoding: "MP3" }
     };
     try {
-        const response = await fetch(TTS_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
-        if (!response.ok) { const errorData = await response.json().catch(() => ({ error: { message: "Réponse non JSON" }})); throw new Error(errorData.error.message || "Réponse non valide de l'API TTS"); }
-        const responseData = await response.json();
-        return responseData.audioContent; // Renvoie la chaîne base64
-    } catch (error) { console.error("Erreur Text-to-Speech:", error); return null; }
+        const responseData = await apiFetch(TTS_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(requestBody) });
+        return responseData ? responseData.audioContent : null;
+    } catch (error) {
+        console.error("Erreur Text-to-Speech:", error);
+        return null;
+    }
 }
 
-function playAudioFromBase64(base64String) {
-    const audioSrc = `data:audio/mp3;base64,${base64String}`;
-    const audio = new Audio(audioSrc);
-    audio.play();
-}
 
 window.handleSynthesisClick = async function(event, element, speciesName) {
     event.preventDefault();
@@ -216,13 +229,9 @@ Ta réponse doit être fluide et de comporter aucun "*" ou "/" ou caractère de 
         "generationConfig": { "temperature": 0.3, "maxOutputTokens": 1500 } 
     };
     try {
-        const response = await fetch(GEMINI_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: { message: "Réponse non JSON" } }));
-            throw new Error(errorData.error.message || `Erreur API Gemini (${response.status})`);
-        }
-        const responseData = await response.json();
-        if (responseData?.candidates?.[0]?.content?.parts?.[0]?.text) {
+        const responseData = await apiFetch(GEMINI_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
+        if (!responseData) return "Erreur technique lors de la génération de la comparaison.";
+        if (responseData.candidates?.[0]?.content?.parts?.[0]?.text) {
             return responseData.candidates[0].content.parts[0].text.trim();
         }
         if (responseData.promptFeedback?.blockReason) {
@@ -315,7 +324,16 @@ async function handleComparisonClick() {
 /* ================================================================
    LOGIQUE D'IDENTIFICATION ET D'AFFICHAGE
    ================================================================ */
-async function callPlantNetAPI(formData) { try { const res = await fetch(ENDPOINT, { method: "POST", body: formData }); if (!res.ok) { const errBody = await res.json().catch(() => res.text()); throw new Error(`Erreur API PlantNet (${res.status}): ${typeof errBody === 'object' ? errBody.message : errBody}`); } return (await res.json()).results.slice(0, MAX_RESULTS); } catch (err) { console.error(err); showNotification(err.message, 'error'); return null; } }
+async function callPlantNetAPI(formData) {
+    try {
+        const data = await apiFetch(ENDPOINT, { method: 'POST', body: formData });
+        return data ? data.results.slice(0, MAX_RESULTS) : null;
+    } catch (err) {
+        console.error(err);
+        showNotification(err.message, 'error');
+        return null;
+    }
+}
 async function identifySingleImage(fileBlob, organ) {
   await ready;
   const fd = new FormData();
