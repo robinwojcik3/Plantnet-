@@ -337,10 +337,11 @@ function buildTable(items){
   if (!wrap) return;
 
   const headers = ['Sél.', 'Nom latin (score %)', 'FloreAlpes', 'INPN statut', 'Critères physiologiques', 'Écologie', 'Physionomie', 'Flora Gallica', 'OpenObs', "Biodiv'AURA", 'Info Flora', 'Fiche synthèse', 'PFAF', 'Carnet'];
-  const linkIcon = (url, img, alt) => {
+  const linkIcon = (url, img, alt, extraClass = '') => {
     if (!url) return "—";
     const encoded = img.split('/').map(s => encodeURIComponent(s)).join('/');
-    return `<a href="${url}" target="_blank" rel="noopener"><img src="assets/${encoded}" alt="${alt}" class="logo-icon"></a>`;
+    const cls = extraClass ? `logo-icon ${extraClass}` : 'logo-icon';
+    return `<a href="${url}" target="_blank" rel="noopener"><img src="assets/${encoded}" alt="${alt}" class="${cls}"></a>`;
   };
 
   const rows = items.map(item => {
@@ -375,7 +376,7 @@ function buildTable(items){
               </td>
               <td class="col-nom-latin">${sci}<br><span class="score">(${pct})</span></td>
               <td class="col-link">${floreAlpesLink}</td>
-              <td class="col-link">${linkIcon(cd && inpnStatut(cd), "INPN.png", "INPN")}</td>
+              <td class="col-link">${linkIcon(cd && inpnStatut(cd), "INPN.png", "INPN", "small-logo")}</td>
               <td class="col-criteres">
                 <div class="text-popup-trigger" data-title="Critères physiologiques" data-fulltext="${encodeURIComponent(crit)}">${crit}</div>
               </td>
@@ -386,7 +387,7 @@ function buildTable(items){
                 <div class="text-popup-trigger" data-title="Physionomie" data-fulltext="${encodeURIComponent(phys)}">${phys}</div>
               </td>
               <td class="col-link">${floraGallicaLink}</td>
-              <td class="col-link">${linkIcon(cd && openObs(cd), "OpenObs.png", "OpenObs")}</td>
+              <td class="col-link">${linkIcon(cd && openObs(cd), "OpenObs.png", "OpenObs", "small-logo")}</td>
               <td class="col-link">${linkIcon(cd && aura(cd), "Biodiv'AURA.png", "Biodiv'AURA")}</td>
               <td class="col-link">${linkIcon(infoFlora(sci), "Info Flora.png", "Info Flora")}</td>
               <td class="col-link"><a href="#" onclick="handleSynthesisClick(event, this, '${escapedSci}')"><img src="assets/Audio.png" alt="Audio" class="logo-icon"></a></td>
