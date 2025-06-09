@@ -9,6 +9,10 @@
 #modal-overlay.show{display:flex;}
 #modal-overlay .modal-content{background:var(--card,#fff);color:var(--text,#000);padding:1rem 1.5rem;border-radius:6px;max-width:500px;width:100%;}
 #modal-overlay .modal-close{float:right;cursor:pointer;background:none;border:none;font-size:1.5rem;}
+#spinner-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,.7);display:none;align-items:center;justify-content:center;z-index:4000;}
+#spinner-overlay.show{display:flex;}
+#spinner-overlay .spinner{border:4px solid #f3f3f3;border-top:4px solid #4caf50;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;}
+@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
 `; 
   document.head.appendChild(style);
   document.addEventListener('DOMContentLoaded',()=>{
@@ -19,6 +23,10 @@
     m.id='modal-overlay';
     m.innerHTML='<div class="modal-content"><button class="modal-close" aria-label="Fermer">&times;</button><div class="modal-body"></div></div>';
     document.body.appendChild(m);
+  const s=document.createElement("div");
+  s.id="spinner-overlay";
+    s.innerHTML='<div class="spinner"></div>';
+  document.body.appendChild(s);
     m.querySelector('.modal-close').addEventListener('click',()=>m.classList.remove('show'));
 
     const themeBtn=document.getElementById('theme-toggle');
@@ -42,4 +50,5 @@
     const o=document.getElementById('modal-overlay');
     if(!o)return;o.querySelector('.modal-body').textContent=message;o.classList.add('show');
   };
+  window.toggleSpinner=function(show){const s=document.getElementById("spinner-overlay");if(s)s.classList.toggle("show",!!show);};
 })();
