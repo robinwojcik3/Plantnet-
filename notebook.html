@@ -11,10 +11,11 @@
   <script defer src="notebook.js"></script>
   <style>
     :root{ --primary:#388e3c; --bg:#f6f9fb; --card:#ffffff; --border:#e0e0e0; --text:#202124; }
+    html[data-theme="dark"]{ --bg:#181a1b; --card:#262b2f; --border:#333; --text:#ececec; }
     *{box-sizing:border-box;}
     body{ background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; margin:0; padding:0; display:flex; flex-direction:column; min-height:100vh; }
-    .tabs-container{ background:var(--card); box-shadow:0 2px 4px rgba(0,0,0,0.1); position:sticky; top:0; z-index:100; }
-    .tabs{ display:flex; border-bottom:2px solid var(--border); }
+    .tabs-container{ background:var(--card); box-shadow:0 2px 4px rgba(0,0,0,0.1); position:sticky; top:0; z-index:100; display:flex; align-items:center; justify-content:space-between; }
+    .tabs{ display:flex; border-bottom:2px solid var(--border); flex-grow:1; }
     .tab{ flex:1; padding:1rem; text-align:center; cursor:pointer; background:none; border:none; font-size:1rem; color:var(--text); transition:all 0.3s; position:relative; }
     .tab:hover{ background:rgba(56,142,60,0.1); }
     .tab.active{ color:var(--primary); font-weight:600; }
@@ -30,6 +31,8 @@
     .action-button{ background:var(--primary); color:#fff; transition:all 0.3s; }
     .action-button:hover{ background:#2e7d32; transform:scale(1.02); }
     #logout-btn{ margin-bottom:1rem; }
+    #theme-toggle{ background:none; border:none; cursor:pointer; font-size:1.2rem; color:var(--text); padding:0 1rem; }
+    #theme-toggle:hover{ transform:scale(1.1); }
   </style>
 </head>
 <body>
@@ -39,6 +42,7 @@
       <button class="tab" onclick="window.location.href='contexte.html'">Contexte environnemental</button>
       <button class="tab active">Carnet</button>
     </div>
+    <button id="theme-toggle" title="Basculer le thème">🌙</button>
   </nav>
 
   <div class="main-content">

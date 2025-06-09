@@ -20,6 +20,17 @@
     m.innerHTML='<div class="modal-content"><button class="modal-close" aria-label="Fermer">&times;</button><div class="modal-body"></div></div>';
     document.body.appendChild(m);
     m.querySelector('.modal-close').addEventListener('click',()=>m.classList.remove('show'));
+
+    const themeBtn=document.getElementById('theme-toggle');
+    if(themeBtn){
+      const apply=t=>{document.documentElement.dataset.theme=t;localStorage.setItem('theme',t);themeBtn.textContent=t==='dark'?'☀️':'🌙';};
+      const saved=localStorage.getItem('theme');
+      if(saved)apply(saved);
+      themeBtn.addEventListener('click',()=>{
+        const next=document.documentElement.dataset.theme==='dark'?'light':'dark';
+        apply(next);
+      });
+    }
   });
   window.showNotification=function(message,type='info'){
     const c=document.getElementById('notification-container');
