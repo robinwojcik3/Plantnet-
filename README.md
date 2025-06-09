@@ -61,6 +61,13 @@ example `Lam pur` will match **Lamium purpureum**. For taxa with ranks such as
 `subsp.` or `var.`, include the rank and the first three letters of the epithet:
 `car atr subsp. nig` will resolve to `Carex atrata subsp. nigra`.
 
+## TaxRef Match suggestions
+
+If a typed name does not directly match the local dataset, the application now
+queries the [TaxRef Match](https://taxref.mnhn.fr/taxref-match) service to
+suggest the closest valid name. The best suggestion is displayed along with its
+similarity score and can be selected directly from the search field.
+
 ## Deploying to Netlify
 
 1. Push the project to a Git repository (e.g. GitHub).
