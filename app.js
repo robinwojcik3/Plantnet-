@@ -119,6 +119,16 @@ async function apiFetch(url, options = {}) {
   }
 }
 
+// Interroge l'API TaxRef-Match pour proposer des noms valides
+async function taxrefFuzzyMatch(term) {
+  const url = `https://taxref.mnhn.fr/api/taxa/fuzzyMatch?term=${encodeURIComponent(term)}`;
+  const data = await apiFetch(url);
+  if (!data) return [];
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data.matches)) return data.matches;
+  return [];
+}
+
 
 /* ================================================================
    NOUVEAU : FENÊTRE MODALE D'INFORMATION GÉNÉRIQUE
@@ -518,6 +528,15 @@ if (document.getElementById("file-capture")) {
           });
           if (partial.length === 1) foundName = partial[0];
         }
+        if (!foundName) {
+          const matches = await taxrefFuzzyMatch(q);
+          if (matches.length) {
+            const best = matches[0];
+            foundName = best.nom_complet || best.name || best.nom;
+            const sc = best.score !== undefined ? ` (${Math.round(best.score * 100)}%)` : '';
+            showNotification(`Suggestion : ${foundName}${sc}`, 'success');
+          }
+        }
       }
       if (foundName) {
         found.push(foundName);
@@ -644,14 +663,19 @@ const performGenusSearch = async () => {
 genusSearchButton?.addEventListener("click", performGenusSearch);
 genusSearchInput?.addEventListener("keypress", e => { if (e.key === "Enter") performGenusSearch(); });
 
-speciesSearchInput?.addEventListener("input", e => {
+speciesSearchInput?.addEventListener("input", async e => {
   if (!speciesSuggestions) return;
   const parts = e.target.value.split(/[;,\n]+/);
-  const q = norm(parts[parts.length - 1]);
+  const term = parts[parts.length - 1].trim();
+  const q = norm(term);
   if (!q) { speciesSuggestions.innerHTML = ""; return; }
-  const matches = taxrefNames.filter(n => {
+  let matches = taxrefNames.filter(n => {
     const nk = norm(n);
     return nk.startsWith(q) || (nameTrigram[n] && nameTrigram[n].startsWith(q));
   }).slice(0, 5);
+  if (matches.length === 0) {
+    const remote = await taxrefFuzzyMatch(term);
+    matches = remote.slice(0, 5).map(m => m.nom_complet || m.name || m.nom);
+  }
   speciesSuggestions.innerHTML = matches.map(n => `<option value="${n}">`).join("");
 });
