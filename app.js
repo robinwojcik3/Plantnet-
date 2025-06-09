@@ -497,16 +497,15 @@ const speciesSuggestions = document.getElementById("species-suggestions");
 
 if (document.getElementById("file-capture")) {
   const fileCaptureInput = document.getElementById("file-capture");
-  const fileGalleryInput = document.getElementById("file-gallery");
   const multiFileInput = document.getElementById("multi-file-input");
   const multiImageListArea = document.getElementById("multi-image-list-area");
   const multiImageIdentifyButton = document.getElementById("multi-image-identify-button");
+  const multiImageSection = document.getElementById("multi-image-section");
   let selectedMultiFilesData = [];
   fileCaptureInput?.addEventListener("change", e => {
     const f = e.target.files[0];
     if (f) handleSingleFileSelect(f);
   });
-  fileGalleryInput?.addEventListener("change", e => handleSingleFileSelect(e.target.files[0]));
   const performNameSearch = async () => {
     const raw = nameSearchInput.value.trim();
     if (!raw) return;
@@ -566,6 +565,7 @@ if (document.getElementById("file-capture")) {
   function renderMultiImageList() {
     multiImageListArea.innerHTML = '';
     multiImageIdentifyButton.style.display = selectedMultiFilesData.length > 0 ? 'block' : 'none';
+    if (multiImageSection) multiImageSection.style.display = selectedMultiFilesData.length > 0 ? 'block' : 'none';
     if (selectedMultiFilesData.length === 0) multiFileInput.value = '';
     selectedMultiFilesData.forEach((item, index) => {
       const itemDiv = document.createElement('div');
@@ -587,7 +587,13 @@ if (document.getElementById("file-capture")) {
     }
   });
   multiFileInput?.addEventListener("change", (e) => {
-    const files = Array.from(e.target.files), r = MAX_MULTI_IMAGES - selectedMultiFilesData.length;
+    const files = Array.from(e.target.files);
+    if (selectedMultiFilesData.length === 0 && files.length === 1) {
+      handleSingleFileSelect(files[0]);
+      e.target.value = '';
+      return;
+    }
+    const r = MAX_MULTI_IMAGES - selectedMultiFilesData.length;
     if (r <= 0) return showNotification(`Limite de ${MAX_MULTI_IMAGES} atteinte.`, "error");
     files.slice(0, r).forEach(f => {
       if (!selectedMultiFilesData.some(i => i.file.name === f.name && i.file.size === f.size)) selectedMultiFilesData.push({ file: f, organ: 'leaf' });
