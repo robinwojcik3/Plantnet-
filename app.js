@@ -208,6 +208,16 @@ async function synthesizeSpeech(text) {
     }
 }
 
+// Convertit une chaîne Base64 en audio et la joue
+function playAudioFromBase64(base64Audio) {
+    if (!base64Audio) return;
+    const audio = new Audio(`data:audio/mp3;base64,${base64Audio}`);
+    audio.play().catch(err => {
+        console.error("Erreur lecture audio:", err);
+        showNotification("Impossible de lire l\'audio", 'error');
+    });
+}
+
 
 window.handleSynthesisClick = async function(event, element, speciesName) {
     event.preventDefault();
