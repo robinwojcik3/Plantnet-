@@ -41,7 +41,10 @@
     .upload-btn.logo-btn img { width: 100%; max-width: 300px; height: auto; display: block; margin: 0 auto 0.5rem auto; }
     .upload-btn.logo-btn span { display: block; margin-top: 0.3rem; font-size: 0.9rem; color: var(--text); }
     body.home .upload-btn.logo-btn:hover img { transform:scale(1.05); }
-    .search-species-container input[type="search"] { width: calc(100% - 22px); padding: 10px; margin-bottom: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; }
+    .home-actions{display:flex;flex-direction:column;align-items:center;gap:1rem;}
+    .home-actions .upload-btn,.home-actions .search-inline{width:90vw;max-width:450px;}
+    .search-inline{display:flex;gap:.5rem;align-items:center;}
+    .search-inline input[type="search"]{flex-grow:1;padding:10px;border:1px solid var(--border);border-radius:6px;font-size:1rem;margin:0;}
     #multi-image-list-area .image-organ-item { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem; padding: 0.6rem; border: 1px solid var(--border); border-radius: 4px; background-color: var(--card); font-size: 0.9rem; }
     #multi-image-list-area .file-info { flex-grow: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 10px; }
     #multi-image-list-area .file-info .file-index { font-weight: bold; margin-right: 5px; }
@@ -84,7 +87,7 @@
       :root{--bg:#181a1b;--card:#262b2f;--border:#333;--text:#ececec} 
       .tabs-container { background: var(--card); }
       .tab:hover { background: rgba(56, 142, 60, 0.2); }
-      table,details{border-color:#333} th{background:#262b2f;color:#ececec} body.home .upload-btn.logo-btn span { color: var(--text); } .option-container { background-color: rgba(38, 43, 47, 0.8); } #multi-image-list-area .image-organ-item { background-color: var(--card); border-color: var(--border); } #multi-image-list-area select { background-color: #333; color: var(--text); } .col-nom-latin .score { color:#ccc; } .col-criteres { color: #ccc; } .col-physionomie { color:#ccc; } #multi-image-list-area .delete-file-btn { color: #ff6b6b; } #multi-image-list-area .delete-file-btn:hover { color: #ff8787; } .search-species-container input[type="search"] { background-color: #333; color: var(--text); border-color: #555; }
+      table,details{border-color:#333} th{background:#262b2f;color:#ececec} body.home .upload-btn.logo-btn span { color: var(--text); } .option-container { background-color: rgba(38, 43, 47, 0.8); } #multi-image-list-area .image-organ-item { background-color: var(--card); border-color: var(--border); } #multi-image-list-area select { background-color: #333; color: var(--text); } .col-nom-latin .score { color:#ccc; } .col-criteres { color: #ccc; } .col-physionomie { color:#ccc; } #multi-image-list-area .delete-file-btn { color: #ff6b6b; } #multi-image-list-area .delete-file-btn:hover { color: #ff8787; } .search-inline input[type="search"] { background-color: #333; color: var(--text); border-color: #555; }
     }
   </style>
 </head>
@@ -100,10 +103,20 @@
 
     <div id="main-content">
         <h1>Plantouille express</h1>
-        <div class="option-container"><h2>Identification rapide (1 photo)</h2><input type="file" id="file-capture" accept="image/*" capture="environment" style="display:none;"><label for="file-capture" class="upload-btn logo-btn"><img src="logo acceuil.svg" alt="Prendre une photo"><span>Prendre une photo</span></label></div>
-        <div class="option-container"><h2>Identification depuis galerie (1 photo)</h2><input type="file" id="file-gallery" accept="image/*" style="display:none;"><label for="file-gallery" class="upload-btn">Choisir une image</label></div>
+        <div class="home-actions">
+            <input type="file" id="file-capture" accept="image/*" capture="environment" style="display:none;">
+            <label for="file-capture" class="upload-btn logo-btn"><img src="logo acceuil.svg" alt="Prendre une photo"><span>Prendre une photo</span></label>
+
+            <input type="file" id="file-gallery" accept="image/*" style="display:none;">
+            <label for="file-gallery" class="upload-btn">Choisir une image</label>
+
+            <div class="search-inline">
+                <input type="search" id="name-search-input" placeholder="Nom d'espèce ou de genre" list="species-suggestions">
+                <datalist id="species-suggestions"></datalist>
+                <button type="button" id="name-search-button" class="action-button">Rechercher</button>
+            </div>
+        </div>
         <div class="option-container"><h2>Identification avancée (multi-images)</h2><input type="file" id="multi-file-input" accept="image/*" multiple style="display:none;"><label for="multi-file-input" class="upload-btn">Ajouter des images</label><div id="multi-image-list-area" style="margin-top: 1rem; text-align: left;"></div><button type="button" id="multi-image-identify-button" class="action-button" style="display: none;">Identifier</button></div>
-        <div class="option-container search-species-container"><h2>Recherche par nom ou genre</h2><input type="search" id="name-search-input" placeholder="Nom d'espèce ou de genre" list="species-suggestions"><datalist id="species-suggestions"></datalist><button type="button" id="name-search-button" class="action-button">Rechercher</button></div>
         <div id="results"></div>
     </div>
 
