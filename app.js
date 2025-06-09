@@ -348,7 +348,7 @@ async function identifySingleImage(fileBlob, organ) {
     if (latin) savePhotoLocally(fileBlob, latin);
   }
 }
-async function identifyMultipleImages(files, organs) { await ready; const fd = new FormData(); files.forEach((f, i) => fd.append("images", f, f.name || `photo_${i}.jpg`)); organs.forEach(o => fd.append("organs", o)); if (!fd.has("images")) return showNotification("Aucune image valide.", 'error'); const results = await callPlantNetAPI(fd); if (results) { sessionStorage.setItem("identificationResults", JSON.stringify(results)); ["photoData", "speciesQueryName"].forEach(k => sessionStorage.removeItem(k)); location.href = "organ.html"; } }
+async function identifyMultipleImages(files, organs) { await ready; const fd = new FormData(); files.forEach((f, i) => fd.append("images", f, f.name || `photo_${i}.jpg`)); organs.forEach(o => fd.append("organs", o)); if (!fd.has("images")) return showNotification("Aucune image valide.", 'error'); const results = await callPlantNetAPI(fd); if (results) { sessionStorage.setItem("identificationResults", JSON.stringify(results)); ["photoData", "speciesQueryNames"].forEach(k => sessionStorage.removeItem(k)); location.href = "organ.html"; } }
 
 function buildTable(items){
   const wrap = document.getElementById("results");
@@ -458,7 +458,7 @@ function buildCards(items){ const zone = document.getElementById("cards"); if (!
 /* ================================================================
    LOGIQUE SPÉCIFIQUE AUX PAGES (ÉCOUTEURS)
    ================================================================ */
-function handleSingleFileSelect(file) { if (!file) return; const reader = new FileReader(); reader.onload = () => { sessionStorage.setItem("photoData", reader.result); ["speciesQueryName", "identificationResults"].forEach(k => sessionStorage.removeItem(k)); location.href = "organ.html"; }; reader.onerror = () => showNotification("Erreur lecture image.", 'error'); reader.readAsDataURL(file); }
+function handleSingleFileSelect(file) { if (!file) return; const reader = new FileReader(); reader.onload = () => { sessionStorage.setItem("photoData", reader.result); ["speciesQueryNames", "identificationResults"].forEach(k => sessionStorage.removeItem(k)); location.href = "organ.html"; }; reader.onerror = () => showNotification("Erreur lecture image.", 'error'); reader.readAsDataURL(file); }
 const speciesSearchInput = document.getElementById("species-search-input");
 const speciesSearchButton = document.getElementById("species-search-button");
 const speciesSuggestions = document.getElementById("species-suggestions");
@@ -476,21 +476,28 @@ if (document.getElementById("file-capture")) {
   });
   fileGalleryInput?.addEventListener("change", e => handleSingleFileSelect(e.target.files[0]));
   const performSpeciesSearch = async () => {
-    const query = speciesSearchInput.value.trim();
-    if (!query) return;
+    const raw = speciesSearchInput.value.trim();
+    if (!raw) return;
     await ready;
-    const normQuery = norm(query);
-    let foundName = taxrefNames.find(n => norm(n) === normQuery);
-    if (!foundName) {
-      const partial = taxrefNames.filter(n => norm(n).startsWith(normQuery));
-      if (partial.length === 1) foundName = partial[0];
+    const queries = raw.split(/[;,\n]+/).map(q => q.trim()).filter(Boolean);
+    const found = [];
+    for (const q of queries) {
+      const normQuery = norm(q);
+      let foundName = taxrefNames.find(n => norm(n) === normQuery);
+      if (!foundName) {
+        const partial = taxrefNames.filter(n => norm(n).startsWith(normQuery));
+        if (partial.length === 1) foundName = partial[0];
+      }
+      if (foundName) {
+        found.push(foundName);
+      } else {
+        showNotification(`Espèce "${q}" non trouvée.`, "error");
+      }
     }
-    if (foundName) {
-      sessionStorage.setItem("speciesQueryName", foundName);
+    if (found.length) {
+      sessionStorage.setItem("speciesQueryNames", JSON.stringify(found));
       ["photoData", "identificationResults"].forEach(k => sessionStorage.removeItem(k));
       location.href = "organ.html";
-    } else {
-      showNotification(`Espèce "${query}" non trouvée.`, "error");
     }
   };
   speciesSearchButton?.addEventListener("click", performSpeciesSearch);
@@ -533,7 +540,59 @@ if (document.getElementById("file-capture")) {
     identifyMultipleImages(selectedMultiFilesData.map(i => i.file), selectedMultiFilesData.map(i => i.organ));
   });
 }
-const organBoxOnPage = document.getElementById("organ-choice"); if (organBoxOnPage) { const displayResults = async (results, isNameSearch = false) => { const previewEl = document.getElementById("preview"); if (previewEl) previewEl.style.display = 'none'; if (organBoxOnPage) organBoxOnPage.style.display = 'none'; await ready; document.body.classList.remove("home"); buildTable(isNameSearch ? [{ score: 1.0, species: { scientificNameWithoutAuthor: results } }] : results); buildCards(isNameSearch ? [{ score: 1.0, species: { scientificNameWithoutAuthor: results } }] : results); }; const speciesQueryName = sessionStorage.getItem("speciesQueryName"); const storedImage = sessionStorage.getItem("photoData"); const multiImageResults = sessionStorage.getItem("identificationResults"); if (speciesQueryName) { sessionStorage.removeItem("speciesQueryName"); displayResults(speciesQueryName, true); } else if (multiImageResults) { try { displayResults(JSON.parse(multiImageResults)); } catch (e) { location.href = "index.html"; } } else if (storedImage) { const previewElement = document.getElementById("preview"); if(previewElement) previewElement.src = storedImage; if (organBoxOnPage) organBoxOnPage.style.display = 'block'; const toBlob = dataURL => { try { const [m,b] = dataURL.split(','), [,e] = /:(.*?);/.exec(m), B=atob(b), a=new Uint8Array(B.length); for(let i=0;i<B.length;i++)a[i]=B.charCodeAt(i); return new Blob([a],{type:e})}catch(e){return null}}; const imageBlob = toBlob(storedImage); if (imageBlob) { organBoxOnPage.querySelectorAll("button").forEach(b => b.addEventListener("click", (e) => identifySingleImage(imageBlob, e.currentTarget.dataset.organ))); } else { showNotification("Erreur lors de la préparation de l'image.", 'error'); } } else { location.href = "index.html"; } }
+const organBoxOnPage = document.getElementById("organ-choice");
+if (organBoxOnPage) {
+  const displayResults = async (results, isNameSearch = false) => {
+    const previewEl = document.getElementById("preview");
+    if (previewEl) previewEl.style.display = 'none';
+    organBoxOnPage.style.display = 'none';
+    await ready;
+    document.body.classList.remove("home");
+    const items = isNameSearch
+      ? results.map(n => ({ score: 1.0, species: { scientificNameWithoutAuthor: n } }))
+      : results;
+    buildTable(items);
+    buildCards(items);
+  };
+
+  const namesRaw = sessionStorage.getItem("speciesQueryNames");
+  const storedImage = sessionStorage.getItem("photoData");
+  const multiImageResults = sessionStorage.getItem("identificationResults");
+
+  if (namesRaw) {
+    sessionStorage.removeItem("speciesQueryNames");
+    let names;
+    try { names = JSON.parse(namesRaw); } catch { names = [namesRaw]; }
+    displayResults(names, true);
+  } else if (multiImageResults) {
+    try {
+      displayResults(JSON.parse(multiImageResults));
+    } catch (e) {
+      location.href = "index.html";
+    }
+  } else if (storedImage) {
+    const previewElement = document.getElementById("preview");
+    if (previewElement) previewElement.src = storedImage;
+    organBoxOnPage.style.display = 'block';
+    const toBlob = dataURL => {
+      try {
+        const [m,b] = dataURL.split(','), [,e] = /:(.*?);/.exec(m), B=atob(b), a=new Uint8Array(B.length);
+        for (let i=0; i<B.length; i++) a[i] = B.charCodeAt(i);
+        return new Blob([a], { type: e });
+      } catch(e) { return null; }
+    };
+    const imageBlob = toBlob(storedImage);
+    if (imageBlob) {
+      organBoxOnPage.querySelectorAll("button").forEach(b =>
+        b.addEventListener("click", e => identifySingleImage(imageBlob, e.currentTarget.dataset.organ))
+      );
+    } else {
+      showNotification("Erreur lors de la préparation de l'image.", 'error');
+    }
+  } else {
+    location.href = "index.html";
+  }
+}
 
 const genusSearchInput = document.getElementById("genus-search-input");
 const genusSearchButton = document.getElementById("genus-search-button");
@@ -544,7 +603,7 @@ const performGenusSearch = async () => {
   const normQuery = norm(query);
   const tocEntry = floraToc[normQuery];
   if (tocEntry?.pdfFile && tocEntry?.page) {
-    sessionStorage.setItem("speciesQueryName", query);
+    sessionStorage.setItem("speciesQueryNames", JSON.stringify([query]));
     ["photoData", "identificationResults"].forEach(k => sessionStorage.removeItem(k));
     location.href = "organ.html";
   } else {
@@ -556,7 +615,8 @@ genusSearchInput?.addEventListener("keypress", e => { if (e.key === "Enter") per
 
 speciesSearchInput?.addEventListener("input", e => {
   if (!speciesSuggestions) return;
-  const q = norm(e.target.value);
+  const parts = e.target.value.split(/[;,\n]+/);
+  const q = norm(parts[parts.length - 1]);
   if (!q) { speciesSuggestions.innerHTML = ""; return; }
   const matches = taxrefNames.filter(n => norm(n).startsWith(q)).slice(0, 5);
   speciesSuggestions.innerHTML = matches.map(n => `<option value="${n}">`).join("");
