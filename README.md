@@ -57,6 +57,14 @@ netlify dev
 
 This emulates the Netlify environment and exposes the functions under `/.netlify/functions/`.
 
+## Searching by trigram
+
+When using the "Recherche par nom" field on the homepage, you can now type the
+first three letters of the genus and species to quickly locate an entry. For
+example `Lam pur` will match **Lamium purpureum**. For taxa with ranks such as
+`subsp.` or `var.`, include the rank and the first three letters of the epithet:
+`car atr subsp. nig` will resolve to `Carex atrata subsp. nigra`.
+
 ## Deploying to Netlify
 
 1. Push the project to a Git repository (e.g. GitHub).
