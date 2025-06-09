@@ -6,14 +6,13 @@
   <title>Contexte environnemental - Plantouille express</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script defer src="ui.js"></script>
   <script defer src="contexte.js"></script>
   <style>
-    :root{ --primary:#388e3c; --bg:#f6f9fb; --card:#ffffff; --border:#e0e0e0; --text:#202124; }
-    *{box-sizing:border-box;}
-    body{ background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; margin:0; padding:0; display:flex; flex-direction:column; min-height:100vh; }
+    body{ margin:0; padding:0; display:flex; flex-direction:column; min-height:100vh; }
     
     /* Navigation par onglets */
     .tabs-container { background: var(--card); box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
@@ -54,14 +53,11 @@
     
     /* Chargement */
     .loading { display: none; text-align: center; margin: 2rem 0; }
-    .loading::after { content: ''; display: inline-block; width: 30px; height: 30px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
     
     /* Message d'instruction sur la carte */
     .map-instruction { display: none; position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.7); color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px; z-index: 1000; pointer-events: none; }
     
-    @media (prefers-color-scheme:dark) { 
-      :root{--bg:#181a1b;--card:#262b2f;--border:#333;--text:#ececec} 
+    @media (prefers-color-scheme:dark) {
       .coordinates-display { background: rgba(56, 142, 60, 0.2); }
       .map-instruction { background: rgba(255, 255, 255, 0.15); }
     }
@@ -115,7 +111,7 @@
     </div>
     
     <!-- Indicateur de chargement -->
-    <div class="loading" id="loading"></div>
+    <div class="loading loading-spinner" id="loading"></div>
     
     <!-- Section des résultats -->
     <div class="results-section" id="results-section">
