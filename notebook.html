@@ -15,10 +15,12 @@
     body{ background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; margin:0; padding:0; display:flex; flex-direction:column; min-height:100vh; }
     .tabs-container{ background:var(--card); box-shadow:0 2px 4px rgba(0,0,0,0.1); position:sticky; top:0; z-index:100; }
     .tabs{ display:flex; border-bottom:2px solid var(--border); }
-    .tab{ flex:1; padding:1rem; text-align:center; cursor:pointer; background:none; border:none; font-size:1rem; color:var(--text); transition:all 0.3s; position:relative; }
+    .tab{ flex:1; padding:1rem; text-align:center; cursor:pointer; background:none; border:none; font-size:1rem; color:var(--text); transition:all 0.3s; position:relative; display:flex; align-items:center; justify-content:center; gap:0.4rem; }
     .tab:hover{ background:rgba(56,142,60,0.1); }
     .tab.active{ color:var(--primary); font-weight:600; }
     .tab.active::after{ content:''; position:absolute; bottom:-2px; left:0; right:0; height:2px; background:var(--primary); }
+
+    .tab svg{ width:1em; height:1em; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
 
     .main-content{ flex:1; padding:1.5rem; max-width:900px; margin:0 auto; width:100%; }
     h1{ margin:0 0 1.5rem; font-size:1.6rem; color:var(--primary); text-align:center; }
@@ -35,9 +37,18 @@
 <body>
   <nav class="tabs-container">
     <div class="tabs">
-      <button class="tab" onclick="window.location.href='index.html'">Identification</button>
-      <button class="tab" onclick="window.location.href='contexte.html'">Contexte environnemental</button>
-      <button class="tab active">Carnet</button>
+      <button class="tab" onclick="window.location.href='index.html'">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Identification
+      </button>
+      <button class="tab" onclick="window.location.href='contexte.html'">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        Contexte environnemental
+      </button>
+      <button class="tab active">
+        <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"/></svg>
+        Carnet
+      </button>
     </div>
   </nav>
 
