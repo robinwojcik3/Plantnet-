@@ -448,7 +448,7 @@ function buildTable(items){
 
   const headerHtml = `<tr><th>Sél.</th><th>Nom latin (score %)</th><th>FloreAlpes</th><th>INPN statut</th><th>Critères physiologiques</th><th>Écologie</th><th>Physionomie</th><th>Flora Gallica</th><th>OpenObs</th><th>Biodiv'AURA</th><th>Info Flora</th><th>Fiche synthèse</th><th>PFAF</th></tr>`;
   
-  wrap.innerHTML = `<table><thead>${headerHtml}</thead><tbody>${rows}</tbody></table><div id="comparison-footer" style="padding-top: 1rem; text-align: center;"></div><div id="comparison-results-container" style="display:none;"></div>`;
+  wrap.innerHTML = `<div class="table-wrapper"><table><thead>${headerHtml}</thead><tbody>${rows}</tbody></table></div><div id="comparison-footer" style="padding-top: 1rem; text-align: center;"></div><div id="comparison-results-container" style="display:none;"></div>`;
 
   const footer = document.getElementById('comparison-footer');
   if (footer) {
@@ -478,9 +478,14 @@ function buildTable(items){
       const targetCell = e.target.closest('.text-popup-trigger');
       if (targetCell) {
           e.preventDefault();
-          const title = targetCell.dataset.title || 'Détails';
-          const fullText = decodeURIComponent(targetCell.dataset.fulltext);
-          showInfoModal(title, fullText);
+          const infoPanel = document.getElementById('info-panel');
+          if (infoPanel) {
+              const title = targetCell.dataset.title || '';
+              const fullText = decodeURIComponent(targetCell.dataset.fulltext);
+              infoPanel.innerHTML = `<h3 style="margin-top:0">${title}</h3><p>${fullText}</p>`;
+              infoPanel.style.display = 'block';
+              infoPanel.scrollIntoView({behavior:'smooth', block:'start'});
+          }
       }
   });
 }
