@@ -377,7 +377,7 @@ function buildTable(items){
   const wrap = document.getElementById("results");
   if (!wrap) return;
 
-  const headers = ['Sél.', 'Nom latin (score %)', 'FloreAlpes', 'INPN statut', 'Critères physiologiques', 'Écologie', 'Physionomie', 'Flora Gallica', 'OpenObs', "Biodiv'AURA", 'Info Flora', 'Fiche synthèse', 'PFAF', 'Carnet'];
+  const headers = ['Sél.', 'Nom latin (score %)', 'FloreAlpes', 'INPN statut', 'Critères physiologiques', 'Écologie', 'Physionomie', 'Flora Gallica', 'OpenObs', "Biodiv'AURA", 'Info Flora', 'Fiche synthèse', 'PFAF'];
   const linkIcon = (url, img, alt, extraClass = '') => {
     if (!url) return "—";
     const encoded = img.split('/').map(s => encodeURIComponent(s)).join('/');
@@ -433,11 +433,10 @@ function buildTable(items){
               <td class="col-link">${linkIcon(infoFlora(sci), "Info Flora.png", "Info Flora")}</td>
               <td class="col-link"><a href="#" onclick="handleSynthesisClick(event, this, '${escapedSci}')"><img src="assets/Audio.png" alt="Audio" class="logo-icon"></a></td>
               <td class="col-link">${linkIcon(pfaf(sci), "PFAF.png", "PFAF")}</td>
-              <td class="col-link"><button onclick="saveObservationPrompt('${escapedSci}')">⭐</button></td>
             </tr>`;
   }).join("");
 
-  const headerHtml = `<tr><th>Sél.</th><th>Nom latin (score %)</th><th>FloreAlpes</th><th>INPN statut</th><th>Critères physiologiques</th><th>Écologie</th><th>Physionomie</th><th>Flora Gallica</th><th>OpenObs</th><th>Biodiv'AURA</th><th>Info Flora</th><th>Fiche synthèse</th><th>PFAF</th><th>Carnet</th></tr>`;
+  const headerHtml = `<tr><th>Sél.</th><th>Nom latin (score %)</th><th>FloreAlpes</th><th>INPN statut</th><th>Critères physiologiques</th><th>Écologie</th><th>Physionomie</th><th>Flora Gallica</th><th>OpenObs</th><th>Biodiv'AURA</th><th>Info Flora</th><th>Fiche synthèse</th><th>PFAF</th></tr>`;
   
   wrap.innerHTML = `<table><thead>${headerHtml}</thead><tbody>${rows}</tbody></table><div id="comparison-footer" style="padding-top: 1rem; text-align: center;"></div><div id="comparison-results-container" style="display:none;"></div>`;
 
