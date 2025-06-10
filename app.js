@@ -609,7 +609,7 @@ if (document.getElementById("file-capture")) {
     selectedMultiFilesData.forEach((item, index) => {
       const itemDiv = document.createElement('div');
       itemDiv.className = 'image-organ-item';
-      itemDiv.innerHTML = `<span class="file-info"><span class="file-index">Image ${index + 1}:</span> <span>${item.file.name.substring(0, 20)}...</span></span><select data-index="${index}"><option value="leaf">Feuille</option><option value="flower">Fleur</option><option value="fruit">Fruit</option><option value="bark">Écorce</option></select><button type="button" class="delete-file-btn" data-index="${index}" title="Supprimer">✖</button>`;
+      itemDiv.innerHTML = `<span class="file-info"><span class="file-index">Image ${index + 1}:</span> <span>${item.file.name.substring(0, 20)}...</span></span><select data-index="${index}"><option value="leaf">🍃</option><option value="flower">🌸</option><option value="fruit">🍒</option><option value="bark">🪵</option></select><button type="button" class="delete-file-btn" data-index="${index}" title="Supprimer">✖</button>`;
       itemDiv.querySelector('select').value = item.organ;
       multiImageListArea.appendChild(itemDiv);
     });
