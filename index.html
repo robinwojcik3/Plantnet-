@@ -40,19 +40,8 @@
     .upload-btn.logo-btn { background-color: transparent; border: none; padding: 0; display: block; max-width: 300px; margin: 0 auto; }
     .upload-btn.logo-btn img { width: 100%; max-width: 300px; height: auto; display: block; margin: 0 auto 0.5rem auto; }
     .camera-logo-btn { max-width: 150px; }
-    
-    /* MODIFICATION : Logo galerie 2x plus petit et aligné à gauche */
-    .gallery-container {
-      display: flex;
-      justify-content: flex-start;
-      width: 90vw;
-      max-width: 450px;
-    }
-    .gallery-logo-btn { 
-      max-width: 75px; 
-      margin: 0;
-    }
-    
+    /* Mise à jour : logo galerie réduit de moitié et aligné à gauche */
+    .gallery-logo-btn { max-width: 38px; margin-left: 0; margin-right: auto; align-self: flex-start; }
     .upload-btn.logo-btn span { display: block; margin-top: 0.3rem; font-size: 0.9rem; color: var(--text); }
     body.home .upload-btn.logo-btn:hover img { transform:scale(1.05); }
     .home-actions{display:flex;flex-direction:column;align-items:center;gap:1rem;}
@@ -126,11 +115,8 @@
             <input type="file" id="file-capture" accept="image/*" capture="environment" style="display:none;">
             <label for="file-capture" class="upload-btn logo-btn camera-logo-btn"><img src="assets/logo acceuil.png" alt="Prendre une photo"></label>
 
-            <!-- MODIFICATION : Conteneur pour aligner le logo galerie à gauche -->
-            <div class="gallery-container">
-                <input type="file" id="multi-file-input" accept="image/*" multiple style="display:none;">
-                <label for="multi-file-input" class="upload-btn logo-btn gallery-logo-btn"><img src="assets/logo gallerie.png" alt="Choisir image(s)"></label>
-            </div>
+            <input type="file" id="multi-file-input" accept="image/*" multiple style="display:none;">
+            <label for="multi-file-input" class="upload-btn logo-btn gallery-logo-btn"><img src="assets/logo gallerie.png" alt="Choisir image(s)"></label>
 
             <div class="search-inline">
                 <input type="search" id="name-search-input" placeholder="Nom d'espèce ou de genre" list="species-suggestions">
@@ -152,9 +138,4 @@
             <h2 id="synthesis-modal-title">Fiche de synthèse</h2>
             <div id="synthesis-modal-body"></div>
             <div id="synthesis-modal-footer">
-                <button id="synthesis-play-btn" class="action-button">Écouter la synthèse</button>
-            </div>
-        </div>
-    </div>
-</body>
-</html>
+                <button id="
