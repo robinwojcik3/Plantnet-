@@ -58,7 +58,8 @@
     #results{overflow-x:auto;-webkit-overflow-scrolling:touch;}
     #results::after{content:"";display:block;height:6rem;}
     @media (max-width:600px){
-      #results::after{height:50vh;}
+      /* étend la zone tactile de défilement horizontal sur mobile */
+      #results::after{height:10cm;}
     }
     th,td{ padding: 8px 6px; border-bottom:1px solid var(--border); word-wrap: break-word; vertical-align: top; }
     th{background:#fff;color:#000;font-weight:600;text-align:left}
