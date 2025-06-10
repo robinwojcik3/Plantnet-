@@ -25,6 +25,9 @@
     .table-wrapper{overflow-x:auto;-webkit-overflow-scrolling:touch;}
     #results{overflow-x:auto;-webkit-overflow-scrolling:touch;}
     #results::after{content:"";display:block;height:6rem;}
+    @media (max-width:600px){
+      #results::after{height:50vh;}
+    }
     table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.05);margin-bottom:1.2rem;table-layout:auto;}
     
     th,td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle;word-wrap:break-word;}
