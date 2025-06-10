@@ -76,6 +76,29 @@ const aura       = c => `https://atlas.biodiversite-auvergne-rhone-alpes.fr/espe
 const openObs    = c => `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=lsid%3A${c}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&qc=&radius=120.6&lat=45.188529&lon=5.724524#tab_mapView`;
 const pfaf       = n => `https://pfaf.org/user/Plant.aspx?LatinName=${encodeURIComponent(n).replace(/%20/g, '+')}`;
 const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+function enableDragScroll(el) {
+  if (!el) return;
+  let isDown = false;
+  let startX = 0;
+  let scrollLeft = 0;
+  el.addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'touch') return;
+    isDown = true;
+    startX = e.clientX;
+    scrollLeft = el.scrollLeft;
+    el.setPointerCapture(e.pointerId);
+  });
+  el.addEventListener('pointermove', e => {
+    if (!isDown) return;
+    const dx = startX - e.clientX;
+    el.scrollLeft = scrollLeft + dx;
+  });
+  const stop = () => { isDown = false; };
+  el.addEventListener('pointerup', stop);
+  el.addEventListener('pointercancel', stop);
+  el.addEventListener('pointerleave', stop);
+}
 // Génère un nom de fichier basé sur la date et l'heure courantes
 function makeTimestampedName(prefix = "") {
   const d = new Date();
@@ -459,6 +482,7 @@ function buildTable(items){
   const headerHtml = `<tr><th>Sél.</th><th>Nom latin (score %)</th><th>FloreAlpes</th><th>INPN statut</th><th>Critères physiologiques</th><th>Écologie</th><th>Physionomie</th><th>Flora Gallica</th><th>OpenObs</th><th>Biodiv'AURA</th><th>Info Flora</th><th>Fiche synthèse</th><th>PFAF</th></tr>`;
   
   wrap.innerHTML = `<div class="table-wrapper"><table><thead>${headerHtml}</thead><tbody>${rows}</tbody></table></div><div id="comparison-footer" style="padding-top: 1rem; text-align: center;"></div><div id="comparison-results-container" style="display:none;"></div>`;
+  enableDragScroll(wrap);
 
   const footer = document.getElementById('comparison-footer');
   if (footer) {
