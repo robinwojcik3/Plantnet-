@@ -21,8 +21,8 @@
     #preview{max-width:100%;height:auto;display:block;margin:0 auto 1rem;}
     #preview.thumbnail{max-width:150px;cursor:pointer;}
     #preview.enlarged{max-width:90vw;}
-    #organ-choice{text-align:center;margin:1rem 0;}
-    #organ-choice button{margin:.25rem;padding:.4rem .8rem;border:1px solid var(--primary);background:var(--primary);color:#fff;border-radius:4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;font-size:1rem;}
+    #organ-choice{display:flex;justify-content:center;gap:.5rem;margin:1rem 0;}
+    #organ-choice button{margin:0;padding:.4rem .8rem;border:1px solid var(--primary);background:var(--primary);color:#fff;border-radius:4px;cursor:pointer;display:inline-flex;flex-direction:column;align-items:center;font-size:1rem;}
     #organ-choice button .emoji{font-size:3rem;line-height:1;}
     #organ-choice button .label{margin-top:.25rem;}
     
@@ -92,8 +92,8 @@
     <p>Quelle partie de la plante est photographiée&nbsp;?</p>
     <button type="button" data-organ="flower" aria-label="Fleur"><span class="emoji">🌸</span><span class="label">Fleurs</span></button>
     <button type="button" data-organ="leaf" aria-label="Feuille"><span class="emoji">🍃</span><span class="label">Feuilles</span></button>
-    <button type="button" data-organ="bark" aria-label="Écorce"><span class="emoji">🪵</span><span class="label">Écorce</span></button>
     <button type="button" data-organ="fruit" aria-label="Fruit"><span class="emoji">🍒</span><span class="label">Fruits</span></button>
+    <button type="button" data-organ="bark" aria-label="Écorce"><span class="emoji">🪵</span><span class="label">Écorce</span></button>
   </div>
   <div id="results"></div>
   <div id="info-panel" class="info-panel"></div>
