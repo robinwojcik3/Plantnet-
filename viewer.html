@@ -14,86 +14,28 @@
             height: 100%;
             width: 100%;
             background-color: #333;
+            margin: 0;
             overflow: hidden;
         }
-        #viewer-container {
-            display: flex;
-            flex-direction: column;
+        #pdf-container {
             height: 100vh;
             width: 100vw;
-        }
-        /* MODIFICATION : La barre de contrôles est maintenant fixée en bas de l'écran */
-        #pdf-controls {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background-color: #222;
-            color: white;
-            padding: 10px; /* Augmentation du padding pour plus de hauteur */
+            overflow-y: auto;
             text-align: center;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 -2px 5px rgba(0,0,0,0.5);
-            z-index: 100;
-            -webkit-user-select: none;
-            user-select: none;
+            padding: 20px 0;
         }
-        /* MODIFICATION : Agrandissement des boutons */
-        #pdf-controls button {
-            background-color: #555;
-            color: white;
-            border: 1px solid #777;
-            border-radius: 6px;
-            padding: 8px 18px; /* Plus de padding pour une plus grande zone de clic */
-            margin: 0 15px;
-            font-size: 1.1rem; /* Police plus grande */
-            font-weight: bold;
-            cursor: pointer;
-        }
-        #pdf-controls button:disabled {
-            background-color: #444;
-            cursor: not-allowed;
-            opacity: 0.5;
-        }
-        #page-info {
-            font-family: sans-serif;
-            font-size: 1rem;
-            min-width: 100px;
-        }
-        #pdf-canvas-wrapper {
-            flex-grow: 1;
-            overflow: auto; 
-            text-align: center;
-            /* MODIFICATION : Ajout d'un espace en bas pour que les contrôles ne masquent pas le contenu */
-            padding-bottom: 70px; 
-        }
-        #pdf-canvas {
+        .pdf-page {
             box-shadow: 0 0 10px rgba(0,0,0,0.5);
             width: 100%;
             max-width: 1000px;
             height: auto;
-            transition: opacity 0.15s ease-in-out;
-        }
-        #pdf-canvas.pdf-turning {
-            opacity: 0;
+            margin: 0 auto 20px;
         }
     </style>
 </head>
 <body>
 
-    <div id="pdf-canvas-wrapper">
-        <canvas id="pdf-canvas"></canvas>
-    </div>
-
-    <div id="pdf-controls">
-        <button id="prev-page-btn">Précédent</button>
-        <span id="page-info">
-            Page <span id="current-page-num">0</span> / <span id="total-page-num">0</span>
-        </span>
-        <button id="next-page-btn">Suivant</button>
-    </div>
+    <div id="pdf-container"></div>
 
     <script src="pdfjs/build/pdf.mjs" type="module"></script>
     <script src="assets/viewer_app.js" type="module"></script>

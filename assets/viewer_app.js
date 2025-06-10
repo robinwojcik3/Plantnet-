@@ -17,81 +17,47 @@ function supportsModuleWorker() {
     }
 }
 
-// Récupération des éléments du DOM
-const canvas = document.getElementById('pdf-canvas');
-const ctx = canvas.getContext('2d');
-const prevBtn = document.getElementById('prev-page-btn');
-const nextBtn = document.getElementById('next-page-btn');
-const currentPageNumSpan = document.getElementById('current-page-num');
-const totalPageNumSpan = document.getElementById('total-page-num');
+// Récupération du conteneur qui accueillera les pages du PDF
+const container = document.getElementById('pdf-container');
 
 // Variables pour garder l'état du PDF
 let pdfDoc = null;
-let currentPageNum = 1;
 let totalPages = 0;
-let isRendering = false;
 
 /**
- * Affiche une page spécifique du PDF sur le canvas avec une haute résolution.
- * @param {number} num - Le numéro de la page à afficher.
+ * Rendu d'une page du PDF dans un nouveau canvas inséré dans le conteneur.
+ * @param {number} num - Numéro de la page à afficher.
+ * @returns {Promise<HTMLCanvasElement>} Canvas contenant la page rendue.
  */
 async function renderPage(num) {
-    if (!pdfDoc) return;
-    currentPageNum = Math.max(1, Math.min(totalPages, num));
+    if (!pdfDoc) return null;
 
     try {
-        const page = await pdfDoc.getPage(currentPageNum);
-        
+        const page = await pdfDoc.getPage(num);
+
         // Réduire l'échelle sur iOS pour éviter les problèmes de mémoire
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        const baseScale = isIOS ? 1.5 : 2.0; 
+        const baseScale = isIOS ? 1.5 : 2.0;
         const devicePixelRatio = window.devicePixelRatio || 1;
         const finalScale = baseScale * devicePixelRatio;
-        
+
         const viewport = page.getViewport({ scale: finalScale });
-        
+        const canvas = document.createElement('canvas');
+        canvas.className = 'pdf-page';
         canvas.height = viewport.height;
         canvas.width = viewport.width;
 
         const renderContext = {
-            canvasContext: ctx,
-            viewport: viewport
+            canvasContext: canvas.getContext('2d'),
+            viewport
         };
         await page.render(renderContext).promise;
-
-        currentPageNumSpan.textContent = currentPageNum;
-        prevBtn.disabled = (currentPageNum <= 1);
-        nextBtn.disabled = (currentPageNum >= totalPages);
-
+        container.appendChild(canvas);
+        return canvas;
     } catch (error) {
         console.error('Erreur lors du rendu de la page:', error);
+        return null;
     }
-}
-
-/**
- * Fonctions de navigation avec animation.
- */
-async function goToPage(pageNumber) {
-    if (isRendering || !pdfDoc) return;
-    if (pageNumber < 1 || pageNumber > totalPages) return;
-
-    isRendering = true;
-    canvas.classList.add('pdf-turning');
-
-    await new Promise(resolve => setTimeout(resolve, 150)); 
-    
-    await renderPage(pageNumber);
-    
-    canvas.classList.remove('pdf-turning');
-    isRendering = false;
-}
-
-function goToPrevPage() {
-    goToPage(currentPageNum - 1);
-}
-
-function goToNextPage() {
-    goToPage(currentPageNum + 1);
 }
 
 /**
@@ -134,13 +100,17 @@ async function loadPdfViewer() {
         const loadingTask = pdfjsLib.getDocument(pdfUrl, loadingOptions);
         pdfDoc = await loadingTask.promise;
         totalPages = pdfDoc.numPages;
-        totalPageNumSpan.textContent = totalPages;
 
-        // Écouteurs pour les boutons uniquement
-        prevBtn.addEventListener('click', goToPrevPage);
-        nextBtn.addEventListener('click', goToNextPage);
+        const canvases = [];
+        for (let i = 1; i <= totalPages; i++) {
+            const c = await renderPage(i);
+            canvases.push(c);
+        }
 
-        await renderPage(initialPage);
+        const target = canvases[initialPage - 1];
+        if (target) {
+            target.scrollIntoView({ behavior: 'smooth' });
+        }
     } catch (error) {
         console.error('Erreur lors du chargement du PDF:', error);
         
