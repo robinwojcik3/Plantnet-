@@ -14,7 +14,7 @@
     html[data-theme="dark"]{ --bg:#181a1b; --card:#262b2f; --border:#333; --text:#ececec; }
     *{box-sizing:border-box;}
     
-    /* Styles pour la navigation par onglets */
+    /* NOUVEAU : Styles pour la navigation par onglets */
     .tabs-container { background: var(--card); box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; display:flex; align-items:center; justify-content:space-between; }
     .tabs { display: flex; border-bottom: 2px solid var(--border); flex-grow:1; }
     .tab { flex: 1; padding: 1rem; text-align: center; cursor: pointer; background: none; border: none; font-size: 1rem; color: var(--text); transition: all 0.3s; position: relative; }
@@ -39,14 +39,8 @@
     .upload-btn:hover, .action-button:hover { background-color: #2e7d32; transform: scale(1.03); }
     .upload-btn.logo-btn { background-color: transparent; border: none; padding: 0; display: block; max-width: 300px; margin: 0 auto; }
     .upload-btn.logo-btn img { width: 100%; max-width: 300px; height: auto; display: block; margin: 0 auto 0.5rem auto; }
-    
-    /* Taille du logo caméra */
     .camera-logo-btn { max-width: 150px; }
-    /* Taille du logo galerie (2x plus petit), centré par défaut par .home-actions */
-    .gallery-logo-btn { 
-        max-width: 75px; 
-    }
-
+    .gallery-logo-btn { max-width: 75px; margin-left: 0; margin-right: auto; }
     .upload-btn.logo-btn span { display: block; margin-top: 0.3rem; font-size: 0.9rem; color: var(--text); }
     body.home .upload-btn.logo-btn:hover img { transform:scale(1.05); }
     .home-actions{display:flex;flex-direction:column;align-items:center;gap:1rem;}
@@ -105,6 +99,7 @@
   </style>
 </head>
 <body class="home">
+    <!-- NOUVEAU : Navigation par onglets -->
     <nav class="tabs-container">
         <div class="tabs">
             <button class="tab active">Identification</button>
