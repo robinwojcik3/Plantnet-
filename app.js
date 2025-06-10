@@ -713,19 +713,15 @@ if (organBoxOnPage) {
 }
 
 
-nameSearchInput?.addEventListener("input", async e => {
+nameSearchInput?.addEventListener("input", e => {
   if (!speciesSuggestions) return;
   const parts = e.target.value.split(/[;,\n]+/);
   const term = parts[parts.length - 1].trim();
   const q = norm(term);
   if (!q) { speciesSuggestions.innerHTML = ""; return; }
-  let matches = taxrefNames.filter(n => {
+  const matches = taxrefNames.filter(n => {
     const nk = norm(n);
     return nk.startsWith(q) || (nameTrigram[n] && nameTrigram[n].startsWith(q));
   }).slice(0, 5);
-  if (matches.length === 0) {
-    const remote = await taxrefFuzzyMatch(term);
-    matches = remote.slice(0, 5).map(m => m.nom_complet || m.name || m.nom);
-  }
   speciesSuggestions.innerHTML = matches.map(n => `<option value="${n}">`).join("");
 });
