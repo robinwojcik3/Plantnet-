@@ -408,6 +408,13 @@ async function identifySingleImage(fileBlob, organ) {
   const results = await callPlantNetAPI(fd);
   if (results) {
     document.body.classList.remove("home");
+    const preview = document.getElementById("preview");
+    if (preview) {
+      preview.classList.add('thumbnail');
+      preview.addEventListener('click', () => {
+        preview.classList.toggle('enlarged');
+      });
+    }
     buildTable(results);
     buildCards(results);
     const latin = results[0]?.species?.scientificNameWithoutAuthor;
@@ -650,7 +657,12 @@ const organBoxOnPage = document.getElementById("organ-choice");
 if (organBoxOnPage) {
   const displayResults = async (results, isNameSearch = false) => {
     const previewEl = document.getElementById("preview");
-    if (previewEl) previewEl.style.display = 'none';
+    if (previewEl) {
+      previewEl.classList.add('thumbnail');
+      previewEl.addEventListener('click', () => {
+        previewEl.classList.toggle('enlarged');
+      });
+    }
     organBoxOnPage.style.display = 'none';
     await ready;
     document.body.classList.remove("home");
