@@ -29,7 +29,7 @@ let totalPages = 0;
  * @param {number} num - Numéro de la page à afficher.
  * @returns {Promise<HTMLCanvasElement>} Canvas contenant la page rendue.
  */
-async function renderPage(num) {
+async function renderPage(num, canvas) {
     if (!pdfDoc) return null;
 
     try {
@@ -42,7 +42,9 @@ async function renderPage(num) {
         const finalScale = baseScale * devicePixelRatio;
 
         const viewport = page.getViewport({ scale: finalScale });
-        const canvas = document.createElement('canvas');
+        if (!canvas) {
+            canvas = document.createElement('canvas');
+        }
         canvas.className = 'pdf-page';
         canvas.height = viewport.height;
         canvas.width = viewport.width;
@@ -52,7 +54,6 @@ async function renderPage(num) {
             viewport
         };
         await page.render(renderContext).promise;
-        container.appendChild(canvas);
         return canvas;
     } catch (error) {
         console.error('Erreur lors du rendu de la page:', error);
@@ -101,15 +102,27 @@ async function loadPdfViewer() {
         pdfDoc = await loadingTask.promise;
         totalPages = pdfDoc.numPages;
 
-        const canvases = [];
+        const slots = [];
         for (let i = 1; i <= totalPages; i++) {
-            const c = await renderPage(i);
-            canvases.push(c);
+            const canvas = document.createElement('canvas');
+            canvas.className = 'pdf-page';
+            container.appendChild(canvas);
+            slots.push(canvas);
         }
 
-        const target = canvases[initialPage - 1];
-        if (target) {
-            target.scrollIntoView({ behavior: 'smooth' });
+        const targetCanvas = await renderPage(initialPage, slots[initialPage - 1]);
+        if (targetCanvas) {
+            targetCanvas.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        for (let i = initialPage + 1; i <= totalPages; i++) {
+            await renderPage(i, slots[i - 1]);
+        }
+        for (let i = initialPage - 1; i >= 1; i--) {
+            const before = targetCanvas.getBoundingClientRect().top;
+            await renderPage(i, slots[i - 1]);
+            const after = targetCanvas.getBoundingClientRect().top;
+            container.scrollTop += after - before;
         }
     } catch (error) {
         console.error('Erreur lors du chargement du PDF:', error);
