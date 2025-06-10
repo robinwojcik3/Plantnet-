@@ -14,7 +14,7 @@
     html[data-theme="dark"]{ --bg:#181a1b; --card:#262b2f; --border:#333; --text:#ececec; }
     *{box-sizing:border-box;}
     
-    /* NOUVEAU : Styles pour la navigation par onglets */
+    /* Styles pour la navigation par onglets */
     .tabs-container { background: var(--card); box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; display:flex; align-items:center; justify-content:space-between; }
     .tabs { display: flex; border-bottom: 2px solid var(--border); flex-grow:1; }
     .tab { flex: 1; padding: 1rem; text-align: center; cursor: pointer; background: none; border: none; font-size: 1rem; color: var(--text); transition: all 0.3s; position: relative; }
@@ -39,14 +39,19 @@
     .upload-btn:hover, .action-button:hover { background-color: #2e7d32; transform: scale(1.03); }
     .upload-btn.logo-btn { background-color: transparent; border: none; padding: 0; display: block; max-width: 300px; margin: 0 auto; }
     .upload-btn.logo-btn img { width: 100%; max-width: 300px; height: auto; display: block; margin: 0 auto 0.5rem auto; }
-    .camera-logo-btn { max-width: 150px; }
-    .gallery-logo-btn { max-width: 75px; margin-left: 0; margin-right: auto; }
     .upload-btn.logo-btn span { display: block; margin-top: 0.3rem; font-size: 0.9rem; color: var(--text); }
     body.home .upload-btn.logo-btn:hover img { transform:scale(1.05); }
     .home-actions{display:flex;flex-direction:column;align-items:center;gap:1rem;}
     .home-actions .upload-btn,.home-actions .search-inline{width:90vw;max-width:450px;}
     .search-inline{display:flex;gap:.5rem;align-items:center;}
     .search-inline input[type="search"]{flex-grow:1;padding:10px;border:1px solid var(--border);border-radius:6px;font-size:1rem;margin:0;background-color:#fff;}
+    
+    /* MODIFIÉ : Augmentation de la taille du logo caméra */
+    .camera-logo-btn { max-width: 200px; }
+    
+    /* SUPPRIMÉ : Ancien style pour le logo gallerie qui n'est plus pertinent ici */
+    /* .gallery-logo-btn { max-width: 75px; margin-left: 0; margin-right: auto; } */
+
     #multi-image-list-area .image-organ-item { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem; padding: 0.6rem; border: 1px solid var(--border); border-radius: 4px; background-color: var(--card); font-size: 0.9rem; }
     #multi-image-list-area .file-info { flex-grow: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 10px; }
     #multi-image-list-area .file-info .file-index { font-weight: bold; margin-right: 5px; }
@@ -90,6 +95,12 @@
     #synthesis-modal-body { margin-top: 15px; }
     #synthesis-modal-footer { margin-top: 20px; text-align: center; }
 
+    /* NOUVEAU : Styles pour le pied de page avec le logo galerie */
+    #gallery-footer { position: fixed; bottom: 15px; left: 15px; z-index: 100; }
+    #gallery-footer .upload-btn { display: flex; align-items: center; gap: 8px; background: none; border: none; padding: 0; width: auto; margin: 0; }
+    #gallery-footer img { max-width: 50px; margin: 0; }
+    #gallery-footer span { color: var(--text); font-weight: 500; font-size: 0.9rem; }
+    
     @media (prefers-color-scheme:dark){ 
       :root{--bg:#181a1b;--card:#262b2f;--border:#333;--text:#ececec} 
       .tabs-container { background: var(--card); }
@@ -113,9 +124,6 @@
             <input type="file" id="file-capture" accept="image/*" capture="environment" style="display:none;">
             <label for="file-capture" class="upload-btn logo-btn camera-logo-btn"><img src="assets/logo acceuil.png" alt="Prendre une photo"></label>
 
-            <input type="file" id="multi-file-input" accept="image/*" multiple style="display:none;">
-            <label for="multi-file-input" class="upload-btn logo-btn gallery-logo-btn"><img src="assets/logo gallerie.png" alt="Choisir image(s)"></label>
-
             <div class="search-inline">
                 <input type="search" id="name-search-input" placeholder="Nom d'espèce ou de genre" list="species-suggestions">
                 <datalist id="species-suggestions"></datalist>
@@ -129,6 +137,14 @@
         </div>
         <div id="results"></div>
     </div>
+    
+    <footer id="gallery-footer">
+        <input type="file" id="multi-file-input" accept="image/*" multiple style="display:none;">
+        <label for="multi-file-input" class="upload-btn">
+            <img src="assets/logo gallerie.png" alt="Choisir image(s)">
+            <span>Choisir une image</span>
+        </label>
+    </footer>
 
     <div id="synthesis-modal" class="synthesis-modal-overlay">
         <div class="synthesis-modal-content">
