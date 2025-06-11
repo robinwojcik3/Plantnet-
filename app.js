@@ -534,6 +534,35 @@ function buildTable(items){
   });
 
   wrap.addEventListener('click', (e) => {
+      const nameCell = e.target.closest('.col-nom-latin');
+      if (nameCell) {
+          const text = nameCell.innerText.replace(/\s+/g, ' ').trim();
+          const copy = (t) => {
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                  navigator.clipboard.writeText(t).then(() => {
+                      showNotification('Nom latin copié', 'success');
+                  }).catch(() => showNotification('Échec de la copie', 'error'));
+              } else {
+                  const ta = document.createElement('textarea');
+                  ta.value = t;
+                  ta.style.position = 'fixed';
+                  ta.style.opacity = '0';
+                  document.body.appendChild(ta);
+                  ta.focus();
+                  ta.select();
+                  try {
+                      document.execCommand('copy');
+                      showNotification('Nom latin copié', 'success');
+                  } catch(err) {
+                      showNotification('Échec de la copie', 'error');
+                  }
+                  document.body.removeChild(ta);
+              }
+          };
+          copy(text);
+          return;
+      }
+
       const targetCell = e.target.closest('.text-popup-trigger');
       if (targetCell) {
           e.preventDefault();
