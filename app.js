@@ -390,15 +390,16 @@ async function handleComparisonClick() {
 /* ================================================================
    LOGIQUE D'IDENTIFICATION ET D'AFFICHAGE
    ================================================================ */
-async function callPlantNetAPI(formData) {
-    try {
+async function callPlantNetAPI(formData, retries = 2) {
+    for (let attempt = 0; attempt <= retries; attempt++) {
         const data = await apiFetch(ENDPOINT, { method: 'POST', body: formData });
-        return data ? data.results.slice(0, MAX_RESULTS) : null;
-    } catch (err) {
-        console.error(err);
-        showNotification(err.message, 'error');
-        return null;
+        if (data) return data.results.slice(0, MAX_RESULTS);
+        if (attempt < retries) {
+            await new Promise(res => setTimeout(res, 1000));
+        }
     }
+    showNotification('Échec de l\'analyse après plusieurs tentatives.', 'error');
+    return null;
 }
 async function identifySingleImage(fileBlob, organ) {
   await ready;
