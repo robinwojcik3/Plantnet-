@@ -27,24 +27,32 @@ let criteres = {}; // NOUVEAU : pour les critères physiologiques
 let physionomie = {}; // Nouvelle table pour la physionomie
 let userLocation = { latitude: 45.188529, longitude: 5.724524 };
 
-const ready = Promise.all([
-  fetch("taxref.json").then(r => r.json()).then(j => Object.entries(j).forEach(([k,v]) => {
-    taxrefNames.push(k);
-    taxref[norm(k)] = v;
-    const tri = makeTrigram(k);
-    nameTrigram[k] = tri;
-    if (!trigramIndex[tri]) trigramIndex[tri] = [];
-    trigramIndex[tri].push(k);
-  })),
-  fetch("ecology.json").then(r => r.json()).then(j => Object.entries(j).forEach(([k,v]) => ecology[norm(k.split(';')[0])] = v)),
-  fetch("assets/flora_gallica_toc.json").then(r => r.json()).then(j => floraToc = j),
-  fetch("assets/florealpes_index.json").then(r => r.json()).then(j => floreAlpesIndex = j),
-  // NOUVEAU : Chargement des critères physiologiques
-  fetch("Criteres_herbier.json").then(r => r.json()).then(j => j.forEach(item => criteres[norm(item.species)] = item.description)),
-  // Nouvelle donnée : physionomie des espèces
-  fetch("Physionomie.json").then(r => r.json()).then(j => j.forEach(item => physionomie[norm(item.nom_latin)] = item.physionomie))
-]).then(() => { taxrefNames.sort(); console.log("Données prêtes."); })
-  .catch(err => showNotification("Erreur chargement des données: " + err.message, 'error'));
+let dataPromise = null;
+function loadData() {
+  if (dataPromise) return dataPromise;
+  dataPromise = Promise.all([
+    fetch("taxref.json").then(r => r.json()).then(j => Object.entries(j).forEach(([k,v]) => {
+      taxrefNames.push(k);
+      taxref[norm(k)] = v;
+      const tri = makeTrigram(k);
+      nameTrigram[k] = tri;
+      if (!trigramIndex[tri]) trigramIndex[tri] = [];
+      trigramIndex[tri].push(k);
+    })),
+    fetch("ecology.json").then(r => r.json()).then(j => Object.entries(j).forEach(([k,v]) => ecology[norm(k.split(';')[0])] = v)),
+    fetch("assets/flora_gallica_toc.json").then(r => r.json()).then(j => floraToc = j),
+    fetch("assets/florealpes_index.json").then(r => r.json()).then(j => floreAlpesIndex = j),
+    // NOUVEAU : Chargement des critères physiologiques
+    fetch("Criteres_herbier.json").then(r => r.json()).then(j => j.forEach(item => criteres[norm(item.species)] = item.description)),
+    // Nouvelle donnée : physionomie des espèces
+    fetch("Physionomie.json").then(r => r.json()).then(j => j.forEach(item => physionomie[norm(item.nom_latin)] = item.physionomie))
+  ]).then(() => { taxrefNames.sort(); console.log("Données prêtes."); })
+    .catch(err => {
+      dataPromise = null;
+      showNotification("Erreur chargement des données: " + err.message, 'error');
+    });
+  return dataPromise;
+}
 
 
 /* ================================================================
@@ -402,7 +410,7 @@ async function callPlantNetAPI(formData, retries = 2) {
     return null;
 }
 async function identifySingleImage(fileBlob, organ) {
-  await ready;
+  await loadData();
   const fd = new FormData();
   fd.append("images", fileBlob, fileBlob.name || "photo.jpg");
   fd.append("organs", organ);
@@ -422,7 +430,7 @@ async function identifySingleImage(fileBlob, organ) {
     if (latin) savePhotoLocally(fileBlob, latin);
   }
 }
-async function identifyMultipleImages(files, organs) { await ready; const fd = new FormData(); files.forEach((f, i) => fd.append("images", f, f.name || `photo_${i}.jpg`)); organs.forEach(o => fd.append("organs", o)); if (!fd.has("images")) return showNotification("Aucune image valide.", 'error'); const results = await callPlantNetAPI(fd); if (results) { sessionStorage.setItem("identificationResults", JSON.stringify(results)); ["photoData", "speciesQueryNames"].forEach(k => sessionStorage.removeItem(k)); location.href = "organ.html"; } }
+async function identifyMultipleImages(files, organs) { await loadData(); const fd = new FormData(); files.forEach((f, i) => fd.append("images", f, f.name || `photo_${i}.jpg`)); organs.forEach(o => fd.append("organs", o)); if (!fd.has("images")) return showNotification("Aucune image valide.", 'error'); const results = await callPlantNetAPI(fd); if (results) { sessionStorage.setItem("identificationResults", JSON.stringify(results)); ["photoData", "speciesQueryNames"].forEach(k => sessionStorage.removeItem(k)); location.href = "organ.html"; } }
 
 function buildTable(items){
   const wrap = document.getElementById("results");
@@ -556,7 +564,7 @@ if (document.getElementById("file-capture")) {
   const performNameSearch = async () => {
     const raw = nameSearchInput.value.trim();
     if (!raw) return;
-    await ready;
+    await loadData();
     const queries = raw.split(/[;,\n]+/).map(q => q.trim()).filter(Boolean);
     if (queries.length === 1 && queries[0].split(/\s+/).length === 1) {
       const q = queries[0];
@@ -665,7 +673,7 @@ if (organBoxOnPage) {
       });
     }
     organBoxOnPage.style.display = 'none';
-    await ready;
+    await loadData();
     document.body.classList.remove("home");
     const items = isNameSearch
       ? results.map(n => ({ score: 1.0, species: { scientificNameWithoutAuthor: n } }))
@@ -714,8 +722,9 @@ if (organBoxOnPage) {
 }
 
 
-nameSearchInput?.addEventListener("input", e => {
+nameSearchInput?.addEventListener("input", async e => {
   if (!speciesSuggestions) return;
+  await loadData();
   const parts = e.target.value.split(/[;,\n]+/);
   const term = parts[parts.length - 1].trim();
   const q = norm(term);
@@ -726,3 +735,11 @@ nameSearchInput?.addEventListener("input", e => {
   }).slice(0, 5);
   speciesSuggestions.innerHTML = matches.map(n => `<option value="${n}">`).join("");
 });
+
+if (typeof document !== 'undefined' && document.addEventListener) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const trigger = () => { loadData(); };
+    document.addEventListener('click', trigger, { once: true });
+    document.addEventListener('keydown', trigger, { once: true });
+  });
+}
