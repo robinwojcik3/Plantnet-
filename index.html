@@ -29,7 +29,20 @@
     body.home::before{ content:""; position:fixed; inset:0; background:url("assets/Bandeau.jpg") center/cover no-repeat fixed; z-index:-1; opacity:.30; }
     body.home{ display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; margin:0; text-align:center; }
     body.home .tabs-container { position: fixed; top: 0; left: 0; right: 0; }
-    body.home #main-content { margin-top: 60px; } /* Espace pour les onglets */
+    body.home #main-content {
+      margin-top: 60px; /* Espace pour les onglets */
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: calc(100vh - 60px); /* hauteur suffisante pour centrer */
+    }
+
+    /* Décale légèrement le contenu vers le bas sur mobile */
+    @media (max-width:600px){
+      body.home #main-content{ padding-top:10vh; }
+    }
     
     body{ background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; margin:0 auto; padding:1.2rem; max-width:1100px; }
     h1{margin:0 0 1.5rem;font-size:1.8rem;color:var(--primary)}
