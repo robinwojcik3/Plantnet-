@@ -48,6 +48,34 @@ const SERVICES = {
     buildUrl: (lat, lon) => {
       return `https://fr-fr.topographic-map.com/map-v1qmt/?center=${lat.toFixed(6)}%2C${lon.toFixed(6)}&zoom=15`;
     }
+  },
+  natura2000: {
+    name: "Natura 2000",
+    description: "Consultez les sites Natura 2000 aux alentours",
+    buildUrl: (lat, lon) => {
+      return `https://www.geoportail.gouv.fr/carte?c=${lon},${lat}&z=13&l0=ESPACES_NATURELS.NATURA2000::GEOPORTAIL:OGC:WMS(1)&permalink=yes`;
+    }
+  },
+  znieff: {
+    name: "ZNIEFF",
+    description: "Visualisez les zones ZNIEFF proches",
+    buildUrl: (lat, lon) => {
+      return `https://www.geoportail.gouv.fr/carte?c=${lon},${lat}&z=13&l0=ESPACES_NATURELS.ZNIEFF::GEOPORTAIL:OGC:WMS(1)&permalink=yes`;
+    }
+  },
+  appb: {
+    name: "APPB",
+    description: "Cartographie des arrêtés de protection de biotope",
+    buildUrl: (lat, lon) => {
+      return `https://www.geoportail.gouv.fr/carte?c=${lon},${lat}&z=13&l0=ESPACES_NATURELS.APPB::GEOPORTAIL:OGC:WMS(1)&permalink=yes`;
+    }
+  },
+  ens: {
+    name: "ENS",
+    description: "Explorer les espaces naturels sensibles à proximité",
+    buildUrl: (lat, lon) => {
+      return `https://www.geoportail.gouv.fr/carte?c=${lon},${lat}&z=13&l0=ESPACES_NATURELS.ENS::GEOPORTAIL:OGC:WMS(1)&permalink=yes`;
+    }
   }
 };
 
