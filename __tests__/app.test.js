@@ -47,6 +47,14 @@ describe('utility functions', () => {
     const name = ctx.makeTimestampedName('My:Photo');
     expect(name).toBe('My_Photo 2024-01-02 03h04.jpg');
   });
+
+  test('openObsMulti builds OR query', () => {
+    const ctx = loadApp();
+    const url = ctx.openObsMulti(['1','2']);
+    expect(url).toContain('/occurrences/map');
+    expect(url).toContain('embed=true');
+    expect(url).toContain(encodeURIComponent('(lsid:1 OR lsid:2)'));
+  });
 });
 
 describe('api helpers', () => {
