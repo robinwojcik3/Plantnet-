@@ -3,7 +3,7 @@
    ================================================================ */
 
 // Changez ce nom de version à chaque fois que vous mettez à jour les fichiers de l'application
-const CACHE_NAME = "plantid-v16";
+const CACHE_NAME = "plantid-v15";
 
 // Fichiers essentiels pour le fonctionnement de base de l'application
 const CORE_ASSETS = [
@@ -11,11 +11,9 @@ const CORE_ASSETS = [
   "./index.html",
   "./organ.html",
   "./viewer.html",
-  "./openobs-map.html",
   "./contexte.html",                // NOUVEAU : page contexte environnemental
   "./app.js",
   "./contexte.js",                   // NOUVEAU : script contexte environnemental
-  "./openobs-map.js",
   "./assets/viewer_app.js",
   "./manifest.json",
   "./assets/flora_gallica_toc.json",
