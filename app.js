@@ -81,11 +81,11 @@ const slug = n => norm(n).replace(/ /g, "-");
 const infoFlora  = n => `https://www.infoflora.ch/fr/flore/${slug(n)}.html`;
 const inpnStatut = c => `https://inpn.mnhn.fr/espece/cd_nom/${c}/tab/statut`;
 const aura       = c => `https://atlas.biodiversite-auvergne-rhone-alpes.fr/espece/${c}`;
-const openObs    = c => `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=lsid%3A${c}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&qc=&radius=120.6&lat=45.188529&lon=5.724524&embed=true#tab_mapView`;
+const openObs    = c => `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=lsid%3A${c}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&qc=&radius=120.6&lat=45.188529&lon=5.724524#tab_mapView`;
 function openObsMulti(codes) {
   if (!Array.isArray(codes) || codes.length === 0) return '';
   const q = `(${codes.map(c => `lsid:${c}`).join(' OR ')}) AND (dynamicProperties_diffusionGP:"true")`;
-  return `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=${encodeURIComponent(q)}&qc=&radius=120.6&lat=45.188529&lon=5.724524&embed=true#tab_mapView`;
+  return `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=${encodeURIComponent(q)}&qc=&radius=120.6&lat=45.188529&lon=5.724524#tab_mapView`;
 }
 const pfaf       = n => `https://pfaf.org/user/Plant.aspx?LatinName=${encodeURIComponent(n).replace(/%20/g, '+')}`;
 const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -367,7 +367,7 @@ async function handleComparisonClick() {
     }));
 
     const cdCodes = speciesData.map(s => cdRef(s.species)).filter(Boolean);
-    const mapUrl = cdCodes.length ? `openobs-map.html?codes=${cdCodes.join(',')}` : '';
+    const mapUrl = cdCodes.length ? openObsMulti(cdCodes) : '';
 
     const comparisonText = await getComparisonFromGemini(speciesData);
     const { intro, tableMarkdown } = parseComparisonText(comparisonText);
