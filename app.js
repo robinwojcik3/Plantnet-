@@ -295,9 +295,9 @@ ${speciesDataString}
 ---
 Ta réponse doit être structurée en deux parties distinctes, sans aucun texte introductif ou superflu.
 
-Rédige d'abord une phrase unique (1 à 2 lignes maximum) qui met en évidence le critère morphologique le plus facilement observable et le plus discriminant pour distinguer les espèces entre elles.
+Commence par une phrase unique (1 à 2 lignes maximum) qui met en évidence le critère morphologique le plus facilement observable et le plus discriminant pour distinguer les espèces analysées.
 
-Ensuite, présente un tableau de synthèse comparatif. Ce tableau doit regrouper, pour chaque espèce, les principaux critères morphologiques (forme, taille, couleur des organes, etc.) et écologiques (habitat, sol, altitude), à partir des informations issues des colonnes « Physionomie » et « Écologie ». Le tableau doit commencer par les caractères les plus discriminants visuellement. Aucune mise en forme Markdown ne doit être utilisée : pas de gras, pas d’italique, pas de souligné, aucun symbole ou caractère spécial. Le texte doit rester fluide et lisible, sans mise en forme.`;
+Ensuite, présente un tableau comparatif en format Markdown. Ce tableau doit regrouper pour chaque espèce les principaux critères morphologiques (forme, taille, couleur des organes, etc.) et écologiques (habitat, type de sol, altitude), en t’appuyant sur les informations des colonnes « Physionomie » et « Écologie ». Organise les lignes du tableau en commençant par les critères les plus simples et discriminants à observer. Le contenu du tableau doit rester clair, sans utiliser de gras, italique ou autres styles typographiques.`;
 
     const requestBody = { 
         "contents": [{ "parts": [{ "text": promptTemplate }] }], 
