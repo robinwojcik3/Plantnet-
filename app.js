@@ -479,7 +479,7 @@ function buildTable(items){
                        data-physio="${encodeURIComponent(phys)}" 
                        data-eco="${encodeURIComponent(eco)}">
               </td>
-              <td class="col-nom-latin">${sci}<br><span class="score">(${pct})</span></td>
+              <td class="col-nom-latin" data-latin="${sci}">${sci}<br><span class="score">(${pct})</span></td>
               <td class="col-link">${floreAlpesLink}</td>
               <td class="col-link">${linkIcon(cd && inpnStatut(cd), "INPN.png", "INPN", "small-logo")}</td>
               <td class="col-criteres">
@@ -532,7 +532,8 @@ function buildTable(items){
   wrap.addEventListener('click', (e) => {
       const nameCell = e.target.closest('.col-nom-latin');
       if (nameCell) {
-          const text = nameCell.innerText.replace(/\s+/g, ' ').trim();
+          const latin = (nameCell.dataset.latin || '').trim();
+          const text = latin || nameCell.innerText.replace(/\s*\(.*/, '').replace(/\s+/g, ' ').trim();
           const copy = (t) => {
               if (navigator.clipboard && navigator.clipboard.writeText) {
                   navigator.clipboard.writeText(t).then(() => {
