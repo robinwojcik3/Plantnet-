@@ -87,6 +87,88 @@ function openObsMulti(codes) {
   const q = `(${codes.map(c => `lsid:${c}`).join(' OR ')}) AND (dynamicProperties_diffusionGP:"true")`;
   return `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=${encodeURIComponent(q)}&qc=&radius=120.6&lat=45.188529&lon=5.724524#tab_mapView`;
 }
+
+let openObsMap = null;
+let openObsLayer = null;
+
+async function fetchOpenObsOccurrences(cd) {
+  if (!cd) return [];
+  const url = `https://openobs.mnhn.fr/api/occurrence?lsid=${cd}&diffusionGP=true`;
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('API error');
+    const data = await resp.json();
+    if (Array.isArray(data.features)) return data.features;
+    if (Array.isArray(data.results)) return data.results;
+    if (Array.isArray(data.records)) return data.records;
+    return [];
+  } catch (err) {
+    console.error('OpenObs API', err);
+    showNotification('Erreur lors de la récupération des données OpenObs', 'error');
+    return [];
+  }
+}
+
+function extractCoords(rec) {
+  if (!rec) return null;
+  const lat = rec.decimalLatitude || rec.decimallatitude || rec.lat || rec.latitude || (rec.geometry && rec.geometry.coordinates && rec.geometry.coordinates[1]);
+  const lon = rec.decimalLongitude || rec.decimallongitude || rec.lon || rec.longitude || (rec.geometry && rec.geometry.coordinates && rec.geometry.coordinates[0]);
+  if (lat && lon) return [parseFloat(lat), parseFloat(lon)];
+  return null;
+}
+
+async function showOpenObsMap(cd) {
+  const points = await fetchOpenObsOccurrences(cd);
+  let overlay = document.getElementById('openobs-map-overlay');
+  if (overlay) overlay.remove();
+  overlay = document.createElement('div');
+  overlay.id = 'openobs-map-overlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;';
+
+  const container = document.createElement('div');
+  container.style.cssText = 'background:var(--card,#fff);border-radius:8px;width:90%;max-width:800px;height:80%;display:flex;flex-direction:column;position:relative;';
+
+  const closeBtn = document.createElement('button');
+  closeBtn.textContent = 'Fermer';
+  closeBtn.className = 'action-button';
+  closeBtn.style.cssText = 'margin:0.5rem;align-self:flex-end;z-index:1001;';
+  closeBtn.onclick = () => overlay.remove();
+
+  const mapDiv = document.createElement('div');
+  mapDiv.id = 'openobs-map';
+  mapDiv.style.cssText = 'flex:1;';
+
+  container.appendChild(closeBtn);
+  container.appendChild(mapDiv);
+  overlay.appendChild(container);
+  document.body.appendChild(overlay);
+
+  setTimeout(() => {
+    if (!openObsMap) {
+      openObsMap = L.map('openobs-map').setView([45.188529, 5.724524], 6);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap contributors' }).addTo(openObsMap);
+    } else {
+      openObsMap.invalidateSize();
+      openObsMap.setView([45.188529, 5.724524], 6);
+      if (openObsLayer) {
+        openObsLayer.clearLayers();
+      }
+    }
+    openObsLayer = L.layerGroup().addTo(openObsMap);
+    const markers = [];
+    points.forEach(p => {
+      const coords = extractCoords(p);
+      if (!coords) return;
+      const m = L.marker(coords).addTo(openObsLayer);
+      markers.push(m);
+    });
+    if (markers.length) {
+      const group = new L.featureGroup(markers);
+      openObsMap.fitBounds(group.getBounds().pad(0.1));
+    }
+  }, 100);
+}
+
 const pfaf       = n => `https://pfaf.org/user/Plant.aspx?LatinName=${encodeURIComponent(n).replace(/%20/g, '+')}`;
 const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent);
 
@@ -497,7 +579,7 @@ function buildTable(items){
               <td class="col-link">${linkIcon(infoFlora(sci), "Info Flora.png", "Info Flora")}</td>
               <td class="col-link"><a href="#" onclick="handleSynthesisClick(event, this, '${escapedSci}')"><img src="assets/Audio.png" alt="Audio" class="logo-icon"></a></td>
               <td class="col-link">${linkIcon(pfaf(sci), "PFAF.png", "PFAF")}</td>
-              <td class="col-link">${linkIcon(cd && openObs(cd), "OpenObs.png", "Carte", "small-logo")}</td>
+              <td class="col-link">${cd ? `<a href="#" onclick="showOpenObsMap('${cd}')"><img src="assets/OpenObs.png" alt="Carte" class="logo-icon small-logo"></a>` : '—'}</td>
             </tr>`;
   }).join("");
 
