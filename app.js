@@ -319,6 +319,29 @@ Ensuite, présente un tableau comparatif en format Markdown. Ce tableau doit reg
     }
 }
 
+function parseComparisonText(text) {
+    const lines = text.split(/\n+/);
+    let introLines = [];
+    let tableLines = [];
+    let inTable = false;
+    for (const line of lines) {
+        if (!inTable && line.trim().startsWith('|')) inTable = true;
+        if (inTable) tableLines.push(line);
+        else if (line.trim()) introLines.push(line.trim());
+    }
+    return { intro: introLines.join(' '), tableMarkdown: tableLines.join('\n') };
+}
+
+function markdownTableToHtml(md) {
+    const lines = md.trim().split(/\n+/).filter(Boolean);
+    if (lines.length < 2) return '';
+    const headerCells = lines[0].split('|').slice(1, -1).map(c => c.trim());
+    const rows = lines.slice(2).map(l => l.split('|').slice(1, -1).map(c => c.trim()));
+    const thead = '<thead><tr>' + headerCells.map(c => `<th>${c}</th>`).join('') + '</tr></thead>';
+    const tbody = '<tbody>' + rows.map(r => '<tr>' + r.map(c => `<td>${c}</td>`).join('') + '</tr>').join('') + '</tbody>';
+    return `<table>${thead}${tbody}</table>`;
+}
+
 async function handleComparisonClick() {
     const compareBtn = document.getElementById('compare-btn');
     if (!compareBtn) return;
@@ -347,6 +370,8 @@ async function handleComparisonClick() {
     const mapUrl = cdCodes.length ? openObsMulti(cdCodes) : '';
 
     const comparisonText = await getComparisonFromGemini(speciesData);
+    const { intro, tableMarkdown } = parseComparisonText(comparisonText);
+    const tableHtml = markdownTableToHtml(tableMarkdown);
 
     // MODIFICATION : La structure HTML inclut maintenant le bouton de synthèse vocale.
     resultsContainer.style.cssText = `
@@ -365,7 +390,7 @@ async function handleComparisonClick() {
             </a>
         </div>
         <hr style="border: none; border-top: 1px solid var(--border, #e0e0e0); margin: 1rem 0;">
-        <p id="comparison-text-content">${comparisonText.replace(/\n/g, '<br>')}</p>
+        <div id="comparison-text-content"><p>${intro}</p>${tableHtml}</div>
         ${mapUrl ? `<div style="margin-top:1.5rem;"><iframe loading="lazy" src="${mapUrl}" title="Carte OpenObs" style="width:100%;height:400px;border:none;"></iframe></div>` : ''}
     `;
 
