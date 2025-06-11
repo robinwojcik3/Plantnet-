@@ -82,6 +82,11 @@ const infoFlora  = n => `https://www.infoflora.ch/fr/flore/${slug(n)}.html`;
 const inpnStatut = c => `https://inpn.mnhn.fr/espece/cd_nom/${c}/tab/statut`;
 const aura       = c => `https://atlas.biodiversite-auvergne-rhone-alpes.fr/espece/${c}`;
 const openObs    = c => `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=lsid%3A${c}%20AND%20(dynamicProperties_diffusionGP%3A%22true%22)&qc=&radius=120.6&lat=45.188529&lon=5.724524#tab_mapView`;
+function openObsMulti(codes) {
+  if (!Array.isArray(codes) || codes.length === 0) return '';
+  const q = `(${codes.map(c => `lsid:${c}`).join(' OR ')}) AND (dynamicProperties_diffusionGP:"true")`;
+  return `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=${encodeURIComponent(q)}&qc=&radius=120.6&lat=45.188529&lon=5.724524#tab_mapView`;
+}
 const pfaf       = n => `https://pfaf.org/user/Plant.aspx?LatinName=${encodeURIComponent(n).replace(/%20/g, '+')}`;
 const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent);
 
@@ -342,6 +347,9 @@ async function handleComparisonClick() {
         eco: decodeURIComponent(box.dataset.eco)
     }));
 
+    const cdCodes = speciesData.map(s => cdRef(s.species)).filter(Boolean);
+    const mapUrl = cdCodes.length ? openObsMulti(cdCodes) : '';
+
     const comparisonText = await getComparisonFromGemini(speciesData);
 
     // MODIFICATION : La structure HTML inclut maintenant le bouton de synthèse vocale.
@@ -362,6 +370,7 @@ async function handleComparisonClick() {
         </div>
         <hr style="border: none; border-top: 1px solid var(--border, #e0e0e0); margin: 1rem 0;">
         <p id="comparison-text-content">${comparisonText.replace(/\n/g, '<br>')}</p>
+        ${mapUrl ? `<div style="margin-top:1.5rem;"><iframe loading="lazy" src="${mapUrl}" title="Carte OpenObs" style="width:100%;height:400px;border:none;"></iframe></div>` : ''}
     `;
 
     // Ajout de l'écouteur d'événement pour le nouveau bouton de synthèse vocale.
