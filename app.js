@@ -293,15 +293,11 @@ Données :
 ---
 ${speciesDataString}
 ---
-Ta réponse doit être structurée rigoureusement en trois parties distinctes, sans aucun autre texte ou préambule.
+Ta réponse doit être structurée en deux parties distinctes, sans aucun texte introductif ou superflu.
 
-Commence par une unique phrase de synthèse (1-2 lignes maximum) qui souligne l'élément morphologique le plus remarquable et le plus simple à observer pour distinguer ces espèces les unes des autres.
+Rédige d'abord une phrase unique (1 à 2 lignes maximum) qui met en évidence le critère morphologique le plus facilement observable et le plus discriminant pour distinguer les espèces entre elles.
 
-Ensuite, rédige un paragraphe (quelques lignes) qui détaille les autres différences morphologiques importantes, en insistant sur les caractères visibles (taille, couleur, forme des feuilles, etc.) qui permettent de les différencier sans ambiguïté, basé sur le texte descriptif de la colonne 'Physionomie'.
-
-Enfin, rédige un second paragraphe (quelques lignes) qui compare les conditions écologiques préférentielles (habitat, type de sol, altitude) de chaque espèce, en mettant en évidence ce qui les distingue, basé sur le texte descriptif de la colonne 'écologie'.
-
-Ta réponse doit être fluide et de comporter aucun "*" ou "/" ou caractère de formatage de markdown, juste du texte non formaté. Pas d'italique, pas de gras, pas de ssousligné.`;
+Ensuite, présente un tableau de synthèse comparatif. Ce tableau doit regrouper, pour chaque espèce, les principaux critères morphologiques (forme, taille, couleur des organes, etc.) et écologiques (habitat, sol, altitude), à partir des informations issues des colonnes « Physionomie » et « Écologie ». Le tableau doit commencer par les caractères les plus discriminants visuellement. Aucune mise en forme Markdown ne doit être utilisée : pas de gras, pas d’italique, pas de souligné, aucun symbole ou caractère spécial. Le texte doit rester fluide et lisible, sans mise en forme.`;
 
     const requestBody = { 
         "contents": [{ "parts": [{ "text": promptTemplate }] }], 
