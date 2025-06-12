@@ -76,3 +76,29 @@ similarity score and can be selected directly from the search field.
 4. In the site settings, add your API keys as environment variables or embed them directly in `app.js` before deploying.
 5. Trigger a deploy. Once finished, your application is accessible from the generated Netlify URL.
 
+## Node version
+
+The project is tested with **Node.js 18** in continuous integration. Use the same
+version locally to avoid compatibility issues when running the serverless
+functions and the test suite.
+
+## Running tests
+
+Install the development dependencies then execute:
+
+```bash
+npm install
+npm test
+```
+
+This launches the Jest test suite which validates the helper utilities and the
+`inpn-proxy.js` serverless function.
+
+## Additional features
+
+- The results table includes buttons linking to INPN, Biodiv'AURA and OpenObs
+  maps for quick reference.
+- Clicking a species name copies the Latin name to the clipboard.
+- Google Gemini can generate a comparison table with optional text‑to‑speech
+  playback.
+
