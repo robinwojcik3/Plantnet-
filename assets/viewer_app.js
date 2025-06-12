@@ -9,7 +9,6 @@ try {
 
 const viewerContainer = document.getElementById('pdf-viewer');
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-// Définir une échelle de rendu de base
 const RENDER_SCALE = isIOS ? 1.8 : 2.0;
 
 /**
@@ -30,8 +29,6 @@ function displayFallback(title, message, pdfUrl, pageNum) {
 
 /**
  * Rend une page PDF sur son canvas. Appelée par l'IntersectionObserver.
- * @param {PDFPageProxy} page - L'objet page PDF.
- * @param {HTMLCanvasElement} canvas - Le canvas de destination.
  */
 async function renderPageOnCanvas(page, canvas) {
     try {
@@ -69,17 +66,14 @@ async function loadPdfViewer() {
         const loadingTask = pdfjsLib.getDocument(pdfUrl);
         const pdfDoc = await loadingTask.promise;
 
-        // Configuration de l'IntersectionObserver pour le lazy loading
         const observer = new IntersectionObserver(async (entries, self) => {
             for (const entry of entries) {
                 if (entry.isIntersecting) {
                     const pageContainer = entry.target;
                     const pageNum = parseInt(pageContainer.dataset.pageNum, 10);
                     
-                    // Cesser d'observer cet élément pour éviter les rendus multiples
                     self.unobserve(pageContainer);
 
-                    // Créer le canvas et lancer le rendu
                     const canvas = document.createElement('canvas');
                     pageContainer.appendChild(canvas);
                     
@@ -87,24 +81,31 @@ async function loadPdfViewer() {
                     renderPageOnCanvas(page, canvas);
                 }
             }
-        }, { rootMargin: '200px' }); // rootMargin pré-charge les pages un peu avant qu'elles n'arrivent à l'écran
+        }, { rootMargin: '200px' });
 
         // Étape 1: Créer des placeholders pour toutes les pages
-        for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
-            const page = await pdfDoc.getPage(pageNum);
-            const viewport = page.getViewport({ scale: RENDER_SCALE * (window.devicePixelRatio || 1) });
+        const firstPage = await pdfDoc.getPage(1);
+        const viewportForRatio = firstPage.getViewport({ scale: 1 });
+        const aspectRatio = viewportForRatio.width / viewportForRatio.height;
+        
+        // La largeur est déterminée par le CSS. On calcule la hauteur du placeholder en fonction.
+        const containerStyle = window.getComputedStyle(viewerContainer);
+        const maxWidth = parseFloat(containerStyle.maxWidth) || 1000;
+        const parentWidth = parseFloat(containerStyle.width);
+        const placeholderWidth = Math.min(parentWidth * 0.95, maxWidth);
+        const placeholderHeight = placeholderWidth / aspectRatio;
 
+        for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
             const pageContainer = document.createElement('div');
             pageContainer.id = `page-container-${pageNum}`;
             pageContainer.className = 'page-container';
             pageContainer.dataset.pageNum = pageNum;
 
-            // Appliquer la taille au placeholder pour que la scrollbar soit correcte
-            pageContainer.style.width = `${viewport.width / (window.devicePixelRatio || 1)}px`;
-            pageContainer.style.height = `${viewport.height / (window.devicePixelRatio || 1)}px`;
+            // Correction: Ne pas fixer la largeur, fixer seulement la hauteur pour maintenir le ratio
+            pageContainer.style.height = `${placeholderHeight}px`;
 
             viewerContainer.appendChild(pageContainer);
-            observer.observe(pageContainer); // Commencer à observer le placeholder
+            observer.observe(pageContainer);
         }
 
         // Étape 2: Sauter à la page cible
