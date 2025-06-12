@@ -59,43 +59,29 @@ const SERVICES = {
   }
 };
 
-// Couches WMS pour affichage direct sur la carte
+// Service WMS de l'INPN (projection Web Mercator)
+const ENV_WMS_BASE = "https://inpn.mnhn.fr/webgeoservice/WMS/fxx_inpn";
+
+// Couches WMS affichables sur la carte
 const ENV_WMS_LAYERS = [
-  {
-    name: "Natura 2000 (SIC/ZSC)",
-    url: "https://inpn.mnhn.fr/webgeoservice/WMS/fxx_inpn",
-    layers: "PROTECTEDAREAS.SIC:sic"
-  },
-  {
-    name: "Natura 2000 (ZPS)",
-    url: "https://inpn.mnhn.fr/webgeoservice/WMS/fxx_inpn",
-    layers: "PROTECTEDAREAS.ZPS:zps"
-  },
-  {
-    name: "ZNIEFF type 1",
-    url: "https://inpn.mnhn.fr/webgeoservice/WMS/fxx_inpn",
-    layers: "PROTECTEDAREAS.ZNIEFF1:znieff1"
-  },
-  {
-    name: "ZNIEFF type 2",
-    url: "https://inpn.mnhn.fr/webgeoservice/WMS/fxx_inpn",
-    layers: "PROTECTEDAREAS.ZNIEFF2:znieff2"
-  },
-  {
-    name: "APPB",
-    url: "https://inpn.mnhn.fr/webgeoservice/WMS/fxx_inpn",
-    layers: "PROTECTEDAREAS.APB:apb"
-  },
-  {
-    name: "Parcs nationaux",
-    url: "https://inpn.mnhn.fr/webgeoservice/WMS/fxx_inpn",
-    layers: "PROTECTEDAREAS.PN:pn"
-  },
-  {
-    name: "Réserves naturelles nationales",
-    url: "https://inpn.mnhn.fr/webgeoservice/WMS/fxx_inpn",
-    layers: "PROTECTEDAREAS.RNN:rnn"
-  }
+  { name: "Natura 2000 (SIC/ZSC)", layers: "PROTECTEDAREAS.SIC:sic" },
+  { name: "Natura 2000 (ZPS)",    layers: "PROTECTEDAREAS.ZPS:zps" },
+  { name: "ZNIEFF type 1",       layers: "PROTECTEDAREAS.ZNIEFF1:znieff1" },
+  { name: "ZNIEFF type 1 mer",   layers: "PROTECTEDAREAS.ZNIEFF1.SEA:znieff1_mer" },
+  { name: "ZNIEFF type 2",       layers: "PROTECTEDAREAS.ZNIEFF2:znieff2" },
+  { name: "ZNIEFF type 2 mer",   layers: "PROTECTEDAREAS.ZNIEFF2.SEA:znieff2_mer" },
+  { name: "APPB",                layers: "PROTECTEDAREAS.APB:apb" },
+  { name: "Parcs nationaux",     layers: "PROTECTEDAREAS.PN:pn" },
+  { name: "Parcs naturels régionaux", layers: "PROTECTEDAREAS.PNR:pnr" },
+  { name: "Parcs naturels marins", layers: "PROTECTEDAREAS.PNM:pnm" },
+  { name: "Réserves naturelles nationales",  layers: "PROTECTEDAREAS.RNN:rnn" },
+  { name: "Réserves naturelles régionales",  layers: "PROTECTEDSITES.MNHN.RESERVES-REGIONALES:rnr" },
+  { name: "Réserves biologiques",            layers: "PROTECTEDAREAS.RB:rb" },
+  { name: "Réserves de biosphère",           layers: "PROTECTEDAREAS.BIOS:bios" },
+  { name: "Réserves naturelles de Corse",    layers: "PROTECTEDAREAS.RNC:rnc" },
+  { name: "Périmètre de protection RNN",     layers: "PROTECTEDAREAS.MNHN.RN.PERIMETER:pprnn" },
+  { name: "Conservatoire du littoral",       layers: "PROTECTEDAREAS.MNHN.CDL.PERIMETER" }
+  // Pas de couche nationale ENS disponible pour le moment
 ];
 
 // Utilitaires de conversion
@@ -408,7 +394,8 @@ function displayEnvMap() {
   controlDiv.innerHTML = '';
   ENV_WMS_LAYERS.forEach(def => {
     if (def.layer) envMap.removeLayer(def.layer);
-    def.layer = L.tileLayer.wms(def.url, {
+    const url = def.url || ENV_WMS_BASE;
+    def.layer = L.tileLayer.wms(url, {
       layers: def.layers,
       format: 'image/png',
       transparent: true,

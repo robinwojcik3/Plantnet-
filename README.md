@@ -106,3 +106,19 @@ This launches the Jest test suite which validates the helper utilities and the
   genus using the Gemini API. This button now sits directly under the results
   table with enhanced styling for better visibility.
 
+## Environmental map overlays
+
+The page `contexte.html` displays an optional Leaflet map with overlay layers
+coming from the INPN Web Map Service. These layers include Natura 2000,
+ZNIEFF, APPB, several categories of parks and reserves, as well as the
+Conservatoire du littoral. The service endpoint used is:
+
+```
+https://inpn.mnhn.fr/webgeoservice/WMS/fxx_inpn
+```
+
+Each overlay is loaded with the appropriate layer name, e.g.
+`PROTECTEDAREAS.SIC:sic` for Natura 2000 habitats or
+`PROTECTEDSITES.MNHN.RESERVES-REGIONALES:rnr` for regional nature reserves.
+All layers are requested in EPSG:3857 with PNG images.
+
