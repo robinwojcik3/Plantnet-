@@ -466,7 +466,7 @@ function buildTable(items){
   const wrap = document.getElementById("results");
   if (!wrap) return;
 
-  const headers = ['Sél.', 'Nom latin (score %)', 'FloreAlpes', 'INPN statut', 'Critères physiologiques', 'Écologie', 'Physionomie', 'Flora Gallica', 'OpenObs', "Biodiv'AURA", 'Info Flora', 'Fiche synthèse', 'PFAF'];
+  const headers = ['Sél.', 'Nom latin (score %)', 'FloreAlpes', 'Flora Gallica', 'INPN statut', 'Critères physiologiques', 'Écologie', 'Physionomie', 'OpenObs', "Biodiv'AURA", 'Info Flora', 'Fiche synthèse', 'PFAF'];
   const linkIcon = (url, img, alt, extraClass = '') => {
     if (!url) return "—";
     const encoded = img.split('/').map(s => encodeURIComponent(s)).join('/');
@@ -506,6 +506,7 @@ function buildTable(items){
               </td>
               <td class="col-nom-latin" data-latin="${sci}">${sci}<br><span class="score">(${pct})</span></td>
               <td class="col-link">${floreAlpesLink}</td>
+              <td class="col-link">${floraGallicaLink}</td>
               <td class="col-link">${linkIcon(cd && inpnStatut(cd), "INPN.png", "INPN", "small-logo")}</td>
               <td class="col-criteres">
                 <div class="text-popup-trigger" data-title="Critères physiologiques" data-fulltext="${encodeURIComponent(crit)}">${crit}</div>
@@ -516,7 +517,6 @@ function buildTable(items){
               <td class="col-physionomie">
                 <div class="text-popup-trigger" data-title="Physionomie" data-fulltext="${encodeURIComponent(phys)}">${phys}</div>
               </td>
-              <td class="col-link">${floraGallicaLink}</td>
               <td class="col-link">${linkIcon(cd && openObs(cd), "OpenObs.png", "OpenObs", "small-logo")}</td>
               <td class="col-link">${linkIcon(cd && aura(cd), "Biodiv'AURA.png", "Biodiv'AURA")}</td>
               <td class="col-link">${linkIcon(infoFlora(sci), "Info Flora.png", "Info Flora")}</td>
@@ -525,7 +525,7 @@ function buildTable(items){
             </tr>`;
   }).join("");
 
-  const headerHtml = `<tr><th>Sél.</th><th>Nom latin (score %)</th><th>FloreAlpes</th><th>INPN statut</th><th>Critères physiologiques</th><th>Écologie</th><th>Physionomie</th><th>Flora Gallica</th><th>OpenObs</th><th>Biodiv'AURA</th><th>Info Flora</th><th>Fiche synthèse</th><th>PFAF</th></tr>`;
+  const headerHtml = `<tr><th>Sél.</th><th>Nom latin (score %)</th><th>FloreAlpes</th><th>Flora Gallica</th><th>INPN statut</th><th>Critères physiologiques</th><th>Écologie</th><th>Physionomie</th><th>OpenObs</th><th>Biodiv'AURA</th><th>Info Flora</th><th>Fiche synthèse</th><th>PFAF</th></tr>`;
   
   wrap.innerHTML = `<div class="table-wrapper"><table><thead>${headerHtml}</thead><tbody>${rows}</tbody></table></div><div id="comparison-footer" style="padding-top: 1rem; text-align: center;"></div><div id="comparison-results-container" style="display:none;"></div>`;
   enableDragScroll(wrap);
