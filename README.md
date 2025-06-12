@@ -101,7 +101,7 @@ This launches the Jest test suite which validates the helper utilities and the
 - Clicking a species name copies the Latin name to the clipboard.
 - Google Gemini can generate a comparison table with optional text‑to‑speech
   playback.
-- When a single species is searched, a button below the results can fetch
-  suggestions of morphologically similar species from the same genus using the
-  Gemini API.
+- When a single species is searched, a button appears directly below the
+  comparison table allowing you to fetch suggestions of morphologically similar
+  species from the same genus via the Gemini API.
 

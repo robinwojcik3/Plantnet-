@@ -615,7 +615,7 @@ function buildTable(items){
 
   const headerHtml = `<tr><th>Sél.</th><th>Nom latin (score %)</th><th>FloreAlpes</th><th>Flora Gallica</th><th>INPN statut</th><th>Critères physiologiques</th><th>Écologie</th><th>Physionomie</th><th>OpenObs</th><th>Biodiv'AURA</th><th>Info Flora</th><th>Fiche synthèse</th><th>PFAF</th></tr>`;
   
-  wrap.innerHTML = `<div class="table-wrapper"><table><thead>${headerHtml}</thead><tbody>${rows}</tbody></table></div><div id="comparison-footer" style="padding-top: 1rem; text-align: center;"></div><div id="comparison-results-container" style="display:none;"></div>`;
+  wrap.innerHTML = `<div class="table-wrapper"><table><thead>${headerHtml}</thead><tbody>${rows}</tbody></table></div><div id="comparison-footer" style="padding-top: 1rem; text-align: center;"></div><div id="similar-btn-area" style="margin-top:0.5rem;text-align:center;"></div><div id="comparison-results-container" style="display:none;"></div>`;
   enableDragScroll(wrap);
 
   const footer = document.getElementById('comparison-footer');
@@ -725,6 +725,8 @@ function showSimilarSpeciesButton(speciesName) {
   btn.id = 'similar-btn';
   btn.textContent = 'Montrer des espèces similaires';
   btn.className = 'action-button';
+  btn.style.marginTop = '0.5rem';
+  btn.style.fontSize = '1.1rem';
   area.appendChild(btn);
   btn.addEventListener('click', async () => {
     btn.disabled = true;
