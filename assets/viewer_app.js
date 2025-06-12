@@ -20,7 +20,7 @@ function displayFallback(title, message, pdfUrl, pageNum) {
             <h2>${title}</h2>
             <p>${message}</p>
             <p>Page cible : ${pageNum}</p>
-            <a href="${pdfUrl}#page=${pageNum}" target="_blank" rel="noopener noreferrer">
+            <a href="${isIOS ? `${pdfUrl}?page=${pageNum}` : `${pdfUrl}#page=${pageNum}`}" target="_blank" rel="noopener noreferrer">
                 Ouvrir le PDF directement – page ${pageNum}
             </a>
         </div>
