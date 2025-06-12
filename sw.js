@@ -79,6 +79,11 @@ self.addEventListener("activate", event => {
 /* ---------------- interceptions FETCH ---------- */
 self.addEventListener("fetch", event => {
     const { request } = event;
+    // Laisser passer les URLs locales de type "blob:" sans tentative de mise
+    // en cache car caches.match ne supporte pas ce schéma.
+    if (request.url.startsWith('blob:')) {
+        return;
+    }
     const url = new URL(request.url);
 
     // Ne pas mettre en cache les requêtes vers les API
