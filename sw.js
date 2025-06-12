@@ -3,7 +3,7 @@
    ================================================================ */
 
 // Changez ce nom de version à chaque fois que vous mettez à jour les fichiers de l'application
-const CACHE_NAME = "plantid-v15";
+const CACHE_NAME = "plantid-v16";
 
 // Fichiers essentiels pour le fonctionnement de base de l'application
 const CORE_ASSETS = [
@@ -20,6 +20,14 @@ const CORE_ASSETS = [
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./assets/Bandeau.jpg",
+  "./assets/FloreAlpes.png",
+  "./assets/Flora Gallica.png",
+  "./assets/INPN.png",
+  "./assets/Biodiv'AURA.png",
+  "./assets/Info Flora.png",
+  "./assets/OpenObs.png",
+  "./assets/Audio.png",
+  "./assets/PFAF.png",
   // Bibliothèque PDF.js
   "./pdfjs/build/pdf.mjs",
   "./pdfjs/build/pdf.worker.mjs",

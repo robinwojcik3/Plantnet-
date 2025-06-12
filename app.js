@@ -143,7 +143,13 @@ async function apiFetch(url, options = {}) {
     const res = await fetch(url, options);
     if (!res.ok) {
       const errBody = await res.json().catch(() => res.text());
-      throw new Error(typeof errBody === "object" ? errBody.error?.message || errBody.message : errBody);
+      let msg;
+      if (typeof errBody === "object") {
+        msg = (errBody.error && errBody.error.message) || errBody.message;
+      } else {
+        msg = errBody;
+      }
+      throw new Error(msg);
     }
     return await res.json();
   } catch (e) {
@@ -223,8 +229,15 @@ async function getSynthesisFromGemini(speciesName) {
     try {
         const responseData = await apiFetch(GEMINI_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(requestBody) });
         if (!responseData) return "Erreur lors de la génération du texte.";
-        if (responseData.candidates?.[0]?.content?.parts?.[0]?.text) return responseData.candidates[0].content.parts[0].text.trim();
-        if (responseData.promptFeedback?.blockReason) return `Réponse bloquée par le modèle (${responseData.promptFeedback.blockReason}).`;
+        if (responseData.candidates &&
+            responseData.candidates[0] &&
+            responseData.candidates[0].content &&
+            responseData.candidates[0].content.parts &&
+            responseData.candidates[0].content.parts[0] &&
+            responseData.candidates[0].content.parts[0].text)
+            return responseData.candidates[0].content.parts[0].text.trim();
+        if (responseData.promptFeedback && responseData.promptFeedback.blockReason)
+            return `Réponse bloquée par le modèle (${responseData.promptFeedback.blockReason}).`;
         return "Le modèle n'a pas pu générer de synthèse.";
     } catch (error) { console.error("Erreur Gemini:", error); return "Erreur lors de la génération du texte."; }
 }
@@ -306,10 +319,15 @@ Ensuite, présente un tableau comparatif en format Markdown. Ce tableau doit reg
     try {
         const responseData = await apiFetch(GEMINI_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
         if (!responseData) return "Erreur technique lors de la génération de la comparaison.";
-        if (responseData.candidates?.[0]?.content?.parts?.[0]?.text) {
+        if (responseData.candidates &&
+            responseData.candidates[0] &&
+            responseData.candidates[0].content &&
+            responseData.candidates[0].content.parts &&
+            responseData.candidates[0].content.parts[0] &&
+            responseData.candidates[0].content.parts[0].text) {
             return responseData.candidates[0].content.parts[0].text.trim();
         }
-        if (responseData.promptFeedback?.blockReason) {
+        if (responseData.promptFeedback && responseData.promptFeedback.blockReason) {
             return `Réponse bloquée par le modèle (${responseData.promptFeedback.blockReason}). Vérifiez le contenu du prompt.`;
         }
         return "Le modèle n'a pas pu générer de comparaison. La réponse était vide.";
@@ -456,7 +474,9 @@ async function identifySingleImage(fileBlob, organ) {
     }
     buildTable(results);
     buildCards(results);
-    const latin = results[0]?.species?.scientificNameWithoutAuthor;
+    const latin = results[0] && results[0].species
+      ? results[0].species.scientificNameWithoutAuthor
+      : undefined;
     if (latin) savePhotoLocally(fileBlob, latin);
   }
 }
@@ -484,7 +504,7 @@ function buildTable(items){
     const genus = sci.split(' ')[0].toLowerCase();
     const tocEntry = floraToc[genus];
     let floraGallicaLink = "—";
-    if (tocEntry?.pdfFile && tocEntry?.page) {
+    if (tocEntry && tocEntry.pdfFile && tocEntry.page) {
       const pdfPath = `assets/flora_gallica_pdfs/${tocEntry.pdfFile}`;
       const viewerUrl = `viewer.html?file=${encodeURIComponent(pdfPath)}&page=${tocEntry.page}`;
       floraGallicaLink = linkIcon(viewerUrl, "Flora Gallica.png", "Flora Gallica");
@@ -554,7 +574,7 @@ function buildTable(items){
       }
   });
 
-  wrap.addEventListener('click', (e) => {
+  const handleWrapClick = (e) => {
       const nameCell = e.target.closest('.col-nom-latin');
       if (nameCell) {
           const latin = (nameCell.dataset.latin || '').trim();
@@ -597,7 +617,9 @@ function buildTable(items){
               infoPanel.scrollIntoView({behavior:'smooth', block:'start'});
           }
       }
-  });
+  };
+  wrap.addEventListener('click', handleWrapClick);
+  wrap.addEventListener('touchend', handleWrapClick);
 }
 
 function buildCards(items){ const zone = document.getElementById("cards"); if (!zone) return; zone.innerHTML = ""; items.forEach(item => { const sci = item.species.scientificNameWithoutAuthor; const cd = cdRef(sci); if(!cd && !(item.score === 1.00 && items.length === 1)) return; const pct = item.score !== undefined ? Math.round(item.score * 100) : "Info"; const isNameSearchResult = item.score === 1.00 && items.length === 1; const details = document.createElement("details"); let iframeHTML = ''; if (cd) { iframeHTML = `<div class="iframe-grid"><iframe loading="lazy" src="${inpnStatut(cd)}" title="Statut INPN"></iframe><iframe loading="lazy" src="${aura(cd)}" title="Biodiv'AURA"></iframe><iframe loading="lazy" src="${openObs(cd)}" title="OpenObs"></iframe></div>`; } details.innerHTML = `<summary>${sci} — ${pct}${!isNameSearchResult ? '%' : ''}</summary><p style="padding:0 12px 8px;font-style:italic">${ecolOf(sci)}</p>${iframeHTML}`; zone.appendChild(details); }); }
@@ -617,10 +639,12 @@ if (document.getElementById("file-capture")) {
   const multiImageIdentifyButton = document.getElementById("multi-image-identify-button");
   const multiImageSection = document.getElementById("multi-image-section");
   let selectedMultiFilesData = [];
-  fileCaptureInput?.addEventListener("change", e => {
-    const f = e.target.files[0];
-    if (f) handleSingleFileSelect(f);
-  });
+  if (fileCaptureInput) {
+    fileCaptureInput.addEventListener("change", e => {
+      const f = e.target.files[0];
+      if (f) handleSingleFileSelect(f);
+    });
+  }
   const performNameSearch = async () => {
     const raw = nameSearchInput.value.trim();
     if (!raw) return;
@@ -629,7 +653,7 @@ if (document.getElementById("file-capture")) {
     if (queries.length === 1 && queries[0].split(/\s+/).length === 1) {
       const q = queries[0];
       const tocEntry = floraToc[norm(q)];
-      if (tocEntry?.pdfFile && tocEntry?.page) {
+      if (tocEntry && tocEntry.pdfFile && tocEntry.page) {
         sessionStorage.setItem("speciesQueryNames", JSON.stringify([q]));
         ["photoData", "identificationResults"].forEach(k => sessionStorage.removeItem(k));
         location.href = "organ.html";
@@ -675,8 +699,8 @@ if (document.getElementById("file-capture")) {
       location.href = "organ.html";
     }
   };
-  nameSearchButton?.addEventListener("click", performNameSearch);
-  nameSearchInput?.addEventListener("keypress", e => { if (e.key === "Enter") performNameSearch(); });
+  if (nameSearchButton) nameSearchButton.addEventListener("click", performNameSearch);
+  if (nameSearchInput) nameSearchInput.addEventListener("keypress", e => { if (e.key === "Enter") performNameSearch(); });
   function renderMultiImageList() {
     multiImageListArea.innerHTML = '';
     multiImageIdentifyButton.style.display = selectedMultiFilesData.length > 0 ? 'block' : 'none';
@@ -690,18 +714,18 @@ if (document.getElementById("file-capture")) {
       multiImageListArea.appendChild(itemDiv);
     });
   }
-  multiImageListArea?.addEventListener('click', (e) => {
-    if (e.target?.classList.contains('delete-file-btn')) {
+  if (multiImageListArea) multiImageListArea.addEventListener('click', (e) => {
+    if (e.target && e.target.classList.contains('delete-file-btn')) {
       selectedMultiFilesData.splice(parseInt(e.target.dataset.index, 10), 1);
       renderMultiImageList();
     }
   });
-  multiImageListArea?.addEventListener('change', (e) => {
-    if (e.target?.tagName === 'SELECT') {
+  if (multiImageListArea) multiImageListArea.addEventListener('change', (e) => {
+    if (e.target && e.target.tagName === 'SELECT') {
       selectedMultiFilesData[parseInt(e.target.dataset.index, 10)].organ = e.target.value;
     }
   });
-  multiFileInput?.addEventListener("change", (e) => {
+  if (multiFileInput) multiFileInput.addEventListener("change", (e) => {
     const files = Array.from(e.target.files);
     if (selectedMultiFilesData.length === 0 && files.length === 1) {
       handleSingleFileSelect(files[0]);
@@ -717,7 +741,7 @@ if (document.getElementById("file-capture")) {
     renderMultiImageList();
     e.target.value = '';
   });
-  multiImageIdentifyButton?.addEventListener("click", () => {
+  if (multiImageIdentifyButton) multiImageIdentifyButton.addEventListener("click", () => {
     if (selectedMultiFilesData.length === 0) return showNotification("Veuillez sélectionner au moins une image.", "error");
     identifyMultipleImages(selectedMultiFilesData.map(i => i.file), selectedMultiFilesData.map(i => i.organ));
   });
@@ -782,7 +806,7 @@ if (organBoxOnPage) {
 }
 
 
-nameSearchInput?.addEventListener("input", async e => {
+if (nameSearchInput) nameSearchInput.addEventListener("input", async e => {
   if (!speciesSuggestions) return;
   await loadData();
   const parts = e.target.value.split(/[;,\n]+/);
