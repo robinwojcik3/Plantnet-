@@ -580,7 +580,7 @@ function buildTable(items){
       }
   });
 
-  wrap.addEventListener('click', (e) => {
+  const handleWrapClick = (e) => {
       const nameCell = e.target.closest('.col-nom-latin');
       if (nameCell) {
           const latin = (nameCell.dataset.latin || '').trim();
@@ -623,7 +623,9 @@ function buildTable(items){
               infoPanel.scrollIntoView({behavior:'smooth', block:'start'});
           }
       }
-  });
+  };
+  wrap.addEventListener('click', handleWrapClick);
+  wrap.addEventListener('touchend', handleWrapClick);
 }
 
 function buildCards(items){
