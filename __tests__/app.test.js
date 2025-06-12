@@ -105,4 +105,14 @@ describe('api helpers', () => {
     const list = await ctx.getSimilarSpeciesFromGemini('Abies alba');
     expect(list).toEqual(['Abies grandis','Abies cephalonica']);
   });
+
+  test('getSimilarSpeciesFromGemini strips markdown asterisks', async () => {
+    const fetchMock = jest.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({candidates:[{content:{parts:[{text:'*Abies nordmanniana*, *Abies pinsapo*'}]}}]})
+    });
+    const ctx = loadApp({ fetch: fetchMock });
+    const list = await ctx.getSimilarSpeciesFromGemini('Abies alba');
+    expect(list).toEqual(['Abies nordmanniana','Abies pinsapo']);
+  });
 });
