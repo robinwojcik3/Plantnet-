@@ -485,7 +485,19 @@ async function identifySingleImage(fileBlob, organ) {
     if (latin) savePhotoLocally(fileBlob, latin);
   }
 }
-async function identifyMultipleImages(files, organs) { await loadData(); const fd = new FormData(); files.forEach((f, i) => fd.append("images", f, f.name || `photo_${i}.jpg`)); organs.forEach(o => fd.append("organs", o)); if (!fd.has("images")) return showNotification("Aucune image valide.", 'error'); const results = await callPlantNetAPI(fd); if (results) { sessionStorage.setItem("identificationResults", JSON.stringify(results)); ["photoData", "speciesQueryNames"].forEach(k => sessionStorage.removeItem(k)); location.href = "organ.html"; } }
+async function identifyMultipleImages(files, organs) {
+  await loadData();
+  const fd = new FormData();
+  files.forEach((f, i) => fd.append("images", f, f.name || `photo_${i}.jpg`));
+  organs.forEach(o => fd.append("organs", o));
+  if (!fd.has("images")) return showNotification("Aucune image valide.", 'error');
+  const results = await callPlantNetAPI(fd);
+  if (results) {
+    sessionStorage.setItem("identificationResults", JSON.stringify(results));
+    ["photoURL", "speciesQueryNames"].forEach(k => sessionStorage.removeItem(k));
+    location.href = "organ.html";
+  }
+}
 
 function buildTable(items){
   const wrap = document.getElementById("results");
@@ -652,7 +664,18 @@ function buildCards(items){
 /* ================================================================
    LOGIQUE SPÉCIFIQUE AUX PAGES (ÉCOUTEURS)
    ================================================================ */
-function handleSingleFileSelect(file) { if (!file) return; const reader = new FileReader(); reader.onload = () => { sessionStorage.setItem("photoData", reader.result); ["speciesQueryNames", "identificationResults"].forEach(k => sessionStorage.removeItem(k)); location.href = "organ.html"; }; reader.onerror = () => showNotification("Erreur lecture image.", 'error'); reader.readAsDataURL(file); }
+function handleSingleFileSelect(file) {
+  if (!file) return;
+  try {
+    const url = URL.createObjectURL(file);
+    sessionStorage.setItem("photoURL", url);
+    ["speciesQueryNames", "identificationResults"].forEach(k => sessionStorage.removeItem(k));
+    location.href = "organ.html";
+  } catch (err) {
+    console.error(err);
+    showNotification("Erreur lors du traitement de l'image.", 'error');
+  }
+}
 const nameSearchInput = document.getElementById("name-search-input");
 const nameSearchButton = document.getElementById("name-search-button");
 const speciesSuggestions = document.getElementById("species-suggestions");
@@ -680,7 +703,7 @@ if (document.getElementById("file-capture")) {
       const tocEntry = floraToc[norm(q)];
       if (tocEntry && tocEntry.pdfFile && tocEntry.page) {
         sessionStorage.setItem("speciesQueryNames", JSON.stringify([q]));
-        ["photoData", "identificationResults"].forEach(k => sessionStorage.removeItem(k));
+        ["photoURL", "identificationResults"].forEach(k => sessionStorage.removeItem(k));
         location.href = "organ.html";
       } else {
         showNotification(`Genre "${q}" non trouvé.`, "error");
@@ -720,7 +743,7 @@ if (document.getElementById("file-capture")) {
     }
     if (found.length) {
       sessionStorage.setItem("speciesQueryNames", JSON.stringify(found));
-      ["photoData", "identificationResults"].forEach(k => sessionStorage.removeItem(k));
+      ["photoURL", "identificationResults"].forEach(k => sessionStorage.removeItem(k));
       location.href = "organ.html";
     }
   };
@@ -792,7 +815,7 @@ if (organBoxOnPage) {
   };
 
   const namesRaw = sessionStorage.getItem("speciesQueryNames");
-  const storedImage = sessionStorage.getItem("photoData");
+  const storedImage = sessionStorage.getItem("photoURL");
   const multiImageResults = sessionStorage.getItem("identificationResults");
 
   if (namesRaw) {
@@ -810,21 +833,16 @@ if (organBoxOnPage) {
     const previewElement = document.getElementById("preview");
     if (previewElement) previewElement.src = storedImage;
     organBoxOnPage.style.display = 'block';
-    const toBlob = dataURL => {
-      try {
-        const [m,b] = dataURL.split(','), [,e] = /:(.*?);/.exec(m), B=atob(b), a=new Uint8Array(B.length);
-        for (let i=0; i<B.length; i++) a[i] = B.charCodeAt(i);
-        return new Blob([a], { type: e });
-      } catch(e) { return null; }
-    };
-    const imageBlob = toBlob(storedImage);
-    if (imageBlob) {
+    fetch(storedImage).then(resp => resp.blob()).then(imageBlob => {
       organBoxOnPage.querySelectorAll("button").forEach(b =>
-        b.addEventListener("click", e => identifySingleImage(imageBlob, e.currentTarget.dataset.organ))
+        b.addEventListener("click", e => {
+          identifySingleImage(imageBlob, e.currentTarget.dataset.organ);
+          URL.revokeObjectURL(storedImage);
+        })
       );
-    } else {
+    }).catch(() => {
       showNotification("Erreur lors de la préparation de l'image.", 'error');
-    }
+    });
   } else {
     location.href = "index.html";
   }
