@@ -2,7 +2,7 @@ const fs = require('fs');
 const vm = require('vm');
 
 function loadHandler(mockFetch) {
-  const code = fs.readFileSync('inpn-proxy.js', 'utf-8');
+  const code = fs.readFileSync('netlify/functions/inpn-proxy.js', 'utf-8');
   const patched = code.replace(
     /const fetch = \(\.\.\.args\) => import\("node-fetch"\)\.then\(\(\{default: f\}\) => f\(\.\.\.args\)\);/,
     'const fetch = (...args) => global.__fetch(...args);'
