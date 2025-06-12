@@ -8,13 +8,12 @@ try {
 }
 
 const viewerContainer = document.getElementById('pdf-viewer');
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+// Définir une échelle de rendu de base
+const RENDER_SCALE = isIOS ? 1.8 : 2.0;
 
 /**
- * Affiche un message d'erreur et un lien de secours pour ouvrir le PDF.
- * @param {string} title - Le titre de l'erreur.
- * @param {string} message - Le message d'erreur.
- * @param {string} pdfUrl - L'URL du fichier PDF.
- * @param {number} pageNum - Le numéro de la page cible.
+ * Affiche un message d'erreur et un lien de secours.
  */
 function displayFallback(title, message, pdfUrl, pageNum) {
     viewerContainer.innerHTML = `
@@ -30,20 +29,13 @@ function displayFallback(title, message, pdfUrl, pageNum) {
 }
 
 /**
- * Rend une page spécifique du PDF sur son canvas dédié.
- * @param {PDFDocumentProxy} pdfDoc - L'objet document PDF chargé.
- * @param {number} num - Le numéro de la page à rendre.
- * @param {HTMLCanvasElement} canvas - Le canvas sur lequel dessiner la page.
+ * Rend une page PDF sur son canvas. Appelée par l'IntersectionObserver.
+ * @param {PDFPageProxy} page - L'objet page PDF.
+ * @param {HTMLCanvasElement} canvas - Le canvas de destination.
  */
-async function renderPage(pdfDoc, num, canvas) {
+async function renderPageOnCanvas(page, canvas) {
     try {
-        const page = await pdfDoc.getPage(num);
-        
-        // Utiliser une échelle haute résolution pour une meilleure qualité
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        const baseScale = isIOS ? 1.8 : 2.0;
-        const finalScale = (window.devicePixelRatio || 1) * baseScale;
-
+        const finalScale = (window.devicePixelRatio || 1) * RENDER_SCALE;
         const viewport = page.getViewport({ scale: finalScale });
 
         const context = canvas.getContext('2d');
@@ -56,18 +48,17 @@ async function renderPage(pdfDoc, num, canvas) {
         };
         await page.render(renderContext).promise;
     } catch (error) {
-        console.error(`Erreur lors du rendu de la page ${num}:`, error);
-        // On pourrait afficher un message d'erreur sur le canvas de la page
+        console.error(`Erreur lors du rendu de la page ${page.pageNumber}:`, error);
     }
 }
 
 /**
- * Fonction principale qui charge le PDF et initialise le visualiseur.
+ * Fonction principale qui initialise le visualiseur.
  */
 async function loadPdfViewer() {
     const urlParams = new URLSearchParams(window.location.search);
     const pdfUrl = urlParams.get('file');
-    const initialPage = parseInt(urlParams.get('page'), 10) || 1;
+    const initialPageNum = parseInt(urlParams.get('page'), 10) || 1;
 
     if (!pdfUrl) {
         viewerContainer.innerHTML = '<div class="error-message"><h1>Erreur : Aucun fichier PDF spécifié.</h1></div>';
@@ -78,37 +69,53 @@ async function loadPdfViewer() {
         const loadingTask = pdfjsLib.getDocument(pdfUrl);
         const pdfDoc = await loadingTask.promise;
 
-        // Boucle pour créer un conteneur et un canvas pour chaque page
+        // Configuration de l'IntersectionObserver pour le lazy loading
+        const observer = new IntersectionObserver(async (entries, self) => {
+            for (const entry of entries) {
+                if (entry.isIntersecting) {
+                    const pageContainer = entry.target;
+                    const pageNum = parseInt(pageContainer.dataset.pageNum, 10);
+                    
+                    // Cesser d'observer cet élément pour éviter les rendus multiples
+                    self.unobserve(pageContainer);
+
+                    // Créer le canvas et lancer le rendu
+                    const canvas = document.createElement('canvas');
+                    pageContainer.appendChild(canvas);
+                    
+                    const page = await pdfDoc.getPage(pageNum);
+                    renderPageOnCanvas(page, canvas);
+                }
+            }
+        }, { rootMargin: '200px' }); // rootMargin pré-charge les pages un peu avant qu'elles n'arrivent à l'écran
+
+        // Étape 1: Créer des placeholders pour toutes les pages
         for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+            const page = await pdfDoc.getPage(pageNum);
+            const viewport = page.getViewport({ scale: RENDER_SCALE * (window.devicePixelRatio || 1) });
+
             const pageContainer = document.createElement('div');
             pageContainer.id = `page-container-${pageNum}`;
             pageContainer.className = 'page-container';
+            pageContainer.dataset.pageNum = pageNum;
 
-            const canvas = document.createElement('canvas');
-            pageContainer.appendChild(canvas);
+            // Appliquer la taille au placeholder pour que la scrollbar soit correcte
+            pageContainer.style.width = `${viewport.width / (window.devicePixelRatio || 1)}px`;
+            pageContainer.style.height = `${viewport.height / (window.devicePixelRatio || 1)}px`;
+
             viewerContainer.appendChild(pageContainer);
-
-            // Lancer le rendu de la page (sans attendre la fin)
-            renderPage(pdfDoc, pageNum, canvas);
+            observer.observe(pageContainer); // Commencer à observer le placeholder
         }
 
-        // Ancrage : faire défiler jusqu'à la page cible
-        // On utilise setTimeout pour s'assurer que le DOM est bien mis à jour avant de scroller
-        setTimeout(() => {
-            const targetElement = document.getElementById(`page-container-${initialPage}`);
-            if (targetElement) {
-                targetElement.scrollIntoView({ behavior: 'auto', block: 'start' });
-            }
-        }, 0);
+        // Étape 2: Sauter à la page cible
+        const targetElement = document.getElementById(`page-container-${initialPageNum}`);
+        if (targetElement) {
+            targetElement.scrollIntoView({ behavior: 'auto', block: 'start' });
+        }
 
     } catch (error) {
         console.error('Erreur lors du chargement du PDF:', error);
-        displayFallback(
-            'Erreur de chargement',
-            'Impossible de charger le lecteur PDF intégré.',
-            pdfUrl,
-            initialPage
-        );
+        displayFallback('Erreur de chargement', 'Impossible de charger le lecteur PDF.', pdfUrl, initialPageNum);
     }
 }
 
