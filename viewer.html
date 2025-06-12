@@ -16,17 +16,21 @@
             flex-direction: column;
             align-items: center;
             padding-top: 20px;
+            padding-bottom: 20px;
         }
         .page-container {
+            /* Correction: La largeur est gérée par CSS pour un affichage responsive */
+            width: 95%;
+            max-width: 1000px; 
             margin-bottom: 20px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
             line-height: 0; /* Empêche les espaces indésirables sous le canvas */
         }
         .page-container canvas {
-            display: block;
+            /* Le canvas remplit son conteneur */
             width: 100%;
-            max-width: 1000px;
             height: auto;
+            display: block;
         }
         .error-message {
             padding: 20px; 
