@@ -103,5 +103,6 @@ This launches the Jest test suite which validates the helper utilities and the
   playback.
 - When a single species is searched, a button under the results can retrieve
   suggestions of up to **five** morphologically similar species from the same
-  genus using the Gemini API.
+  genus using the Gemini API. This button now sits directly under the results
+  table with enhanced styling for better visibility.
 
