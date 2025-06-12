@@ -142,6 +142,37 @@ function savePhotoLocally(blob, name) {
     console.error("Erreur sauvegarde photo:", e);
   }
 }
+
+// Prépare une image en la redimensionnant pour limiter la taille stockée
+function resizeImageToDataURL(file, maxDim = 1600) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round(height * maxDim / width);
+            width = maxDim;
+          } else {
+            width = Math.round(width * maxDim / height);
+            height = maxDim;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.onerror = () => reject(new Error('Image load error'));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error('File read error'));
+    reader.readAsDataURL(file);
+  });
+}
 async function apiFetch(url, options = {}) {
   toggleSpinner(true);
   try {
@@ -652,7 +683,19 @@ function buildCards(items){
 /* ================================================================
    LOGIQUE SPÉCIFIQUE AUX PAGES (ÉCOUTEURS)
    ================================================================ */
-function handleSingleFileSelect(file) { if (!file) return; const reader = new FileReader(); reader.onload = () => { sessionStorage.setItem("photoData", reader.result); ["speciesQueryNames", "identificationResults"].forEach(k => sessionStorage.removeItem(k)); location.href = "organ.html"; }; reader.onerror = () => showNotification("Erreur lecture image.", 'error'); reader.readAsDataURL(file); }
+function handleSingleFileSelect(file) {
+  if (!file) return;
+  resizeImageToDataURL(file).then(dataURL => {
+    try {
+      sessionStorage.setItem("photoData", dataURL);
+      ["speciesQueryNames", "identificationResults"].forEach(k => sessionStorage.removeItem(k));
+      location.href = "organ.html";
+    } catch (e) {
+      console.error("Erreur stockage photo:", e);
+      showNotification("Image trop volumineuse.", 'error');
+    }
+  }).catch(() => showNotification("Erreur lecture image.", 'error'));
+}
 const nameSearchInput = document.getElementById("name-search-input");
 const nameSearchButton = document.getElementById("name-search-button");
 const speciesSuggestions = document.getElementById("species-suggestions");
