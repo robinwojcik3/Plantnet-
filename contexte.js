@@ -5,6 +5,7 @@
 
 // Variables globales
 let map = null;
+let envMap = null;
 let marker = null;
 let selectedLat = null;
 let selectedLon = null;
@@ -57,6 +58,45 @@ const SERVICES = {
     }
   }
 };
+
+// Couches WMS pour affichage direct sur la carte
+const ENV_WMS_LAYERS = [
+  {
+    name: "Natura 2000 (SIC/ZSC)",
+    url: "https://inpn.mnhn.fr/webgeoservice/WMS/fxx_inpn",
+    layers: "PROTECTEDAREAS.SIC:sic"
+  },
+  {
+    name: "Natura 2000 (ZPS)",
+    url: "https://inpn.mnhn.fr/webgeoservice/WMS/fxx_inpn",
+    layers: "PROTECTEDAREAS.ZPS:zps"
+  },
+  {
+    name: "ZNIEFF type 1",
+    url: "https://inpn.mnhn.fr/webgeoservice/WMS/fxx_inpn",
+    layers: "PROTECTEDAREAS.ZNIEFF1:znieff1"
+  },
+  {
+    name: "ZNIEFF type 2",
+    url: "https://inpn.mnhn.fr/webgeoservice/WMS/fxx_inpn",
+    layers: "PROTECTEDAREAS.ZNIEFF2:znieff2"
+  },
+  {
+    name: "APPB",
+    url: "https://inpn.mnhn.fr/webgeoservice/WMS/fxx_inpn",
+    layers: "PROTECTEDAREAS.APB:apb"
+  },
+  {
+    name: "Parcs nationaux",
+    url: "https://inpn.mnhn.fr/webgeoservice/WMS/fxx_inpn",
+    layers: "PROTECTEDAREAS.PN:pn"
+  },
+  {
+    name: "Réserves naturelles nationales",
+    url: "https://inpn.mnhn.fr/webgeoservice/WMS/fxx_inpn",
+    layers: "PROTECTEDAREAS.RNN:rnn"
+  }
+];
 
 // Utilitaires de conversion
 function latLonToWebMercator(lat, lon) {
@@ -340,10 +380,59 @@ function showResults() {
       
       resultsGrid.appendChild(card);
     });
-    
+
+    // Afficher la carte avec les couches WMS
+    displayEnvMap();
+
     // Faire défiler jusqu'aux résultats
     resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, 500);
+}
+
+// Initialisation et affichage de la carte avec couches WMS
+function displayEnvMap() {
+  const mapDiv = document.getElementById('env-map');
+  const controlDiv = document.getElementById('layer-controls');
+  mapDiv.style.display = 'block';
+
+  if (!envMap) {
+    envMap = L.map('env-map').setView([selectedLat, selectedLon], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 19
+    }).addTo(envMap);
+  } else {
+    envMap.setView([selectedLat, selectedLon], 12);
+  }
+
+  controlDiv.innerHTML = '';
+  ENV_WMS_LAYERS.forEach(def => {
+    if (def.layer) envMap.removeLayer(def.layer);
+    def.layer = L.tileLayer.wms(def.url, {
+      layers: def.layers,
+      format: 'image/png',
+      transparent: true,
+      attribution: def.attribution || 'INPN'
+    });
+
+    const id = `layer-${def.layers.replace(/[:.]/g, '-')}`;
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.id = id;
+    checkbox.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        def.layer.addTo(envMap);
+      } else {
+        envMap.removeLayer(def.layer);
+      }
+    });
+    const label = document.createElement('label');
+    label.htmlFor = id;
+    label.textContent = def.name;
+    controlDiv.appendChild(checkbox);
+    controlDiv.appendChild(label);
+    controlDiv.appendChild(document.createElement('br'));
+  });
 }
 
 // Gestionnaire pour le retour à la page d'accueil
