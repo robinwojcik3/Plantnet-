@@ -305,7 +305,7 @@ function playAudioFromBase64(base64Audio) {
     });
 }
 
-async function getSimilarSpeciesFromGemini(speciesName, limit = 3) {
+async function getSimilarSpeciesFromGemini(speciesName, limit = 5) {
     const genus = speciesName.split(/\s+/)[0];
     const prompt = `Donne une liste de ${limit} espèces du genre ${genus} avec lesquelles ${speciesName} peut être confondu pour des raisons morphologiques. Réponds uniquement par une liste séparée par des virgules.`;
     const requestBody = {
@@ -316,7 +316,10 @@ async function getSimilarSpeciesFromGemini(speciesName, limit = 3) {
     if (!data) return [];
     const txt = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text;
     if (!txt) return [];
-    return txt.split(/[,\n;]/).map(s => s.trim()).filter(Boolean);
+    return txt
+        .split(/[\,\n;]+/)
+        .map(s => s.trim().replace(/^\*+|\*+$/g, ''))
+        .filter(Boolean);
 }
 
 
