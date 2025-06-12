@@ -102,6 +102,7 @@ This launches the Jest test suite which validates the helper utilities and the
 - Google Gemini can generate a comparison table with optional text‑to‑speech
   playback.
 - When a single species is searched, a button under the results can retrieve
-  suggestions of morphologically similar species from the same genus using the
-  Gemini API.
+  suggestions of up to **five** morphologically similar species from the same
+  genus using the Gemini API. This button now sits directly under the results
+  table with enhanced styling for better visibility.
 
