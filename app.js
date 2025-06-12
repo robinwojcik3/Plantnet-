@@ -27,6 +27,8 @@ let criteres = {}; // NOUVEAU : pour les critères physiologiques
 let physionomie = {}; // Nouvelle table pour la physionomie
 let userLocation = { latitude: 45.188529, longitude: 5.724524 };
 
+let displayedItems = [];
+
 let dataPromise = null;
 function loadData() {
   if (dataPromise) return dataPromise;
@@ -272,6 +274,22 @@ function playAudioFromBase64(base64Audio) {
     });
 }
 
+async function getSimilarSpeciesFromGemini(speciesName, limit = 5) {
+    const genus = speciesName.split(/\s+/)[0];
+    const prompt = `Donne une liste de ${limit} espèces du genre ${genus} autres que ${speciesName} avec lesquelles on peut le confondre pour des raisons morphologiques. Réponds uniquement par une liste sans numérotation ni astérisque, séparée par des virgules.`;
+    const requestBody = {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.4, maxOutputTokens: 60 }
+    };
+    const data = await apiFetch(GEMINI_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
+    if (!data) return [];
+    const txt = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text;
+    if (!txt) return [];
+    return txt.split(/[,\n;]/)
+              .map(s => s.replace(/^[\s\d•*-]+[.)]?\s*/, '').replace(/\*/g, '').trim())
+              .filter(Boolean);
+}
+
 
 window.handleSynthesisClick = async function(event, element, speciesName) {
     event.preventDefault();
@@ -477,8 +495,9 @@ async function identifySingleImage(fileBlob, organ) {
         preview.classList.toggle('enlarged');
       });
     }
-    buildTable(results);
-    buildCards(results);
+    displayedItems = results;
+    buildTable(displayedItems);
+    buildCards(displayedItems);
     const latin = results[0] && results[0].species
       ? results[0].species.scientificNameWithoutAuthor
       : undefined;
@@ -523,11 +542,12 @@ function buildTable(items){
         floreAlpesLink = linkIcon(`https://www.florealpes.com/${urlPart}`, "FloreAlpes.png", "FloreAlpes");
     }
     const escapedSci = displaySci.replace(/'/g, "\\'");
+    const checkedAttr = item.autoCheck ? ' checked' : '';
     return `<tr>
               <td class="col-checkbox">
-                <input type="checkbox" class="species-checkbox" 
-                       data-species="${escapedSci}" 
-                       data-physio="${encodeURIComponent(phys)}" 
+                <input type="checkbox" class="species-checkbox"${checkedAttr}
+                       data-species="${escapedSci}"
+                       data-physio="${encodeURIComponent(phys)}"
                        data-eco="${encodeURIComponent(eco)}">
               </td>
               <td class="col-nom-latin" data-latin="${displaySci}">${displaySci}<br><span class="score">(${pct})</span></td>
@@ -564,19 +584,25 @@ function buildTable(items){
       compareBtn.className = 'action-button';
       compareBtn.style.display = 'none';
       compareBtn.style.padding = '0.8rem 1.5rem';
-      
+
       footer.appendChild(compareBtn);
 
       compareBtn.addEventListener('click', handleComparisonClick);
   }
 
+  const updateCompareVisibility = () => {
+      const checkedCount = wrap.querySelectorAll('.species-checkbox:checked').length;
+      const compareBtn = document.getElementById('compare-btn');
+      if(compareBtn) {
+        compareBtn.style.display = (checkedCount >= 2) ? 'inline-block' : 'none';
+      }
+  };
+
+  updateCompareVisibility();
+
   wrap.addEventListener('change', (e) => {
       if (e.target.classList.contains('species-checkbox')) {
-          const checkedCount = wrap.querySelectorAll('.species-checkbox:checked').length;
-          const compareBtn = document.getElementById('compare-btn');
-          if(compareBtn) {
-            compareBtn.style.display = (checkedCount >= 2) ? 'inline-block' : 'none';
-          }
+          updateCompareVisibility();
       }
   });
 
@@ -646,6 +672,34 @@ function buildCards(items){
     }
     details.innerHTML = `<summary>${displaySci} — ${pct}${!isNameSearchResult ? '%' : ''}</summary><p style="padding:0 12px 8px;font-style:italic">${ecolOf(sci)}</p>${iframeHTML}`;
     zone.appendChild(details);
+  });
+}
+
+function showSimilarSpeciesButton(speciesName) {
+  const area = document.getElementById('similar-btn-area');
+  if (!area) return;
+  area.innerHTML = '';
+  const btn = document.createElement('button');
+  btn.id = 'similar-btn';
+  btn.textContent = 'Montrer des espèces similaires';
+  btn.className = 'action-button';
+  area.appendChild(btn);
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    btn.textContent = 'Recherche...';
+    const extras = await getSimilarSpeciesFromGemini(speciesName);
+    btn.remove();
+    if (extras.length) {
+      extras.forEach(n => {
+        if (!displayedItems.some(it => it.species.scientificNameWithoutAuthor === n)) {
+          displayedItems.push({ score: 0, species: { scientificNameWithoutAuthor: n }, autoCheck: true });
+        }
+      });
+      buildTable(displayedItems);
+      buildCards(displayedItems);
+    } else {
+      showNotification('Aucune espèce similaire trouvée.', 'error');
+    }
   });
 }
 
@@ -784,11 +838,20 @@ if (organBoxOnPage) {
     organBoxOnPage.style.display = 'none';
     await loadData();
     document.body.classList.remove("home");
-    const items = isNameSearch
-      ? results.map(n => ({ score: 1.0, species: { scientificNameWithoutAuthor: n } }))
+    let items = isNameSearch
+      ? results.map(n => ({ score: 1.0, species: { scientificNameWithoutAuthor: n }, autoCheck: results.length === 1 }))
       : results;
-    buildTable(items);
-    buildCards(items);
+
+    displayedItems = items;
+    buildTable(displayedItems);
+    buildCards(displayedItems);
+
+    if (isNameSearch && results.length === 1) {
+      showSimilarSpeciesButton(results[0]);
+    } else {
+      const area = document.getElementById('similar-btn-area');
+      if (area) area.innerHTML = '';
+    }
   };
 
   const namesRaw = sessionStorage.getItem("speciesQueryNames");
