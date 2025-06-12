@@ -78,6 +78,11 @@ const ecolOf = n => ecology[norm(n)] || "—";
 const criteresOf = n => criteres[norm(n)] || "—"; // NOUVEAU : fonction pour récupérer les critères
 const physioOf = n => physionomie[norm(n)] || "—"; // Récupération de la physionomie
 const slug = n => norm(n).replace(/ /g, "-");
+function capitalizeGenus(name) {
+  if (typeof name !== 'string') return name;
+  return name.replace(/^(?:[x×]\s*)?([a-z])/,
+                      (m, p1) => m.replace(p1, p1.toUpperCase()));
+}
 const infoFlora  = n => `https://www.infoflora.ch/fr/flore/${slug(n)}.html`;
 const inpnStatut = c => `https://inpn.mnhn.fr/espece/cd_nom/${c}/tab/statut`;
 const aura       = c => `https://atlas.biodiversite-auvergne-rhone-alpes.fr/espece/${c}`;
@@ -497,7 +502,8 @@ function buildTable(items){
   const rows = items.map(item => {
     const pct = item.score !== undefined ? `${Math.round(item.score * 100)}%` : "N/A";
     const sci  = item.species.scientificNameWithoutAuthor;
-    const cd   = cdRef(sci); 
+    const displaySci = capitalizeGenus(sci);
+    const cd   = cdRef(sci);
     const eco  = ecolOf(sci);
     const crit = criteresOf(sci);
     const phys = physioOf(sci);
@@ -516,7 +522,7 @@ function buildTable(items){
         const urlPart = floreAlpesIndex[foundKey].split('?')[0];
         floreAlpesLink = linkIcon(`https://www.florealpes.com/${urlPart}`, "FloreAlpes.png", "FloreAlpes");
     }
-    const escapedSci = sci.replace(/'/g, "\\'");
+    const escapedSci = displaySci.replace(/'/g, "\\'");
     return `<tr>
               <td class="col-checkbox">
                 <input type="checkbox" class="species-checkbox" 
@@ -524,7 +530,7 @@ function buildTable(items){
                        data-physio="${encodeURIComponent(phys)}" 
                        data-eco="${encodeURIComponent(eco)}">
               </td>
-              <td class="col-nom-latin" data-latin="${sci}">${sci}<br><span class="score">(${pct})</span></td>
+              <td class="col-nom-latin" data-latin="${displaySci}">${displaySci}<br><span class="score">(${pct})</span></td>
               <td class="col-link">${floreAlpesLink}</td>
               <td class="col-link">${floraGallicaLink}</td>
               <td class="col-link">${linkIcon(cd && inpnStatut(cd), "INPN.png", "INPN", "small-logo")}</td>
@@ -620,7 +626,26 @@ function buildTable(items){
   });
 }
 
-function buildCards(items){ const zone = document.getElementById("cards"); if (!zone) return; zone.innerHTML = ""; items.forEach(item => { const sci = item.species.scientificNameWithoutAuthor; const cd = cdRef(sci); if(!cd && !(item.score === 1.00 && items.length === 1)) return; const pct = item.score !== undefined ? Math.round(item.score * 100) : "Info"; const isNameSearchResult = item.score === 1.00 && items.length === 1; const details = document.createElement("details"); let iframeHTML = ''; if (cd) { iframeHTML = `<div class="iframe-grid"><iframe loading="lazy" src="${inpnStatut(cd)}" title="Statut INPN"></iframe><iframe loading="lazy" src="${aura(cd)}" title="Biodiv'AURA"></iframe><iframe loading="lazy" src="${openObs(cd)}" title="OpenObs"></iframe></div>`; } details.innerHTML = `<summary>${sci} — ${pct}${!isNameSearchResult ? '%' : ''}</summary><p style="padding:0 12px 8px;font-style:italic">${ecolOf(sci)}</p>${iframeHTML}`; zone.appendChild(details); }); }
+function buildCards(items){
+  const zone = document.getElementById("cards");
+  if (!zone) return;
+  zone.innerHTML = "";
+  items.forEach(item => {
+    const sci = item.species.scientificNameWithoutAuthor;
+    const displaySci = capitalizeGenus(sci);
+    const cd = cdRef(sci);
+    if(!cd && !(item.score === 1.00 && items.length === 1)) return;
+    const pct = item.score !== undefined ? Math.round(item.score * 100) : "Info";
+    const isNameSearchResult = item.score === 1.00 && items.length === 1;
+    const details = document.createElement("details");
+    let iframeHTML = '';
+    if (cd) {
+      iframeHTML = `<div class="iframe-grid"><iframe loading="lazy" src="${inpnStatut(cd)}" title="Statut INPN"></iframe><iframe loading="lazy" src="${aura(cd)}" title="Biodiv'AURA"></iframe><iframe loading="lazy" src="${openObs(cd)}" title="OpenObs"></iframe></div>`;
+    }
+    details.innerHTML = `<summary>${displaySci} — ${pct}${!isNameSearchResult ? '%' : ''}</summary><p style="padding:0 12px 8px;font-style:italic">${ecolOf(sci)}</p>${iframeHTML}`;
+    zone.appendChild(details);
+  });
+}
 
 /* ================================================================
    LOGIQUE SPÉCIFIQUE AUX PAGES (ÉCOUTEURS)
