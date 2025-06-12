@@ -15,12 +15,15 @@ const RENDER_SCALE = isIOS ? 1.8 : 2.0;
  * Affiche un message d'erreur et un lien de secours.
  */
 function displayFallback(title, message, pdfUrl, pageNum) {
+    const altUrl = isIOS
+        ? `viewer.html?file=${encodeURIComponent(pdfUrl)}&page=${pageNum}`
+        : `${pdfUrl}#page=${pageNum}`;
     viewerContainer.innerHTML = `
         <div class="error-message">
             <h2>${title}</h2>
             <p>${message}</p>
             <p>Page cible : ${pageNum}</p>
-            <a href="${pdfUrl}#page=${pageNum}" target="_blank" rel="noopener noreferrer">
+            <a href="${altUrl}" target="_blank" rel="noopener noreferrer">
                 Ouvrir le PDF directement – page ${pageNum}
             </a>
         </div>
@@ -111,7 +114,12 @@ async function loadPdfViewer() {
         // Étape 2: Sauter à la page cible
         const targetElement = document.getElementById(`page-container-${initialPageNum}`);
         if (targetElement) {
-            targetElement.scrollIntoView({ behavior: 'auto', block: 'start' });
+            const scrollFn = () => {
+                const top = targetElement.getBoundingClientRect().top + window.pageYOffset;
+                window.scrollTo({ top, behavior: 'auto' });
+            };
+            scrollFn();
+            if (isIOS) setTimeout(scrollFn, 150);
         }
 
     } catch (error) {
