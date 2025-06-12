@@ -15,9 +15,7 @@ const RENDER_SCALE = isIOS ? 1.8 : 2.0;
  * Affiche un message d'erreur et un lien de secours.
  */
 function displayFallback(title, message, pdfUrl, pageNum) {
-    const altUrl = isIOS
-        ? `viewer.html?file=${encodeURIComponent(pdfUrl)}&page=${pageNum}`
-        : `${pdfUrl}#page=${pageNum}`;
+    const altUrl = `${pdfUrl}#page=${pageNum}`;
     viewerContainer.innerHTML = `
         <div class="error-message">
             <h2>${title}</h2>
