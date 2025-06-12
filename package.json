@@ -4,6 +4,7 @@
   "description": "Plantouille Express is a progressive web application for plant identification built using the PlantNet API. The project also integrates Google Gemini and Google Text‑to‑Speech for generating short descriptions and audio.",
   "main": "app.js",
   "scripts": {
+    "pretest": "npm install",
     "test": "jest"
   },
   "keywords": [],
