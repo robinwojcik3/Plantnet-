@@ -1,30 +1,8 @@
-const fs = require('fs');
+const { loadApp } = require('../test-utils');
 const vm = require('vm');
 
-function loadApp(extraCtx = {}) {
-  const code = fs.readFileSync('app.js', 'utf-8');
-  const defaultFetch = jest.fn().mockResolvedValue({
-    ok: true,
-    json: () => Promise.resolve({}),
-    text: () => Promise.resolve('')
-  });
-  const dummyDocument = {
-    getElementById: () => null,
-    querySelector: () => null,
-    querySelectorAll: () => []
-  };
-  const ctx = {
-    console,
-    fetch: defaultFetch,
-    toggleSpinner: jest.fn(),
-    showNotification: jest.fn(),
-    window: {},
-    document: dummyDocument,
-    ...extraCtx
-  };
-  ctx.window.document = dummyDocument;
-  vm.createContext(ctx);
-  vm.runInContext(code, ctx);
+function loadAppWithExports(extraCtx = {}) {
+  const ctx = loadApp(extraCtx);
   vm.runInContext('globalThis.__extract = { taxref, ecology, trigramIndex, criteres, physionomie };', ctx);
   vm.runInContext('globalThis.__cdRef = cdRef; globalThis.__ecolOf = ecolOf;', ctx);
   return ctx;
@@ -50,7 +28,7 @@ describe('data loading', () => {
       }
       return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
     });
-    const ctx = loadApp({ fetch: fetchMock });
+    const ctx = loadAppWithExports({ fetch: fetchMock });
     await ctx.loadData();
     const code = ctx.__cdRef('Abies alba');
     expect(code).toBe(1);
