@@ -50,13 +50,16 @@
   <div class="main-content">
     <h1>Extraire les données d'une Google Sheet</h1>
     <p style="text-align: left;">
-        Pour utiliser cet outil, votre Google Sheet doit être publiée sur le web au format CSV.
-        <br>Dans votre feuille de calcul, allez dans <strong>Fichier &gt; Partager &gt; Publier sur le web</strong>.
-        Assurez-vous que l'onglet "Lien" est sélectionné. Choisissez la feuille concernée, puis sélectionnez le format "<strong>Valeurs séparées par des virgules (.csv)</strong>".
-        Cliquez sur "Publier", confirmez, puis copiez l'URL générée et collez-la ci-dessous.
+        Cet outil lit les données publiques d'une feuille de calcul. Il ne peut pas accéder à une feuille privée ou en mode édition.
+        <br>
+        1. Dans Google Sheets, allez dans <strong>Fichier &gt; Partager &gt; Publier sur le web</strong>.
+        <br>
+        2. Sous l'onglet "Lien", choisissez la feuille à publier et sélectionnez le format "<strong>Valeurs séparées par des virgules (.csv)</strong>".
+        <br>
+        3. Cliquez sur "Publier" et copiez l'URL générée. Elle doit se terminer par <strong>`.../pub?output=csv`</strong>.
     </p>
     <div class="sheet-input">
-      <input type="text" id="sheet-csv-url" placeholder="Collez l'URL .csv de la feuille publiée">
+      <input type="text" id="sheet-csv-url" placeholder="Collez l'URL de publication .csv de la feuille">
       <button id="load-sheet-csv">Charger les données</button>
     </div>
 
