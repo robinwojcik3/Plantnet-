@@ -1042,15 +1042,26 @@ with tab_pca:
                 circle_y = np.sin(theta)
 
                 fig_corr = go.Figure()
-                fig_corr.add_trace(go.Scatter(x=circle_x, y=circle_y, mode="lines", name="Cercle", showlegend=False))
+                fig_corr.add_trace(
+                    go.Scatter(
+                        x=circle_x,
+                        y=circle_y,
+                        mode="lines",
+                        name="Cercle",
+                        showlegend=False,
+                        line=dict(color="lightgray"),
+                    )
+                )
                 fig_corr.add_shape(type="circle", x0=-1, y0=-1, x1=1, y1=1, line=dict(color="black", dash="dot"))
                 fig_corr.update_xaxes(range=[-1.1, 1.1], zeroline=True)
                 fig_corr.update_yaxes(range=[-1.1, 1.1], zeroline=True)
 
                 for var_name, row in loadings_df.iterrows():
                     x, y = row["PC1"], row["PC2"]
-                    fig_corr.add_trace(go.Scatter(x=[0, x], y=[0, y], mode="lines", showlegend=False))
-                    fig_corr.add_annotation(x=x, y=y, ax=0, ay=0, text=var_name)
+                    fig_corr.add_trace(
+                        go.Scatter(x=[0, x], y=[0, y], mode="lines", showlegend=False, line=dict(color="blue"))
+                    )
+                    fig_corr.add_annotation(x=x, y=y, ax=0, ay=0, text=var_name, showarrow=True, arrowhead=2)
 
                 fig_corr.update_layout(
                     title="Cercle de corrélation",
