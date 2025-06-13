@@ -1,6 +1,6 @@
 /* ================================================================
       CONTEXTE ENVIRONNEMENTAL - Logique JavaScript
-      Refonte pour utiliser l'API Carto (REST/GeoJSON) de l'IGN
+      Refonte pour utiliser un service WMS pour l'affichage des couches
       ================================================================ */
 
 // Variables globales
@@ -61,31 +61,23 @@ const SERVICES = {
 	}
 };
 
-// NOUVEAU : Configuration des couches via l'API Carto de l'IGN
-const APICARTO_LAYERS = {
-    'Natura 2000 (Habitats)': {
-        endpoint: 'https://apicarto.ign.fr/api/nature/natura-habitat',
-        style: { color: "#2E7D32", weight: 2, opacity: 0.9, fillOpacity: 0.2 },
+// NOUVEAU : Configuration des couches WMS via le proxy local
+const WMS_LAYERS = {
+    'Natura 2000': {
+        layerName: 'PROTECTEDAREAS.SIC,PROTECTEDAREAS.ZPS',
+        attribution: 'IGN-F/Geoportail'
     },
-    'Natura 2000 (Oiseaux)': {
-        endpoint: 'https://apicarto.ign.fr/api/nature/natura-oiseaux',
-        style: { color: "#0277BD", weight: 2, opacity: 0.9, fillOpacity: 0.2 },
-    },
-    'ZNIEFF I': {
-        endpoint: 'https://apicarto.ign.fr/api/nature/znieff1',
-        style: { color: "#AFB42B", weight: 2, opacity: 0.9, fillOpacity: 0.2, dashArray: '5, 5' },
-    },
-    'ZNIEFF II': {
-        endpoint: 'https://apicarto.ign.fr/api/nature/znieff2',
-        style: { color: "#E65100", weight: 2, opacity: 0.9, fillOpacity: 0.2 },
+    'ZNIEFF I & II': {
+        layerName: 'PROTECTEDAREAS.ZNIEFF1,PROTECTEDAREAS.ZNIEFF2',
+        attribution: 'IGN-F/Geoportail'
     },
     'Parcs Nationaux': {
-        endpoint: 'https://apicarto.ign.fr/api/nature/pn',
-        style: { color: "#AD1457", weight: 2, opacity: 0.9, fillOpacity: 0.2 },
+        layerName: 'PROTECTEDAREAS.PN',
+        attribution: 'IGN-F/Geoportail'
     },
-    'Réserves Naturelles': {
-        endpoint: 'https://apicarto.ign.fr/api/nature/rn',
-        style: { color: "#6A1B9A", weight: 2, opacity: 0.9, fillOpacity: 0.2 },
+    'Réserves Naturelles (Nationales & Régionales)': {
+        layerName: 'PROTECTEDAREAS.RNN,PROTECTEDAREAS.RNR',
+        attribution: 'IGN-F/Geoportail'
     }
 };
 
@@ -267,7 +259,6 @@ function showResults() {
 	
 	const loading = document.getElementById('loading');
 	loading.style.display = 'block';
-	loading.textContent = 'Préparation des liens...';
 	
 	setTimeout(() => {
 		loading.style.display = 'none';
@@ -291,13 +282,13 @@ function showResults() {
 }
 
 /**
- * NOUVELLE FONCTION : Affiche la carte interactive avec les couches GeoJSON
- * récupérées depuis l'API Carto de l'IGN.
+ * MODIFIÉ : Affiche la carte interactive avec les couches WMS.
  */
-async function displayInteractiveEnvMap() {
+function displayInteractiveEnvMap() {
     const mapDiv = document.getElementById('env-map');
+    const controlsDiv = document.getElementById('layer-controls');
     mapDiv.style.display = 'block';
-    document.getElementById('layer-controls').style.display = 'none'; // On n'utilise plus les contrôles manuels
+    controlsDiv.style.display = 'block'; // Afficher le conteneur des contrôles
 
     // Initialisation ou réinitialisation de la carte
     if (!envMap) {
@@ -308,9 +299,14 @@ async function displayInteractiveEnvMap() {
         }).addTo(envMap);
     } else {
         envMap.setView([selectedLat, selectedLon], 11);
-        if (layerControl) envMap.removeControl(layerControl); // Supprime l'ancien contrôle de couches
-        envMap.eachLayer(layer => { // Supprime les anciennes couches GeoJSON
-            if (layer instanceof L.GeoJSON) envMap.removeLayer(layer);
+        if (layerControl) {
+            envMap.removeControl(layerControl);
+        }
+        envMap.eachLayer(layer => {
+            // Ne pas supprimer le fond de carte (tileLayer)
+            if (!(layer instanceof L.TileLayer)) {
+                envMap.removeLayer(layer);
+            }
         });
     }
 
@@ -319,68 +315,108 @@ async function displayInteractiveEnvMap() {
     envMarker = L.marker([selectedLat, selectedLon]).addTo(envMap)
       .bindPopup("Point d'analyse").openPopup();
 
-    // Initialise le nouveau contrôle de couches
     const overlayMaps = {};
+    Object.entries(WMS_LAYERS).forEach(([name, config]) => {
+        const wmsLayer = L.tileLayer.wms('/api/wms/inpn', {
+            layers: config.layerName,
+            format: 'image/png',
+            transparent: true,
+            attribution: config.attribution
+        });
+        overlayMaps[name] = wmsLayer;
+    });
+
     layerControl = L.control.layers(null, overlayMaps, { collapsed: false }).addTo(envMap);
+    controlsDiv.innerHTML = ''; // Vider les anciens contrôles
+    controlsDiv.appendChild(layerControl.getContainer());
 
-    const loading = document.getElementById('loading');
-    loading.style.display = 'block';
-    loading.textContent = 'Chargement des couches environnementales...';
-    
-    // Lance tous les appels API en parallèle
-    const promises = Object.entries(APICARTO_LAYERS).map(([name, config]) => 
-        fetchAndDisplayApiLayer(name, config, selectedLat, selectedLon)
-    );
-
-    await Promise.all(promises);
-    loading.style.display = 'none';
+    // Ajout de la gestion de l'événement de clic pour GetFeatureInfo
+    envMap.on('click', handleMapClick);
 }
 
 /**
- * NOUVELLE FONCTION : Récupère une couche de données depuis l'API Carto et l'ajoute à la carte.
- * @param {string} name - Nom de la couche pour l'affichage.
- * @param {object} config - Configuration de la couche (endpoint, style).
- * @param {number} lat - Latitude du point d'interrogation.
- * @param {number} lon - Longitude du point d'interrogation.
+ * NOUVEAU : Gère le clic sur la carte pour effectuer une requête GetFeatureInfo.
+ * @param {L.LeafletMouseEvent} e - L'événement de clic de Leaflet.
  */
-async function fetchAndDisplayApiLayer(name, config, lat, lon) {
-    try {
-        const url = `${config.endpoint}?lon=${lon}&lat=${lat}`;
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`Réponse réseau non OK: ${response.statusText}`);
-        }
-        const geojsonData = await response.json();
+function handleMapClick(e) {
+    const latlng = e.latlng;
+    const popup = L.popup()
+        .setLatLng(latlng)
+        .setContent('<p>Chargement des informations...</p>')
+        .openOn(envMap);
 
-        if (geojsonData && geojsonData.features && geojsonData.features.length > 0) {
-            const geoJsonLayer = L.geoJSON(geojsonData, {
-                style: config.style,
-                onEachFeature: (feature, layer) => {
-                    let popupContent = `<h4>${name}</h4>`;
-                    if (feature.properties) {
-                        popupContent += '<ul style="padding-left: 15px; margin: 0;">';
-                        for (const key in feature.properties) {
-                            popupContent += `<li><strong>${key}:</strong> ${feature.properties[key]}</li>`;
-                        }
-                        popupContent += '</ul>';
-                    }
-                    layer.bindPopup(popupContent);
-                }
-            });
-            // Ajoute la couche au contrôleur
-            layerControl.addOverlay(geoJsonLayer, name);
-        } else {
-            console.log(`Aucune donnée de type "${name}" trouvée pour ce point.`);
+    const activeLayers = [];
+    layerControl._layers.forEach(layer => {
+        if (envMap.hasLayer(layer.layer)) {
+            activeLayers.push(layer.layer.wmsParams.layers);
         }
-    } catch (error) {
-        console.error(`Erreur lors du chargement de la couche ${name}:`, error);
+    });
+
+    if (activeLayers.length === 0) {
+        popup.setContent("<p>Aucune couche n'est active.</p>");
+        return;
     }
+
+    const url = getFeatureInfoUrl(e, activeLayers.join(','));
+
+    fetch(url)
+        .then(response => response.text())
+        .then(html => {
+            // La réponse du Géoportail est souvent une page HTML complète.
+            // On cherche la partie pertinente (souvent dans <body>).
+            const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+            const content = bodyMatch && bodyMatch[1].trim() ? bodyMatch[1] : "Aucune information trouvée pour ce point.";
+            popup.setContent(content);
+        })
+        .catch(err => {
+            console.error("Erreur GetFeatureInfo:", err);
+            popup.setContent("<p>Erreur lors de la récupération des informations.</p>");
+        });
+}
+
+/**
+ * NOUVEAU : Construit l'URL pour une requête GetFeatureInfo.
+ * @param {L.LeafletMouseEvent} e - L'événement de clic de Leaflet.
+ * @param {string} layers - La chaîne des couches à interroger.
+ * @returns {string} L'URL complète pour la requête.
+ */
+function getFeatureInfoUrl(e, layers) {
+    const map = e.target;
+    const point = map.latLngToContainerPoint(e.latlng, map.getZoom());
+    const size = map.getSize();
+    const bounds = map.getBounds();
+    const sw = bounds.getSouthWest();
+    const ne = bounds.getNorthEast();
+
+    const params = {
+        request: 'GetFeatureInfo',
+        service: 'WMS',
+        version: '1.1.1',
+        layers: layers,
+        styles: '',
+        bbox: `${sw.lng},${sw.lat},${ne.lng},${ne.lat}`,
+        width: size.x,
+        height: size.y,
+        query_layers: layers,
+        info_format: 'text/html',
+        srs: 'EPSG:4326',
+        x: Math.round(point.x),
+        y: Math.round(point.y)
+    };
+
+    const url = '/api/wms/inpn' + L.Util.getParamString(params, '', true);
+    return url;
 }
 
 // Fonction de notification générique
 function showNotification(message, type = 'info') {
 	console.log(`Notification (${type}): ${message}`);
-	alert(message); 
+	// Remplacer alert par une notification non-bloquante si ui.js est disponible
+    if(window.showUINotification) {
+        window.showUINotification(message, type);
+    } else {
+	    alert(message); 
+    }
 }
 
 // Gestionnaire pour le retour à la page d'accueil
