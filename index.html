@@ -10,8 +10,8 @@
   <script defer src="app.js"></script>
   <script defer src="sw-register.js"></script>
   <style>
-    :root{ --primary:#388e3c; --bg:#f6f9fb; --card:#ffffff; --border:#e0e0e0; --text:#202124; --header-bg:#f1f1f1; }
-    html[data-theme="dark"]{ --bg:#181a1b; --card:#262b2f; --border:#333; --text:#ececec; --header-bg:#333; }
+    :root{ --primary:#388e3c; --bg:#f6f9fb; --card:#ffffff; --border:#e0e0e0; --text:#202124; }
+    html[data-theme="dark"]{ --bg:#181a1b; --card:#262b2f; --border:#333; --text:#ececec; }
     *{box-sizing:border-box;}
     
     /* NOUVEAU : Styles pour la navigation par onglets */
@@ -74,7 +74,7 @@
     body:not(.home) .upload-btn { display:none; }
     body:not(.home) h1 { font-size:1.6rem; color:var(--primary); margin-bottom: 1rem;}
     body:not(.home) .tabs-container { position: static; }
-    table{ width:100%; table-layout: fixed; border-collapse:collapse; background:var(--card); border:1px solid var(--border); border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,.05); margin-bottom:1.2rem; }
+    table{ width:100%; table-layout: fixed; border-collapse:collapse; background:var(--card); border:1px solid var(--border); border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,.05); margin-bottom:1.2rem; }
     #results{overflow-x:auto;-webkit-overflow-scrolling:touch;}
     #results::after{content:"";display:block;height:1rem;}
     @media (max-width:600px){
@@ -82,7 +82,7 @@
       body.home #main-content{padding-top:15vh;}
     }
     th,td{ padding: 8px 6px; border-bottom:1px solid var(--border); word-wrap: break-word; vertical-align: top; }
-    th{background:var(--header-bg);color:var(--text);font-weight:600;text-align:left}
+    th{background:#fff;color:#000;font-weight:600;text-align:left}
     tr:last-child td{border-bottom:none}
     .col-nom-latin { width: 20%; }
     .col-nom-latin .score { display:block; font-size:0.9em; color:#555; }
@@ -131,7 +131,7 @@
       :root{--bg:#181a1b;--card:#262b2f;--border:#333;--text:#ececec} 
       .tabs-container { background: var(--card); }
       .tab:hover { background: rgba(56, 142, 60, 0.2); }
-      table,details{border-color:#333} th{background:var(--header-bg);color:var(--text)} body.home .upload-btn.logo-btn span { color: var(--text); } .option-container { background-color: rgba(38, 43, 47, 0.8); } #multi-image-list-area .image-organ-item { background-color: var(--card); border-color: var(--border); } #multi-image-list-area select { background-color: #333; color: var(--text); } .col-nom-latin .score { color:#ccc; } .col-criteres { color: #ccc; } .col-physionomie { color:#ccc; } #multi-image-list-area .delete-file-btn { color: #ff6b6b; } #multi-image-list-area .delete-file-btn:hover { color: #ff8787; } .search-inline input[type="search"] { background-color: #fff; color: #000; border-color: #555; }
+      table,details{border-color:#333} th{background:#262b2f;color:#ececec} body.home .upload-btn.logo-btn span { color: var(--text); } .option-container { background-color: rgba(38, 43, 47, 0.8); } #multi-image-list-area .image-organ-item { background-color: var(--card); border-color: var(--border); } #multi-image-list-area select { background-color: #333; color: var(--text); } .col-nom-latin .score { color:#ccc; } .col-criteres { color: #ccc; } .col-physionomie { color:#ccc; } #multi-image-list-area .delete-file-btn { color: #ff6b6b; } #multi-image-list-area .delete-file-btn:hover { color: #ff8787; } .search-inline input[type="search"] { background-color: #fff; color: #000; border-color: #555; }
     }
   </style>
 </head>
