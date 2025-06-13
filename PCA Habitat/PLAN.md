@@ -1,75 +1,266 @@
-Absolument. Voici la version mise à jour du fichier `PLAN.md` qui inclut ces précisions contextuelles importantes.
+Absolument. Compris. L'objectif est de fournir un plan d'action clair, simple et séquentiel pour intégrer la fonctionnalité d'analyse PCA dans votre application Netlify existante, au sein d'un nouvel onglet "PCA Habitat", en se basant sur les captures d'écran fournies.
+
+L'architecture change radicalement par rapport au prototype Streamlit. Nous allons adopter une approche client-serveur :
+1.  **Front-End (Client)** : Votre application existante sur Netlify (`index.html`, `js`, etc.). Nous y ajouterons la page et la logique pour l'onglet "PCA Habitat".
+2.  **Back-End (Serveur)** : Un nouveau service API en Python, qui exécutera les calculs de `core.py` et sera appelé par votre application Netlify.
+
+Le script `app.py` (Streamlit) ne sera pas déployé. Il sert uniquement de référence pour la logique métier, notamment le tableau de co-occurrence.
+
+Voici le plan d'implémentation détaillé, étape par étape.
 
 ---
 
-### **PLAN.md**
+### **Plan d'Implémentation : Intégration de "PCA Habitat"**
 
-#### **Objectif : Implémenter l'onglet 'PCA Habitat' de manière incrémentale**
+#### **Étape 1 : Créer la Page "PCA Habitat" (Front-End)**
 
-Ce document détaille les étapes séquentielles pour intégrer la nouvelle fonctionnalité d'Analyse en Composantes Principales dans l'application Streamlit. Chaque étape doit être complétée et validée avant de passer à la suivante.
+L'objectif est de construire l'interface utilisateur visible dans les captures d'écran.
 
-#### **Contexte et Source des Fichiers**
+1.  **Modifier la navigation principale** :
+    * Dans votre fichier `index.html` (ou là où est définie votre barre de navigation), ajoutez une nouvelle entrée pour "PCA Habitat". Inspirez-vous de la structure des autres onglets ("Relevé", "Herbier", etc.).
+    * Ce nouvel onglet doit pointer vers une nouvelle page : `pca.html`.
 
-**Note importante :** Ce plan d'action (`PLAN.md`) est situé dans le répertoire `Plantnet-/PCA Habitat/`. L'ensemble du code et des fonctionnalités à implémenter pour l'onglet **'PCA Habitat'** doivent être une reproduction fidèle de la logique et des scripts déjà présents dans ce même répertoire. Les étapes ci-dessous servent à guider l'intégration structurée de ces éléments existants dans l'application principale `app.py`.
+2.  **Créer le contenu de `pca.html`** :
+    * Créez le fichier `pca.html`. Ce fichier contiendra la structure de base de votre nouvel onglet.
+    * En vous basant sur vos captures d'écran, ajoutez les éléments suivants dans le `<body>` de `pca.html` :
+        * Un titre, par exemple : `<h1>Analyse en Composantes Principales (ACP) sur les Habitats</h1>`.
+        * Un formulaire (`<form id="pca-form">`) qui contiendra les champs d'upload.
+        * Deux champs de type "file" :
+            ```html
+            <label for="user_file">Relevés à analyser (CSV):</label>
+            <input type="file" id="user_file" name="user_file" accept=".csv">
 
----
+            <label for="ref_file">Référence phytosociologique (CSV):</label>
+            <input type="file" id="ref_file" name="ref_file" accept=".csv">
+            ```
+        * Un bouton pour démarrer l'analyse : `<button type="submit">Lancer l'Analyse</button>`.
+        * Des conteneurs vides pour afficher les résultats :
+            ```html
+            <div id="pca-plot-container"></div> <div id="cooccurrence-table-container"></div> ```
 
-### **Étape 1 : Mise en place de la structure de l'onglet**
+3.  **Lier le script `pca.js`** : Assurez-vous que votre page `pca.html` charge bien le fichier JavaScript `pca.js` avec une balise `<script src="pca.js" defer></script>`.
 
-1.  **Modifier `app.py`** pour introduire une structure à onglets avec `st.tabs`.
-2.  **Créer deux onglets** :
-    * Le premier, nommé **'Analyse Syntaxonomique'**, contiendra l'ensemble du code existant de l'application.
-    * Le second, nommé **'PCA Habitat'**, sera initialement vide.
-3.  **Vérifier** que l'application se lance correctement avec les deux onglets et que le contenu original est entièrement fonctionnel dans le premier onglet.
+#### **Étape 2 : Mettre en place le Calculateur d'Analyse (Back-End API)**
 
----
+Cette partie exécute la logique Python sur un serveur. Nous utiliserons FastAPI pour créer une API simple.
 
-### **Étape 2 : Implémentation du chargement des données**
+1.  **Créer le fichier de l'API** :
+    * Dans le répertoire `PCA Habitat/`, créez un nouveau fichier `main.py`.
+    * Installez les dépendances : `pip install fastapi "uvicorn[standard]" python-multipart`. Ajoutez-les à `requirements.txt`.
 
-1.  Dans l'onglet **'PCA Habitat'**, ajouter un titre principal, par exemple : `st.title("Analyse en Composantes Principales des Habitats")`.
-2.  **Intégrer un widget `st.file_uploader`** pour permettre à l'utilisateur de téléverser un fichier CSV.
-3.  **Implémenter la logique de sélection de données** :
-    * Si un fichier est téléversé par l'utilisateur, utiliser ce fichier.
-    * Sinon, charger par défaut le fichier `data_ecologie_espece.csv`.
-4.  Utiliser la fonction `core.read_reference()` pour lire et préparer le DataFrame, quelle que soit sa source.
-5.  **Afficher le DataFrame** chargé dans un `st.expander` pour permettre la vérification des données.
+2.  **Développer le point de terminaison `/analyse`** :
+    * Ouvrez `main.py` et copiez-y le code ci-dessous. Ce code crée un serveur web qui attend de recevoir deux fichiers.
+    * **Action importante** : La logique pour le calcul de co-occurrence se trouve dans votre prototype `app.py`. Vous devrez extraire cette logique et l'intégrer dans la fonction `run_analysis_logic` ci-dessous pour qu'elle soit retournée avec les résultats de la PCA.
 
----
+    **Contenu pour `PCA Habitat/main.py` :**
+    ```python
+    from fastapi import FastAPI, UploadFile, File, HTTPException
+    from fastapi.middleware.cors import CORSMiddleware
+    import pandas as pd
+    import io
 
-### **Étape 3 : Exécution de l'analyse et affichage des résultats de base**
+    # Importez vos fonctions existantes depuis core.py
+    from core import analyse, read_reference
 
-1.  Après le chargement des données, appeler la fonction `core.analyse()` avec le DataFrame pour effectuer la PCA.
-2.  Récupérer les résultats de la fonction : l'objet PCA et les coordonnées des points.
-3.  **Afficher les informations de base** de l'analyse : le pourcentage de variance expliquée par les deux premiers axes principaux. Utiliser `st.metric` ou `st.info` pour une présentation claire.
+    # Initialisation de l'API
+    app = FastAPI()
 
----
+    # Autoriser les requêtes depuis votre site Netlify (CORS)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],  # À restreindre à votre URL Netlify en production
+        allow_methods=["POST"],
+        allow_headers=["*"],
+    )
 
-### **Étape 4 : Création du graphique de projection des espèces**
+    def run_analysis_logic(ref_df, user_df):
+        """
+        Fonction qui encapsule toute la logique d'analyse.
+        """
+        # 1. Logique de préparation des données (inspirée de app.py)
+        # Assurez-vous de bien joindre user_df et ref_df comme dans le prototype.
+        # Exemple simplifié :
+        combined_df = pd.concat([ref_df.set_index('Espece'), user_df.set_index('Espece')]).fillna(0)
+        
+        # 2. Lancer l'analyse PCA de core.py
+        labels, pca, coords, X_std = analyse(combined_df, n_clusters=3)
 
-1.  Utiliser la bibliothèque **Plotly** pour créer une première visualisation.
-2.  **Générer un nuage de points (scatter plot)** représentant le plan factoriel :
-    * Axe X : Coordonnées de la première composante principale (PC1).
-    * Axe Y : Coordonnées de la seconde composante principale (PC2).
-    * Chaque point représente une espèce.
-    * Au survol de la souris (hover), afficher le nom de l'espèce.
-3.  **Afficher ce graphique** dans l'application à l'aide de `st.plotly_chart`.
+        # 3. TODO: Intégrer la logique de calcul de co-occurrence depuis app.py ici.
+        # Calculez le dataframe de co-occurrence.
+        cooccurrence_data = [{"espece": "Exemple", "voisin_1": "Voisin A - 5", "voisin_2": "Voisin B - 3"}] # À remplacer par le vrai calcul
 
----
+        # 4. Formater les résultats pour l'envoi en JSON
+        return {
+            "pca_coordinates": coords.tolist(),
+            "species_names": combined_df.index.tolist(),
+            "cluster_labels": labels.tolist(),
+            "cooccurrence_table": cooccurrence_data
+        }
 
-### **Étape 5 : Création du graphique du cercle de corrélation**
+    @app.post("/analyse/")
+    async def analyse_endpoint(ref_file: UploadFile = File(...), user_file: UploadFile = File(...)):
+        """
+        Point de terminaison de l'API qui reçoit les fichiers et retourne l'analyse.
+        """
+        try:
+            ref_df = read_reference(io.BytesIO(await ref_file.read()))
+            user_df = read_reference(io.BytesIO(await user_file.read()))
+            
+            results = run_analysis_logic(ref_df, user_df)
+            return results
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Erreur lors de l'analyse: {str(e)}")
 
-1.  Toujours avec **Plotly**, créer la seconde visualisation.
-2.  **Générer le cercle de corrélation** des variables :
-    * Dessiner un cercle de rayon 1 centré à l'origine (0,0).
-    * Pour chaque variable écologique (ex: 'Lumière', 'Humidité'), tracer une flèche partant de l'origine jusqu'à ses coordonnées sur le plan factoriel.
-    * Ajouter une étiquette avec le nom de la variable au bout de chaque flèche.
-3.  **Afficher ce second graphique** dans l'application, idéalement à côté du premier en utilisant `st.columns`.
+    ```
 
----
+#### **Étape 3 : Déployer l'API Python**
 
-### **Étape 6 : Finalisation et nettoyage**
+Cette étape est obligatoire car Netlify ne peut pas exécuter Python.
 
-1.  **Vérifier l'agencement** de tous les éléments de l'onglet pour une expérience utilisateur logique et intuitive.
-2.  **Ajouter des titres et des descriptions** claires pour chaque section et chaque graphique afin de guider l'utilisateur.
-3.  **Relire le code** pour s'assurer qu'il est propre, commenté et qu'il respecte les bonnes pratiques.
-4.  **Effectuer un test complet** du nouvel onglet avec et sans chargement de fichier externe pour valider la robustesse de l'implémentation.
+1.  **Créer un `Dockerfile`** : À la racine du projet, créez un fichier nommé `Dockerfile` (sans extension) pour empaqueter votre API.
+    ```Dockerfile
+    FROM python:3.11-slim
+    WORKDIR /app
+    COPY ./PCA Habitat/requirements.txt .
+    RUN pip install --no-cache-dir -r requirements.txt
+    COPY ./PCA Habitat/ /app/
+    CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+    ```
+2.  **Héberger le conteneur** : Déployez cette API sur un service comme **Google Cloud Run**. C'est une solution simple et souvent gratuite pour un faible trafic. Le déploiement vous fournira une URL publique pour votre API (ex: `https://votre-api-unique.a.run.app`).
+
+#### **Étape 4 : Connecter le Front-End à l'API (JavaScript)**
+
+C'est ici que l'on fait le lien entre l'interface et le calculateur.
+
+1.  **Modifier `pca.js`** : Remplacez le contenu de `pca.js` par le code suivant. Il gère l'envoi des fichiers à l'API et l'affichage des résultats.
+2.  **Ajouter Plotly.js** : Pour afficher le graphique, vous devez inclure la bibliothèque Plotly.js dans votre `pca.html`. Ajoutez cette ligne dans le `<head>` : `<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>`.
+
+**Contenu pour `pca.js` :**
+```javascript
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('pca-form');
+    if (form) {
+        form.addEventListener('submit', handleAnalysis);
+    }
+});
+
+async function handleAnalysis(event) {
+    event.preventDefault();
+
+    const userFileInput = document.getElementById('user_file');
+    const refFileInput = document.getElementById('ref_file');
+    const plotContainer = document.getElementById('pca-plot-container');
+    const tableContainer = document.getElementById('cooccurrence-table-container');
+
+    if (!userFileInput.files[0] || !refFileInput.files[0]) {
+        plotContainer.innerHTML = '<p style="color: red;">Veuillez sélectionner les deux fichiers CSV.</p>';
+        return;
+    }
+
+    plotContainer.innerHTML = '<p>Analyse en cours, veuillez patienter...</p>';
+    tableContainer.innerHTML = '';
+
+    const formData = new FormData();
+    formData.append('user_file', userFileInput.files[0]);
+    formData.append('ref_file', refFileInput.files[0]);
+
+    // **REMPLACEZ PAR L'URL DE VOTRE API DÉPLOYÉE**
+    const API_URL = 'https://VOTRE-API-URL.a.run.app/analyse/'; 
+
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Erreur du serveur');
+        }
+
+        const results = await response.json();
+        displayPcaPlot(results);
+        displayCooccurrenceTable(results);
+
+    } catch (error) {
+        plotContainer.innerHTML = `<p style="color: red;">Erreur: ${error.message}</p>`;
+    }
+}
+
+function displayPcaPlot(results) {
+    const plotContainer = document.getElementById('pca-plot-container');
+    const traces = [];
+    const clusterLabels = [...new Set(results.cluster_labels)]; // Labels uniques [1, 2, 3...]
+
+    clusterLabels.forEach(label => {
+        const x_coords = [];
+        const y_coords = [];
+        const texts = [];
+        results.pca_coordinates.forEach((coord, i) => {
+            if (results.cluster_labels[i] === label) {
+                x_coords.push(coord[0]);
+                y_coords.push(coord[1]);
+                texts.push(results.species_names[i]);
+            }
+        });
+
+        traces.push({
+            x: x_coords,
+            y: y_coords,
+            mode: 'markers',
+            type: 'scatter',
+            name: `Cluster ${label}`,
+            text: texts,
+            hoverinfo: 'text'
+        });
+    });
+
+    const layout = {
+        title: 'Projection des relevés et des syntaxons de référence',
+        xaxis: { title: 'Composante Principale 1' },
+        yaxis: { title: 'Composante Principale 2' },
+    };
+
+    Plotly.newPlot(plotContainer, traces, layout);
+}
+
+function displayCooccurrenceTable(results) {
+    const tableContainer = document.getElementById('cooccurrence-table-container');
+    const tableData = results.cooccurrence_table;
+
+    if (!tableData || tableData.length === 0) {
+        tableContainer.innerHTML = '<p>Aucune donnée de co-occurrence à afficher.</p>';
+        return;
+    }
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    const tbody = document.createElement('tbody');
+    
+    // Créer l'en-tête
+    const headers = Object.keys(tableData[0]);
+    const headerRow = document.createElement('tr');
+    headers.forEach(headerText => {
+        const th = document.createElement('th');
+        th.textContent = headerText;
+        headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+
+    // Créer le corps du tableau
+    tableData.forEach(rowData => {
+        const row = document.createElement('tr');
+        headers.forEach(header => {
+            const td = document.createElement('td');
+            td.textContent = rowData[header];
+            row.appendChild(td);
+        });
+        tbody.appendChild(row);
+    });
+
+    table.appendChild(thead);
+    table.appendChild(tbody);
+    tableContainer.innerHTML = '<h2>Tableau des co-occurrences</h2>';
+    tableContainer.appendChild(table);
+}
+```
