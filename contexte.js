@@ -60,51 +60,52 @@ const SERVICES = {
 };
 
 // =================================================================
-// SECTION CORRIGÉE : Couches WMS pour affichage direct sur la carte
-// Les URL et noms de couches ont été mis à jour conformément à la documentation.
+// SECTION CORRIGÉE : Couches WMS utilisant le proxy local
+// L'URL pointe vers le proxy Netlify (/wms/inpn) pour contourner les problèmes de CORS.
+// Les noms des couches sont ceux de l'ancien service WMS (fxx_inpn).
 // =================================================================
 const ENV_WMS_LAYERS = [
     {
-        name: "ZNIEFF type I",
-        url: "https://inpn.mnhn.fr/wms/v2/cs/ZNIEFF",
-        layers: "znieff1",
-        attribution: "INPN"
-    },
-    {
-        name: "ZNIEFF type II",
-        url: "https://inpn.mnhn.fr/wms/v2/cs/ZNIEFF",
-        layers: "znieff2",
-        attribution: "INPN"
-    },
-    {
         name: "Natura 2000 (SIC/ZSC)",
-        url: "https://inpn.mnhn.fr/wms/v2/cs/N2000",
-        layers: "n2000_sic",
-        attribution: "INPN"
+        url: "/wms/inpn",
+        layers: "PROTECTEDAREAS.SIC:sic",
+        attribution: "INPN via Proxy"
     },
     {
         name: "Natura 2000 (ZPS)",
-        url: "https://inpn.mnhn.fr/wms/v2/cs/N2000",
-        layers: "n2000_zps",
-        attribution: "INPN"
+        url: "/wms/inpn",
+        layers: "PROTECTEDAREAS.ZPS:zps",
+        attribution: "INPN via Proxy"
+    },
+    {
+        name: "ZNIEFF type I",
+        url: "/wms/inpn",
+        layers: "PROTECTEDAREAS.ZNIEFF1:znieff1",
+        attribution: "INPN via Proxy"
+    },
+    {
+        name: "ZNIEFF type II",
+        url: "/wms/inpn",
+        layers: "PROTECTEDAREAS.ZNIEFF2:znieff2",
+        attribution: "INPN via Proxy"
     },
     {
         name: "Arrêtés de Protection de Biotope (APPB)",
-        url: "https://inpn.mnhn.fr/wms/v2/cs/espaces_proteges",
-        layers: "apb",
-        attribution: "INPN"
+        url: "/wms/inpn",
+        layers: "PROTECTEDAREAS.APB:apb",
+        attribution: "INPN via Proxy"
     },
     {
         name: "Parcs Nationaux",
-        url: "https://inpn.mnhn.fr/wms/v2/cs/espaces_proteges",
-        layers: "parcs_nationaux",
-        attribution: "INPN"
+        url: "/wms/inpn",
+        layers: "PROTECTEDAREAS.PN:pn",
+        attribution: "INPN via Proxy"
     },
     {
-        name: "Réserves Naturelles",
-        url: "https://inpn.mnhn.fr/wms/v2/cs/espaces_proteges",
-        layers: "reserves_naturelles",
-        attribution: "INPN"
+        name: "Réserves Naturelles Nationales",
+        url: "/wms/inpn",
+        layers: "PROTECTEDAREAS.RNN:rnn",
+        attribution: "INPN via Proxy"
     }
 ];
 // =================================================================
