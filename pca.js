@@ -10,44 +10,25 @@ document.addEventListener('DOMContentLoaded', () => {
 async function handleAnalysis(event) {
     event.preventDefault();
 
-    const userFileInput = document.getElementById('user_file');
-    const refFileInput = document.getElementById('ref_file');
     const plotContainer = document.getElementById('pca-plot-container');
-    const tableContainer = document.getElementById('cooccurrence-table-container');
 
-    if (!userFileInput.files[0] || !refFileInput.files[0]) {
-        plotContainer.innerHTML = '<p style="color: red;">Veuillez sélectionner les deux fichiers CSV.</p>';
-        return;
-    }
+    const data = tableToData();
+    console.log('Données pour analyse', data);
+    plotContainer.innerHTML = '<p>Données prêtes pour analyse (voir console).</p>';
+}
 
-    plotContainer.innerHTML = '<p>Analyse en cours, veuillez patienter...</p>';
-    tableContainer.innerHTML = '';
-
-    const formData = new FormData();
-    formData.append('user_file', userFileInput.files[0]);
-    formData.append('ref_file', refFileInput.files[0]);
-
-    // **REMPLACEZ PAR L'URL DE VOTRE API DÉPLOYÉE**
-    const API_URL = 'https://VOTRE-API-URL.a.run.app/analyse/';
-
-    try {
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            body: formData,
+function tableToData() {
+    const table = document.getElementById('habitat-table');
+    const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+    const rows = Array.from(table.querySelectorAll('tbody tr'));
+    const columns = headers.map(() => []);
+    rows.forEach(row => {
+        Array.from(row.children).forEach((cell, idx) => {
+            const txt = cell.textContent.trim();
+            if (txt) columns[idx].push(txt);
         });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'Erreur du serveur');
-        }
-
-        const results = await response.json();
-        displayPcaPlot(results);
-        displayCooccurrenceTable(results);
-
-    } catch (error) {
-        plotContainer.innerHTML = `<p style="color: red;">Erreur: ${error.message}</p>`;
-    }
+    });
+    return headers.map((h, idx) => ({ habitat: h, species: columns[idx] }));
 }
 
 function displayPcaPlot(results) {

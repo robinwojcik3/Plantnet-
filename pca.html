@@ -25,9 +25,10 @@
     #theme-toggle:hover{ transform:scale(1.1); }
     .main-content{ flex:1; padding:1.5rem; max-width:900px; width:100%; margin:0 auto; text-align:center; }
     form#pca-form { display:flex; flex-direction:column; gap:1rem; align-items:center; margin-top:1rem; }
-    form#pca-form label { font-weight:600; }
-    form#pca-form input[type="file"] { margin-top:0.3rem; }
     form#pca-form button { padding:0.6rem 1.2rem; background:var(--primary); color:#fff; border:none; border-radius:4px; cursor:pointer; }
+    #habitat-table { width:100%; table-layout:fixed; border-collapse:collapse; background:var(--card); border:1px solid var(--border); border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,.05); }
+    #habitat-table th, #habitat-table td { border:1px solid var(--border); padding:8px 6px; word-wrap:break-word; }
+    #habitat-table th { background:#f5f5f5; font-weight:600; }
   </style>
 </head>
 <body>
@@ -44,12 +45,42 @@
   <div class="main-content">
     <h1>Analyse en Composantes Principales (ACP) sur les Habitats</h1>
     <form id="pca-form">
-      <label for="user_file">Relevés à analyser (CSV):</label>
-      <input type="file" id="user_file" name="user_file" accept=".csv">
-
-      <label for="ref_file">Référence phytosociologique (CSV):</label>
-      <input type="file" id="ref_file" name="ref_file" accept=".csv">
-
+      <table id="habitat-table">
+        <thead>
+          <tr>
+            <th contenteditable="true">Habitat 1</th>
+            <th contenteditable="true">Habitat 2</th>
+            <th contenteditable="true">Habitat 3</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td contenteditable="true"></td>
+            <td contenteditable="true"></td>
+            <td contenteditable="true"></td>
+          </tr>
+          <tr>
+            <td contenteditable="true"></td>
+            <td contenteditable="true"></td>
+            <td contenteditable="true"></td>
+          </tr>
+          <tr>
+            <td contenteditable="true"></td>
+            <td contenteditable="true"></td>
+            <td contenteditable="true"></td>
+          </tr>
+          <tr>
+            <td contenteditable="true"></td>
+            <td contenteditable="true"></td>
+            <td contenteditable="true"></td>
+          </tr>
+          <tr>
+            <td contenteditable="true"></td>
+            <td contenteditable="true"></td>
+            <td contenteditable="true"></td>
+          </tr>
+        </tbody>
+      </table>
       <button type="submit">Lancer l'Analyse</button>
     </form>
     <div id="pca-plot-container"></div>
