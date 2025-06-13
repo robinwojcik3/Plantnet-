@@ -1,13 +1,13 @@
 /* ================================================================
       CONTEXTE ENVIRONNEMENTAL - Logique JavaScript
-      Refonte pour utiliser l'API Carto (REST/GeoJSON) de l'IGN
+      Approche Hybride Optimisée : Affichage WMS + Interrogation API REST
       ================================================================ */
 
 // Variables globales
-let map = null; // Carte pour la sélection du point
-let envMap = null; // Carte pour l'affichage des résultats
-let layerControl = null; // Contrôleur de couches pour la carte de résultats
-let envMarker = null; // Marqueur du point analysé
+let map = null;
+let envMap = null;
+let layerControl = null;
+let envMarker = null;
 let marker = null;
 let selectedLat = null;
 let selectedLon = null;
@@ -61,67 +61,52 @@ const SERVICES = {
 	}
 };
 
-// NOUVEAU : Configuration des couches via l'API Carto de l'IGN
-const APICARTO_LAYERS = {
-    'Natura 2000 (Habitats)': {
-        endpoint: 'https://apicarto.ign.fr/api/nature/natura-habitat',
-        style: { color: "#2E7D32", weight: 2, opacity: 0.9, fillOpacity: 0.2 },
-    },
-    'Natura 2000 (Oiseaux)': {
-        endpoint: 'https://apicarto.ign.fr/api/nature/natura-oiseaux',
-        style: { color: "#0277BD", weight: 2, opacity: 0.9, fillOpacity: 0.2 },
-    },
-    'ZNIEFF I': {
-        endpoint: 'https://apicarto.ign.fr/api/nature/znieff1',
-        style: { color: "#AFB42B", weight: 2, opacity: 0.9, fillOpacity: 0.2, dashArray: '5, 5' },
-    },
-    'ZNIEFF II': {
-        endpoint: 'https://apicarto.ign.fr/api/nature/znieff2',
-        style: { color: "#E65100", weight: 2, opacity: 0.9, fillOpacity: 0.2 },
-    },
-    'Parcs Nationaux': {
-        endpoint: 'https://apicarto.ign.fr/api/nature/pn',
-        style: { color: "#AD1457", weight: 2, opacity: 0.9, fillOpacity: 0.2 },
-    },
-    'Réserves Naturelles': {
-        endpoint: 'https://apicarto.ign.fr/api/nature/rn',
-        style: { color: "#6A1B9A", weight: 2, opacity: 0.9, fillOpacity: 0.2 },
-    }
+// Configuration des couches WMS pour l'affichage visuel
+const WMS_LAYERS = {
+    'Natura 2000 (Habitats)': { layers: "PROTECTEDAREAS.HABITAT", attribution: "IGN-Geoportail" },
+    'Natura 2000 (Oiseaux)': { layers: "PROTECTEDAREAS.BIRDS", attribution: "IGN-Geoportail" },
+    'ZNIEFF I': { layers: "PROTECTEDAREAS.ZNIEFF1", attribution: "IGN-Geoportail" },
+    'ZNIEFF II': { layers: "PROTECTEDAREAS.ZNIEFF2", attribution: "IGN-Geoportail" },
+    'Parcs Nationaux': { layers: "PROTECTEDAREAS.PN", attribution: "IGN-Geoportail" },
+    'Réserves Nat. Nationales': { layers: "PROTECTEDAREAS.RNN", attribution: "IGN-Geoportail" },
+    'Réserves Nat. Régionales': { layers: "PROTECTEDAREAS.RNR", attribution: "IGN-Geoportail" },
+    'Arrêtés Protection Biotope': { layers: "PROTECTEDAREAS.BIOTOPE", attribution: "IGN-Geoportail" },
+    'Espaces Naturels Sensibles': { layers: "PROTECTEDAREAS.ENS", attribution: "IGN-Geoportail" }
+};
+
+// Configuration des endpoints API Carto pour l'interrogation au clic
+const APICARTO_ENDPOINTS = {
+    'Natura 2000 (Habitats)': 'https://apicarto.ign.fr/api/nature/natura-habitat',
+    'Natura 2000 (Oiseaux)': 'https://apicarto.ign.fr/api/nature/natura-oiseaux',
+    'ZNIEFF I': 'https://apicarto.ign.fr/api/nature/znieff1',
+    'ZNIEFF II': 'https://apicarto.ign.fr/api/nature/znieff2',
+    'Parcs Nationaux': 'https://apicarto.ign.fr/api/nature/pn',
+    'Réserves Nat. Nationales': 'https://apicarto.ign.fr/api/nature/rn',
+    'Réserves Nat. Régionales': 'https://apicarto.ign.fr/api/nature/rn',
+    'Arrêtés Protection Biotope': 'https://apicarto.ign.fr/api/nature/biotope'
+    // Pas d'endpoint national pour les ENS dans l'API Carto Nature
 };
 
 
-// Utilitaires de conversion
-function latLonToWebMercator(lat, lon) {
-	const R = 6378137.0;
-	const x = R * (lon * Math.PI / 180);
-	const y = R * Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI / 180) / 2));
-	return { x, y };
-}
-
-// Initialisation au chargement de la page
+// --- Initialisation et logique de la page ---
 document.addEventListener('DOMContentLoaded', () => {
 	document.getElementById('use-geolocation').addEventListener('click', useGeolocation);
 	document.getElementById('choose-on-map').addEventListener('click', toggleMap);
 	document.getElementById('validate-location').addEventListener('click', validateLocation);
 	document.getElementById('search-address').addEventListener('click', searchAddress);
-	document.getElementById('address-input').addEventListener('keydown', (e) => {
-		if (e.key === 'Enter') searchAddress();
-	});
+	document.getElementById('address-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') searchAddress(); });
 });
 
-// Fonction pour utiliser la géolocalisation
 async function useGeolocation() {
 	const button = document.getElementById('use-geolocation');
 	button.disabled = true;
 	button.textContent = 'Récupération de la position...';
-	
 	if (!navigator.geolocation) {
 		showNotification('La géolocalisation n\'est pas supportée par votre navigateur', 'error');
 		button.disabled = false;
 		button.textContent = 'Utiliser ma localisation';
 		return;
 	}
-	
 	navigator.geolocation.getCurrentPosition(
 		(position) => {
 			selectedLat = position.coords.latitude;
@@ -136,29 +121,18 @@ async function useGeolocation() {
 		(error) => {
 			let message = 'Impossible de récupérer votre position';
 			switch(error.code) {
-				case error.PERMISSION_DENIED:
-					message = 'Vous avez refusé l\'accès à votre position';
-					break;
-				case error.POSITION_UNAVAILABLE:
-					message = 'Position indisponible';
-					break;
-				case error.TIMEOUT:
-					message = 'La demande de position a expiré';
-					break;
+				case error.PERMISSION_DENIED: message = 'Vous avez refusé l\'accès à votre position'; break;
+				case error.POSITION_UNAVAILABLE: message = 'Position indisponible'; break;
+				case error.TIMEOUT: message = 'La demande de position a expiré'; break;
 			}
 			showNotification(message, 'error');
 			button.disabled = false;
 			button.textContent = 'Utiliser ma localisation';
 		},
-		{
-			enableHighAccuracy: true,
-			timeout: 10000,
-			maximumAge: 0
-		}
+		{ enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
 	);
 }
 
-// Fonction pour afficher/masquer la carte de sélection
 function toggleMap() {
 	const mapContainer = document.getElementById('map-container');
 	const button = document.getElementById('choose-on-map');
@@ -173,64 +147,45 @@ function toggleMap() {
 		} else {
 			setTimeout(() => map.invalidateSize(), 100);
 		}
-		setTimeout(() => {
-			instruction.style.display = 'none';
-		}, 3000);
+		setTimeout(() => { instruction.style.display = 'none'; }, 3000);
 	} else {
 		mapContainer.style.display = 'none';
 		button.textContent = 'Ouvrir la carte';
 	}
 }
 
-// Initialisation de la carte de sélection Leaflet
 function initializeMap() {
-	const defaultLat = 45.188529;
-	const defaultLon = 5.724524;
-	map = L.map('map').setView([defaultLat, defaultLon], 13);
+	map = L.map('map').setView([45.188529, 5.724524], 13);
 	L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 		attribution: '© OpenStreetMap contributors',
 		maxZoom: 19
 	}).addTo(map);
 	
-	let pressTimer;
-	let isPressing = false;
-	
 	function selectPoint(e) {
-		const lat = e.latlng.lat;
-		const lon = e.latlng.lng;
+		const { lat, lng } = e.latlng;
 		if (marker) map.removeLayer(marker);
-		marker = L.marker([lat, lon]).addTo(map);
+		marker = L.marker([lat, lng]).addTo(map);
 		selectedLat = lat;
-		selectedLon = lon;
+		selectedLon = lng;
 		document.getElementById('coordinates-display').style.display = 'block';
-		document.getElementById('selected-coords').textContent = `${lat.toFixed(6)}°, ${lon.toFixed(6)}°`;
+		document.getElementById('selected-coords').textContent = `${lat.toFixed(6)}°, ${lng.toFixed(6)}°`;
 		document.getElementById('validate-location').style.display = 'block';
 	}
 	
-	map.on('mousedown', (e) => { isPressing = true; pressTimer = setTimeout(() => { if (isPressing) selectPoint(e); }, 500); });
-	map.on('mouseup', () => { isPressing = false; clearTimeout(pressTimer); });
-	map.on('mousemove', () => { if (isPressing) { isPressing = false; clearTimeout(pressTimer); }});
-	map.on('touchstart', (e) => { isPressing = true; pressTimer = setTimeout(() => { if (isPressing) selectPoint(e); }, 500); });
-	map.on('touchend', () => { isPressing = false; clearTimeout(pressTimer); });
-	map.on('touchmove', () => { if (isPressing) { isPressing = false; clearTimeout(pressTimer); }});
+	let pressTimer;
+	map.on('mousedown', (e) => { pressTimer = setTimeout(() => selectPoint(e), 500); });
+	map.on('mouseup', () => clearTimeout(pressTimer));
 	map.on('contextmenu', (e) => { e.originalEvent.preventDefault(); selectPoint(e); });
 }
 
-// Fonction pour valider la localisation sélectionnée sur la carte
 function validateLocation() {
-	if (selectedLat && selectedLon) {
-		showResults();
-	}
+	if (selectedLat && selectedLon) showResults();
 }
 
-// Fonction pour rechercher une adresse
 async function searchAddress() {
 	const input = document.getElementById('address-input');
 	const address = input.value.trim();
-	if (!address) {
-		showNotification('Veuillez entrer une adresse', 'error');
-		return;
-	}
+	if (!address) return showNotification('Veuillez entrer une adresse', 'error');
 
 	const button = document.getElementById('search-address');
 	button.disabled = true;
@@ -240,10 +195,8 @@ async function searchAddress() {
 		const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
 		if (!resp.ok) throw new Error('Service indisponible');
 		const data = await resp.json();
-		if (!data.length) {
-			showNotification('Adresse introuvable', 'error');
-			return;
-		}
+		if (!data.length) throw new Error('Adresse introuvable');
+		
 		selectedLat = parseFloat(data[0].lat);
 		selectedLon = parseFloat(data[0].lon);
 		document.getElementById('coordinates-display').style.display = 'block';
@@ -251,23 +204,18 @@ async function searchAddress() {
 		document.getElementById('validate-location').style.display = 'block';
 		showResults();
 	} catch (err) {
-		showNotification('Erreur pendant la recherche', 'error');
+		showNotification(err.message, 'error');
 	} finally {
 		button.disabled = false;
 		button.textContent = 'Rechercher';
 	}
 }
 
-// Fonction principale pour afficher les résultats
 function showResults() {
-	if (!selectedLat || !selectedLon) {
-		showNotification('Aucune localisation sélectionnée', 'error');
-		return;
-	}
-	
+	if (!selectedLat || !selectedLon) return;
 	const loading = document.getElementById('loading');
 	loading.style.display = 'block';
-	loading.textContent = 'Préparation des liens...';
+	loading.textContent = 'Préparation...';
 	
 	setTimeout(() => {
 		loading.style.display = 'none';
@@ -276,117 +224,145 @@ function showResults() {
 		const resultsGrid = document.getElementById('results-grid');
 		resultsGrid.innerHTML = '';
 		
-		Object.keys(SERVICES).forEach(serviceKey => {
-			const service = SERVICES[serviceKey];
-			const url = service.buildUrl(selectedLat, selectedLon);
+		Object.keys(SERVICES).forEach(key => {
+			const s = SERVICES[key];
 			const card = document.createElement('div');
 			card.className = 'result-card';
-			card.innerHTML = `<h3>${service.name}</h3><p>${service.description}</p><a href="${url}" target="_blank" rel="noopener noreferrer">Ouvrir dans un nouvel onglet →</a>`;
+			card.innerHTML = `<h3>${s.name}</h3><p>${s.description}</p><a href="${s.buildUrl(selectedLat, selectedLon)}" target="_blank" rel="noopener noreferrer">Ouvrir dans un nouvel onglet →</a>`;
 			resultsGrid.appendChild(card);
 		});
 
-		displayInteractiveEnvMap();
+		displayHybridEnvMap();
 		resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 	}, 500);
 }
 
-/**
- * NOUVELLE FONCTION : Affiche la carte interactive avec les couches GeoJSON
- * récupérées depuis l'API Carto de l'IGN.
- */
-async function displayInteractiveEnvMap() {
+function displayHybridEnvMap() {
     const mapDiv = document.getElementById('env-map');
     mapDiv.style.display = 'block';
-    document.getElementById('layer-controls').style.display = 'none'; // On n'utilise plus les contrôles manuels
+    document.getElementById('layer-controls').innerHTML = '';
 
-    // Initialisation ou réinitialisation de la carte
     if (!envMap) {
-        envMap = L.map('env-map').setView([selectedLat, selectedLon], 11);
+        envMap = L.map('env-map').setView([selectedLat, selectedLon], 9);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors',
-            maxZoom: 19
+            attribution: '© OpenStreetMap contributors', maxZoom: 19
         }).addTo(envMap);
     } else {
-        envMap.setView([selectedLat, selectedLon], 11);
-        if (layerControl) envMap.removeControl(layerControl); // Supprime l'ancien contrôle de couches
-        envMap.eachLayer(layer => { // Supprime les anciennes couches GeoJSON
-            if (layer instanceof L.GeoJSON) envMap.removeLayer(layer);
+        envMap.setView([selectedLat, selectedLon], 9);
+        if (layerControl) envMap.removeControl(layerControl);
+    }
+    
+    const wmsOverlays = {};
+    Object.entries(WMS_LAYERS).forEach(([name, config]) => {
+        wmsOverlays[name] = L.tileLayer.wms("/api/wms/inpn", {
+            layers: config.layers,
+            format: 'image/png',
+            transparent: true,
+            attribution: config.attribution
         });
+    });
+
+    layerControl = L.control.layers(null, wmsOverlays, { collapsed: false }).addTo(envMap);
+    envMap.off('click').on('click', handleMapClick);
+}
+
+async function handleMapClick(e) {
+    const { lat, lng } = e.latlng;
+    const popup = L.popup().setLatLng(e.latlng).setContent('<p>Analyse des couches en cours...</p>').openOn(envMap);
+
+    let finalContent = '<h4>Données au point cliqué</h4>';
+    let resultsFound = false;
+
+    const activeLayers = [];
+    envMap.eachLayer(layer => {
+        if (layer.wmsParams) {
+           for(const name in layerControl._layers) {
+               if(layerControl._layers[name].layer === layer) {
+                   activeLayers.push(name);
+                   break;
+               }
+           }
+        }
+    });
+
+    if (activeLayers.length === 0) {
+        popup.setContent("<p>Aucune couche n'est activée.</p>");
+        return;
     }
 
-    // Ajoute un marqueur pour le point analysé
-    if (envMarker) envMap.removeLayer(envMarker);
-    envMarker = L.marker([selectedLat, selectedLon]).addTo(envMap)
-      .bindPopup("Point d'analyse").openPopup();
+    const promises = activeLayers.map(async (layerName) => {
+        const endpoint = APICARTO_ENDPOINTS[layerName];
+        if (!endpoint) {
+             console.log(`Pas d'API de détail pour la couche : ${layerName}`);
+             return;
+        }
 
-    // Initialise le nouveau contrôle de couches
-    const overlayMaps = {};
-    layerControl = L.control.layers(null, overlayMaps, { collapsed: false }).addTo(envMap);
+        try {
+            const url = `${endpoint}?lon=${lng}&lat=${lat}`;
+            const response = await fetch(url);
+            if (!response.ok) return;
+            const geojsonData = await response.json();
 
-    const loading = document.getElementById('loading');
-    loading.style.display = 'block';
-    loading.textContent = 'Chargement des couches environnementales...';
-    
-    // Lance tous les appels API en parallèle
-    const promises = Object.entries(APICARTO_LAYERS).map(([name, config]) => 
-        fetchAndDisplayApiLayer(name, config, selectedLat, selectedLon)
-    );
+            if (geojsonData.features.length > 0) {
+                resultsFound = true;
+                finalContent += `<h5>${layerName}</h5>`;
+                geojsonData.features.forEach(feature => {
+                    const info = getFeatureInfo(feature.properties);
+                    const inpnUrl = buildInpnUrl(info, layerName);
+                    finalContent += `<div class="popup-item">`;
+                    if(info.name) finalContent += `<p class="site-name">${info.name}</p>`;
+                    if(inpnUrl) finalContent += `<a href="${inpnUrl}" target="_blank" class="site-link">Voulez-vous ouvrir la page ?</a>`;
+                    finalContent += `</div>`;
+                });
+            }
+        } catch (error) { console.error(`Erreur API pour ${layerName}:`, error); }
+    });
 
     await Promise.all(promises);
-    loading.style.display = 'none';
+    popup.setContent(resultsFound ? finalContent : "<p>Aucune donnée de zone protégée trouvée ici pour les couches actives.</p>");
 }
 
-/**
- * NOUVELLE FONCTION : Récupère une couche de données depuis l'API Carto et l'ajoute à la carte.
- * @param {string} name - Nom de la couche pour l'affichage.
- * @param {object} config - Configuration de la couche (endpoint, style).
- * @param {number} lat - Latitude du point d'interrogation.
- * @param {number} lon - Longitude du point d'interrogation.
- */
-async function fetchAndDisplayApiLayer(name, config, lat, lon) {
-    try {
-        const url = `${config.endpoint}?lon=${lon}&lat=${lat}`;
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`Réponse réseau non OK: ${response.statusText}`);
-        }
-        const geojsonData = await response.json();
+function getFeatureInfo(properties) {
+    const nameKeys = ['nom_site', 'nom', 'libelle', 'site_name'];
+    const idKeys = ['id_site', 'id_inspire', 'inpn_id', 'id'];
+    let name = 'Non spécifié';
+    let id = null;
 
-        if (geojsonData && geojsonData.features && geojsonData.features.length > 0) {
-            const geoJsonLayer = L.geoJSON(geojsonData, {
-                style: config.style,
-                onEachFeature: (feature, layer) => {
-                    let popupContent = `<h4>${name}</h4>`;
-                    if (feature.properties) {
-                        popupContent += '<ul style="padding-left: 15px; margin: 0;">';
-                        for (const key in feature.properties) {
-                            popupContent += `<li><strong>${key}:</strong> ${feature.properties[key]}</li>`;
-                        }
-                        popupContent += '</ul>';
-                    }
-                    layer.bindPopup(popupContent);
-                }
-            });
-            // Ajoute la couche au contrôleur
-            layerControl.addOverlay(geoJsonLayer, name);
-        } else {
-            console.log(`Aucune donnée de type "${name}" trouvée pour ce point.`);
-        }
-    } catch (error) {
-        console.error(`Erreur lors du chargement de la couche ${name}:`, error);
+    for (const key of nameKeys) {
+        if (properties[key]) { name = properties[key]; break; }
     }
+    for (const key of idKeys) {
+        if (properties[key]) { id = properties[key]; break; }
+    }
+    return { name, id };
 }
 
-// Fonction de notification générique
+function buildInpnUrl(info, layerName) {
+    if (!info.id) return null;
+    const ln = layerName.toLowerCase();
+    
+    if (ln.includes('natura')) return `https://inpn.mnhn.fr/site/natura2000/${info.id}`;
+    if (ln.includes('znieff')) return `https://inpn.mnhn.fr/zone/znieff/${info.id}`;
+    if (ln.includes('réserve') || ln.includes('parc') || ln.includes('biotope')) return `https://inpn.mnhn.fr/espace/protege/${info.id}`;
+    
+    return null;
+}
+
 function showNotification(message, type = 'info') {
 	console.log(`Notification (${type}): ${message}`);
 	alert(message); 
 }
 
-// Gestionnaire pour le retour à la page d'accueil
 window.addEventListener('pageshow', (event) => {
 	if (event.persisted) {
 		document.getElementById('use-geolocation').disabled = false;
 		document.getElementById('use-geolocation').textContent = 'Utiliser ma localisation';
 	}
 });
+
+function latLonToWebMercator(lat, lon) {
+	const R = 6378137.0;
+	const x = R * (lon * Math.PI / 180);
+	const y = R * Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI / 180) / 2));
+	return { x, y };
+}
