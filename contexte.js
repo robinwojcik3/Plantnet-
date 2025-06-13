@@ -60,7 +60,7 @@ const SERVICES = {
 	}
 };
 
-// Configuration des couches WMS pour l'affichage visuel
+// MODIFICATION : Configuration des couches WMS pour l'affichage visuel
 const WMS_LAYERS = {
     'Natura 2000 (Habitats)': { layers: "PROTECTEDAREAS.HABITAT", attribution: "IGN-Geoportail" },
     'Natura 2000 (Oiseaux)': { layers: "PROTECTEDAREAS.BIRDS", attribution: "IGN-Geoportail" },
@@ -73,7 +73,7 @@ const WMS_LAYERS = {
     'Espaces Naturels Sensibles': { layers: "PROTECTEDAREAS.ENS", attribution: "IGN-Geoportail" }
 };
 
-// Configuration des endpoints API Carto pour l'interrogation au clic
+// MODIFICATION : Configuration des endpoints API Carto pour l'interrogation au clic
 const APICARTO_ENDPOINTS = {
     'Natura 2000 (Habitats)': 'https://apicarto.ign.fr/api/nature/natura-habitat',
     'Natura 2000 (Oiseaux)': 'https://apicarto.ign.fr/api/nature/natura-oiseaux',
@@ -83,18 +83,30 @@ const APICARTO_ENDPOINTS = {
     'Réserves Nat. Nationales': 'https://apicarto.ign.fr/api/nature/rn',
     'Réserves Nat. Régionales': 'https://apicarto.ign.fr/api/nature/rn',
     'Arrêtés Protection Biotope': 'https://apicarto.ign.fr/api/nature/biotope'
-    // Pas d'endpoint national pour les ENS dans l'API Carto Nature
+    // Pas d'endpoint national pour les ENS dans l'API Carto Nature, l'interaction au clic ne sera pas disponible pour cette couche.
 };
 
-// --- Initialisation et logique de la page ---
+
+// Utilitaires de conversion (inchangé)
+function latLonToWebMercator(lat, lon) {
+	const R = 6378137.0;
+	const x = R * (lon * Math.PI / 180);
+	const y = R * Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI / 180) / 2));
+	return { x, y };
+}
+
+// Initialisation au chargement de la page (inchangé)
 document.addEventListener('DOMContentLoaded', () => {
 	document.getElementById('use-geolocation').addEventListener('click', useGeolocation);
 	document.getElementById('choose-on-map').addEventListener('click', toggleMap);
 	document.getElementById('validate-location').addEventListener('click', validateLocation);
 	document.getElementById('search-address').addEventListener('click', searchAddress);
-	document.getElementById('address-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') searchAddress(); });
+	document.getElementById('address-input').addEventListener('keydown', (e) => {
+		if (e.key === 'Enter') searchAddress();
+	});
 });
 
+// Logique de sélection de la localisation (inchangée)
 async function useGeolocation() {
 	const button = document.getElementById('use-geolocation');
 	button.disabled = true;
@@ -135,7 +147,6 @@ function toggleMap() {
 	const mapContainer = document.getElementById('map-container');
 	const button = document.getElementById('choose-on-map');
 	const instruction = document.getElementById('map-instruction');
-	
 	if (mapContainer.style.display === 'none' || !mapContainer.style.display) {
 		mapContainer.style.display = 'block';
 		instruction.style.display = 'block';
@@ -155,10 +166,8 @@ function toggleMap() {
 function initializeMap() {
 	map = L.map('map').setView([45.188529, 5.724524], 13);
 	L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-		attribution: '© OpenStreetMap contributors',
-		maxZoom: 19
+		attribution: '© OpenStreetMap contributors', maxZoom: 19
 	}).addTo(map);
-	
 	function selectPoint(e) {
 		const { lat, lng } = e.latlng;
 		if (marker) map.removeLayer(marker);
@@ -169,10 +178,14 @@ function initializeMap() {
 		document.getElementById('selected-coords').textContent = `${lat.toFixed(6)}°, ${lng.toFixed(6)}°`;
 		document.getElementById('validate-location').style.display = 'block';
 	}
-	
 	let pressTimer;
-    map.on('mousedown', (e) => { pressTimer = setTimeout(() => { if(e.originalEvent.button === 0) selectPoint(e); }, 500); });
-    map.on('mouseup', () => clearTimeout(pressTimer));
+	let isPressing = false;
+	map.on('mousedown', (e) => { isPressing = true; pressTimer = setTimeout(() => { if (isPressing) selectPoint(e); }, 500); });
+	map.on('mouseup', () => { isPressing = false; clearTimeout(pressTimer); });
+	map.on('mousemove', () => { if (isPressing) { isPressing = false; clearTimeout(pressTimer); }});
+	map.on('touchstart', (e) => { isPressing = true; pressTimer = setTimeout(() => { if (isPressing) selectPoint(e); }, 500); });
+	map.on('touchend', () => { isPressing = false; clearTimeout(pressTimer); });
+	map.on('touchmove', () => { if (isPressing) { isPressing = false; clearTimeout(pressTimer); }});
 	map.on('contextmenu', (e) => { e.originalEvent.preventDefault(); selectPoint(e); });
 }
 
@@ -184,17 +197,14 @@ async function searchAddress() {
 	const input = document.getElementById('address-input');
 	const address = input.value.trim();
 	if (!address) return showNotification('Veuillez entrer une adresse', 'error');
-
 	const button = document.getElementById('search-address');
 	button.disabled = true;
 	button.textContent = 'Recherche en cours...';
-
 	try {
 		const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
 		if (!resp.ok) throw new Error('Service indisponible');
 		const data = await resp.json();
 		if (!data.length) throw new Error('Adresse introuvable');
-		
 		selectedLat = parseFloat(data[0].lat);
 		selectedLon = parseFloat(data[0].lon);
 		document.getElementById('coordinates-display').style.display = 'block';
@@ -209,11 +219,15 @@ async function searchAddress() {
 	}
 }
 
+// Fonction pour afficher les résultats (inchangée)
 function showResults() {
-	if (!selectedLat || !selectedLon) return;
+	if (!selectedLat || !selectedLon) {
+		showNotification('Aucune localisation sélectionnée', 'error');
+		return;
+	}
 	const loading = document.getElementById('loading');
 	loading.style.display = 'block';
-	loading.textContent = 'Préparation...';
+	loading.textContent = 'Préparation des liens...';
 	
 	setTimeout(() => {
 		loading.style.display = 'none';
@@ -221,24 +235,24 @@ function showResults() {
 		resultsSection.style.display = 'block';
 		const resultsGrid = document.getElementById('results-grid');
 		resultsGrid.innerHTML = '';
-		
-		Object.keys(SERVICES).forEach(key => {
-			const s = SERVICES[key];
+		Object.keys(SERVICES).forEach(serviceKey => {
+			const service = SERVICES[serviceKey];
+			const url = service.buildUrl(selectedLat, selectedLon);
 			const card = document.createElement('div');
 			card.className = 'result-card';
-			card.innerHTML = `<h3>${s.name}</h3><p>${s.description}</p><a href="${s.buildUrl(selectedLat, selectedLon)}" target="_blank" rel="noopener noreferrer">Ouvrir dans un nouvel onglet →</a>`;
+			card.innerHTML = `<h3>${service.name}</h3><p>${service.description}</p><a href="${url}" target="_blank" rel="noopener noreferrer">Ouvrir dans un nouvel onglet →</a>`;
 			resultsGrid.appendChild(card);
 		});
-
-		displayHybridEnvMap();
+		displayEnvMap();
 		resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 	}, 500);
 }
 
-function displayHybridEnvMap() {
+// MODIFICATION : Remplacement de l'ancienne fonction par la logique hybride
+function displayEnvMap() {
     const mapDiv = document.getElementById('env-map');
     mapDiv.style.display = 'block';
-    document.getElementById('layer-controls').innerHTML = '';
+    document.getElementById('layer-controls').innerHTML = ''; // Vide le conteneur des anciens contrôles manuels
 
     if (!envMap) {
         envMap = L.map('env-map').setView([selectedLat, selectedLon], 9);
@@ -247,7 +261,9 @@ function displayHybridEnvMap() {
         }).addTo(envMap);
     } else {
         envMap.setView([selectedLat, selectedLon], 9);
-        if (layerControl) envMap.removeControl(layerControl);
+        if (layerControl) {
+            envMap.removeControl(layerControl);
+        }
     }
     
     const wmsOverlays = {};
@@ -256,14 +272,19 @@ function displayHybridEnvMap() {
             layers: config.layers,
             format: 'image/png',
             transparent: true,
-            attribution: config.attribution
+            attribution: config.attribution,
+            version: '1.3.0'
         });
     });
 
+    // Utilise le contrôleur de couches natif de Leaflet
     layerControl = L.control.layers(null, wmsOverlays, { collapsed: false }).addTo(envMap);
+    
+    // Attache l'événement de clic à la carte
     envMap.off('click').on('click', handleMapClick);
 }
 
+// NOUVEAU : Logique de gestion du clic sur la carte
 async function handleMapClick(e) {
     const { lat, lng } = e.latlng;
     const popup = L.popup().setLatLng(e.latlng).setContent('<p>Analyse des couches en cours...</p>').openOn(envMap);
@@ -272,19 +293,17 @@ async function handleMapClick(e) {
     let resultsFound = false;
 
     const activeLayers = [];
-    envMap.eachLayer(layer => {
-        if (layer.wmsParams) {
-           for(const name in layerControl._layers) {
-               if(layerControl._layers[name].layer === layer) {
-                   activeLayers.push(name);
-                   break;
-               }
-           }
+    if (layerControl) {
+        for(const name in layerControl._layers) {
+            const layer = layerControl._layers[name];
+            if (envMap.hasLayer(layer.layer)) {
+                activeLayers.push(layer.name);
+            }
         }
-    });
+    }
 
     if (activeLayers.length === 0) {
-        popup.setContent("<p>Aucune couche n'est activée.</p>");
+        popup.setContent("<p>Aucune couche n'est activée. Cochez une ou plusieurs couches pour l'analyse.</p>");
         return;
     }
 
@@ -321,6 +340,7 @@ async function handleMapClick(e) {
     popup.setContent(resultsFound ? finalContent : "<p>Aucune donnée de zone protégée trouvée ici pour les couches actives.</p>");
 }
 
+// NOUVEAU : Fonctions utilitaires pour les popups
 function getFeatureInfo(properties) {
     const nameKeys = ['nom_site', 'nom', 'libelle', 'site_name'];
     const idKeys = ['id_site', 'id_inspire', 'inpn_id', 'id'];
@@ -347,21 +367,16 @@ function buildInpnUrl(info, layerName) {
     return null;
 }
 
+// Fonction de notification (inchangée)
 function showNotification(message, type = 'info') {
 	console.log(`Notification (${type}): ${message}`);
 	alert(message); 
 }
 
+// Gestionnaire de page (inchangé)
 window.addEventListener('pageshow', (event) => {
 	if (event.persisted) {
 		document.getElementById('use-geolocation').disabled = false;
 		document.getElementById('use-geolocation').textContent = 'Utiliser ma localisation';
 	}
 });
-
-function latLonToWebMercator(lat, lon) {
-	const R = 6378137.0;
-	const x = R * (lon * Math.PI / 180);
-	const y = R * Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI / 180) / 2));
-	return { x, y };
-}
