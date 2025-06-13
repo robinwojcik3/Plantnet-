@@ -7,12 +7,11 @@
 let map = null;
 let envMap = null;
 let layerControl = null;
-let envMarker = null;
 let marker = null;
 let selectedLat = null;
 let selectedLon = null;
 
-// Configuration des services externes (liens)
+// Configuration des services externes
 const SERVICES = {
 	arcgis: {
 		name: "ArcGIS - Carte de la végétation",
@@ -86,7 +85,6 @@ const APICARTO_ENDPOINTS = {
     'Arrêtés Protection Biotope': 'https://apicarto.ign.fr/api/nature/biotope'
     // Pas d'endpoint national pour les ENS dans l'API Carto Nature
 };
-
 
 // --- Initialisation et logique de la page ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -173,8 +171,8 @@ function initializeMap() {
 	}
 	
 	let pressTimer;
-	map.on('mousedown', (e) => { pressTimer = setTimeout(() => selectPoint(e), 500); });
-	map.on('mouseup', () => clearTimeout(pressTimer));
+    map.on('mousedown', (e) => { pressTimer = setTimeout(() => { if(e.originalEvent.button === 0) selectPoint(e); }, 500); });
+    map.on('mouseup', () => clearTimeout(pressTimer));
 	map.on('contextmenu', (e) => { e.originalEvent.preventDefault(); selectPoint(e); });
 }
 
