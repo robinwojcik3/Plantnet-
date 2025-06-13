@@ -1020,3 +1020,11 @@ with tab_pca:
     else:
         st.info("Variance expliquée par la PCA non disponible.")
 
+    if not coords_df.empty:
+        coords_df["Espece"] = df_pca["Espece"].iloc[:len(coords_df)]
+        fig_proj = px.scatter(coords_df, x="PC1", y="PC2", text="Espece", hover_name="Espece", template="plotly_white")
+        fig_proj.update_traces(marker=dict(size=8, opacity=0.8))
+        fig_proj.update_layout(title="Projection des espèces (PC1 vs PC2)", title_x=0.5, xaxis_title="PC1", yaxis_title="PC2")
+        st.plotly_chart(fig_proj, use_container_width=True)
+    else:
+        st.info("Résultats PCA insuffisants pour la projection des espèces.")
