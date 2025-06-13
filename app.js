@@ -757,63 +757,6 @@ const nameSearchInput = document.getElementById("name-search-input");
 const nameSearchButton = document.getElementById("name-search-button");
 const speciesSuggestions = document.getElementById("species-suggestions");
 
-const performNameSearch = async () => {
-  const raw = nameSearchInput.value.trim();
-  if (!raw) return;
-  await loadData();
-  const queries = raw.split(/[;,\n]+/).map(q => q.trim()).filter(Boolean);
-  if (queries.length === 1 && queries[0].split(/\s+/).length === 1) {
-    const q = queries[0];
-    const tocEntry = floraToc[norm(q)];
-    if (tocEntry && tocEntry.pdfFile && tocEntry.page) {
-      sessionStorage.setItem("speciesQueryNames", JSON.stringify([q]));
-      ["photoData", "identificationResults"].forEach(k => sessionStorage.removeItem(k));
-      location.href = "organ.html";
-    } else {
-      showNotification(`Genre "${q}" non trouvé.`, "error");
-    }
-    return;
-  }
-  const found = [];
-  for (const q of queries) {
-    const normQuery = norm(q);
-    let foundName = taxrefNames.find(n => norm(n) === normQuery);
-    if (!foundName) {
-      const triList = trigramIndex[normQuery];
-      if (triList && triList.length === 1) {
-        foundName = triList[0];
-      } else {
-        const partial = taxrefNames.filter(n => {
-          const nk = norm(n);
-          return nk.startsWith(normQuery) || (nameTrigram[n] && nameTrigram[n].startsWith(normQuery));
-        });
-        if (partial.length === 1) foundName = partial[0];
-      }
-      if (!foundName) {
-        const matches = await taxrefFuzzyMatch(q);
-        if (matches.length) {
-          const best = matches[0];
-          foundName = best.nom_complet || best.name || best.nom;
-          const sc = best.score !== undefined ? ` (${Math.round(best.score * 100)}%)` : '';
-          showNotification(`Suggestion : ${foundName}${sc}`, 'success');
-        }
-      }
-    }
-    if (foundName) {
-      found.push(foundName);
-    } else {
-      showNotification(`Espèce "${q}" non trouvée.`, "error");
-    }
-  }
-  if (found.length) {
-    sessionStorage.setItem("speciesQueryNames", JSON.stringify(found));
-    ["photoData", "identificationResults"].forEach(k => sessionStorage.removeItem(k));
-    location.href = "organ.html";
-  }
-};
-if (nameSearchButton) nameSearchButton.addEventListener("click", performNameSearch);
-if (nameSearchInput) nameSearchInput.addEventListener("keypress", e => { if (e.key === "Enter") performNameSearch(); });
-
 if (document.getElementById("file-capture")) {
   const fileCaptureInput = document.getElementById("file-capture");
   const multiFileInput = document.getElementById("multi-file-input");
@@ -827,6 +770,62 @@ if (document.getElementById("file-capture")) {
       if (f) handleSingleFileSelect(f);
     });
   }
+  const performNameSearch = async () => {
+    const raw = nameSearchInput.value.trim();
+    if (!raw) return;
+    await loadData();
+    const queries = raw.split(/[;,\n]+/).map(q => q.trim()).filter(Boolean);
+    if (queries.length === 1 && queries[0].split(/\s+/).length === 1) {
+      const q = queries[0];
+      const tocEntry = floraToc[norm(q)];
+      if (tocEntry && tocEntry.pdfFile && tocEntry.page) {
+        sessionStorage.setItem("speciesQueryNames", JSON.stringify([q]));
+        ["photoData", "identificationResults"].forEach(k => sessionStorage.removeItem(k));
+        location.href = "organ.html";
+      } else {
+        showNotification(`Genre "${q}" non trouvé.`, "error");
+      }
+      return;
+    }
+    const found = [];
+    for (const q of queries) {
+      const normQuery = norm(q);
+      let foundName = taxrefNames.find(n => norm(n) === normQuery);
+      if (!foundName) {
+        const triList = trigramIndex[normQuery];
+        if (triList && triList.length === 1) {
+          foundName = triList[0];
+        } else {
+          const partial = taxrefNames.filter(n => {
+            const nk = norm(n);
+            return nk.startsWith(normQuery) || (nameTrigram[n] && nameTrigram[n].startsWith(normQuery));
+          });
+          if (partial.length === 1) foundName = partial[0];
+        }
+        if (!foundName) {
+          const matches = await taxrefFuzzyMatch(q);
+          if (matches.length) {
+            const best = matches[0];
+            foundName = best.nom_complet || best.name || best.nom;
+            const sc = best.score !== undefined ? ` (${Math.round(best.score * 100)}%)` : '';
+            showNotification(`Suggestion : ${foundName}${sc}`, 'success');
+          }
+        }
+      }
+      if (foundName) {
+        found.push(foundName);
+      } else {
+        showNotification(`Espèce "${q}" non trouvée.`, "error");
+      }
+    }
+    if (found.length) {
+      sessionStorage.setItem("speciesQueryNames", JSON.stringify(found));
+      ["photoData", "identificationResults"].forEach(k => sessionStorage.removeItem(k));
+      location.href = "organ.html";
+    }
+  };
+  if (nameSearchButton) nameSearchButton.addEventListener("click", performNameSearch);
+  if (nameSearchInput) nameSearchInput.addEventListener("keypress", e => { if (e.key === "Enter") performNameSearch(); });
   function renderMultiImageList() {
     multiImageListArea.innerHTML = '';
     multiImageIdentifyButton.style.display = selectedMultiFilesData.length > 0 ? 'block' : 'none';

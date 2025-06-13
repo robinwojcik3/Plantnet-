@@ -68,9 +68,6 @@
     }
     img.small-logo { height: 24px; width: auto; }
 
-    .search-inline{display:flex;gap:.5rem;align-items:center;}
-    .search-inline input[type="search"]{flex-grow:1;padding:10px;border:1px solid var(--border);border-radius:6px;font-size:1rem;margin:0;background-color:#fff;}
-    
     .info-panel{display:none;padding:1rem;background:var(--card);border:1px solid var(--border);border-radius:6px;margin-top:1rem;}
 
     #similar-btn-area { text-align: center; margin-top: 0; }
@@ -104,16 +101,11 @@
     #theme-toggle:hover{transform:scale(1.1);}
   </style>
 </head>
-  <body class="home">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;">
-      <h1 style="margin:0">Plante App</h1>
-      <div class="search-inline" style="max-width:450px;flex-grow:1;">
-        <input type="search" id="name-search-input" placeholder="Nom d'espèce ou de genre" list="species-suggestions">
-        <datalist id="species-suggestions"></datalist>
-        <button type="button" id="name-search-button" class="action-button">Rechercher</button>
-      </div>
-      <button id="theme-toggle" title="Basculer le thème">🌙</button>
-    </div>
+<body class="home">
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <h1 style="margin:0">Plante App</h1>
+    <button id="theme-toggle" title="Basculer le thème">🌙</button>
+  </div>
   <img id="preview" alt="Prévisualisation">
   <div id="organ-choice">
     <p>Quelle partie de la plante est photographiée&nbsp;?</p>
