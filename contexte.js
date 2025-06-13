@@ -61,7 +61,7 @@ const SERVICES = {
 
 // =================================================================
 // SECTION CORRIGÉE : Couches WMS pour affichage direct sur la carte
-// Les URL et noms de couches ont été mis à jour.
+// Les URL et noms de couches ont été mis à jour conformément à la documentation.
 // =================================================================
 const ENV_WMS_LAYERS = [
     {
