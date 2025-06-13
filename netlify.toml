@@ -1,21 +1,34 @@
-# Fichier de configuration pour Netlify
+# Fichier : netlify.toml
 
-# Section principale pour le 'build' de votre site
+# =================================================================
+# Configuration du build et des fonctions
+# =================================================================
 [build]
-  # Le dossier contenant les fonctions serverless
-  functions = "netlify/functions/"
-  # Le dossier à publier pour le site statique (la racine dans votre cas)
+  # Commande à exécuter pour installer les dépendances (comme node-fetch)
+  command = "npm install"
+  # Dossier contenant les fonctions serverless
+  functions = "netlify/functions"
+  # Dossier racine du site à publier
   publish = "."
 
-# Section pour configurer spécifiquement les fonctions
+[build.environment]
+  # Conserve la version de Python que vous aviez spécifiée
+  PYTHON_VERSION = "3.11"
+
 [functions]
-  # Cette directive est cruciale. Elle force Netlify à inclure 
-  # le dossier contenant vos PDF dans le paquet de la fonction.
-  # "/**" signifie "tous les fichiers et sous-dossiers à l'intérieur".
+  # Conserve l'inclusion de vos fichiers PDF pour d'autres fonctions
   included_files = ["netlify/functions/flora_gallica_pdfs/**"]
 
-# Section pour définir l'environnement de build
-[build.environment]
-  # Spécifie explicitement la version de Python à utiliser pour éviter 
-  # toute incompatibilité.
-  PYTHON_VERSION = "3.11"
+# =================================================================
+# NOUVEAU : Règle de redirection pour le proxy WMS
+# Cette section est essentielle pour que les couches de la carte fonctionnent.
+# =================================================================
+[[redirects]]
+  # Intercepte toutes les requêtes faites depuis le navigateur vers /api/wms/inpn
+  from = "/api/wms/inpn"
+  # Les redirige vers la fonction serverless inpn-proxy
+  to = "/.netlify/functions/inpn-proxy"
+  # Répond avec un statut 200 (succès) pour masquer la redirection
+  status = 200
+  # Force l'application de cette règle
+  force = true
