@@ -1,11 +1,39 @@
 // Frontend logic for PCA Habitat module - connects to the FastAPI backend
 
 document.addEventListener('DOMContentLoaded', () => {
+    createHabitatTable(20, 50);
     const form = document.getElementById('pca-form');
     if (form) {
         form.addEventListener('submit', handleAnalysis);
     }
 });
+
+function createHabitatTable(cols, rows) {
+    const table = document.getElementById('habitat-table');
+    const thead = table.querySelector('thead');
+    const tbody = table.querySelector('tbody');
+    thead.innerHTML = '';
+    tbody.innerHTML = '';
+
+    const headerRow = document.createElement('tr');
+    for (let c = 1; c <= cols; c++) {
+        const th = document.createElement('th');
+        th.contentEditable = true;
+        th.textContent = `Habitat ${c}`;
+        headerRow.appendChild(th);
+    }
+    thead.appendChild(headerRow);
+
+    for (let r = 0; r < rows; r++) {
+        const tr = document.createElement('tr');
+        for (let c = 0; c < cols; c++) {
+            const td = document.createElement('td');
+            td.contentEditable = true;
+            tr.appendChild(td);
+        }
+        tbody.appendChild(tr);
+    }
+}
 
 async function handleAnalysis(event) {
     event.preventDefault();
