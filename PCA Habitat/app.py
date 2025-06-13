@@ -1000,3 +1000,23 @@ with tab_pca:
 
     with st.expander("Aperçu des données utilisées"):
         st.dataframe(df_pca, use_container_width=True)
+
+    # ------------------------------------------------------------
+    # Étape 3 : Exécution de l'analyse et affichage des résultats
+    # de base conformément au PLAN.md
+    # ------------------------------------------------------------
+    labels_pca, pca_obj, coords_array, _ = core.analyse(df_pca, n_clusters=3)
+
+    if coords_array.size > 0:
+        coords_df = pd.DataFrame(coords_array, columns=[f"PC{i+1}" for i in range(coords_array.shape[1])])
+    else:
+        coords_df = pd.DataFrame()
+
+    var_ratio = getattr(pca_obj, "explained_variance_ratio_", None)
+    if var_ratio is not None and len(var_ratio) >= 2:
+        col_pc1, col_pc2 = st.columns(2)
+        col_pc1.metric("Variance PC1", f"{var_ratio[0]*100:.2f}%")
+        col_pc2.metric("Variance PC2", f"{var_ratio[1]*100:.2f}%")
+    else:
+        st.info("Variance expliquée par la PCA non disponible.")
+
