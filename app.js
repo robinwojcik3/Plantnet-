@@ -92,7 +92,7 @@ const openObs    = c => `https://openobs.mnhn.fr/openobs-hub/occurrences/search?
 function openObsMulti(codes) {
   if (!Array.isArray(codes) || codes.length === 0) return '';
   const q = `(${codes.map(c => `lsid:${c}`).join(' OR ')}) AND (dynamicProperties_diffusionGP:"true")`;
-  return `/.netlify/functions/inpn-proxy?type=openobs&q=${encodeURIComponent(q)}`;
+  return `https://openobs.mnhn.fr/openobs-hub/occurrences/search?q=${encodeURIComponent(q)}&qc=&radius=120.6&lat=45.188529&lon=5.724524#tab_mapView`;
 }
 const pfaf       = n => `https://pfaf.org/user/Plant.aspx?LatinName=${encodeURIComponent(n).replace(/%20/g, '+')}`;
 const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent);
