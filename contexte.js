@@ -60,55 +60,54 @@ const SERVICES = {
 };
 
 // =================================================================
-// SECTION CORRIGÉE : Couches WMS utilisant la nouvelle route du proxy
-// L'URL pointe vers la route '/api/wms/inpn' définie dans netlify.toml
+// SECTION MISE À JOUR : Configuration pour utiliser le WMS du Géoportail IGN
 // =================================================================
 const ENV_WMS_LAYERS = [
 	{
 		name: "Natura 2000 (SIC/ZSC)",
-		url: "/api/wms/inpn",
-		layers: "SIC_FR",
-		attribution: "INPN"
+		url: "/api/wms/inpn", // Le nom du proxy reste le même, mais il pointe maintenant vers l'IGN
+		layers: "PROTECTEDAREAS.HABITAT",
+		attribution: "IGN-Geoportail"
 	},
 	{
 		name: "Natura 2000 (ZPS)",
 		url: "/api/wms/inpn",
-		layers: "ZPS_FR",
-		attribution: "INPN"
+		layers: "PROTECTEDAREAS.BIRDS",
+		attribution: "IGN-Geoportail"
 	},
 	{
 		name: "ZNIEFF type I",
 		url: "/api/wms/inpn",
-		layers: "znieff1",
-		attribution: "INPN"
+		layers: "PROTECTEDAREAS.ZNIEFF1",
+		attribution: "IGN-Geoportail"
 	},
 	{
 		name: "ZNIEFF type II",
 		url: "/api/wms/inpn",
-		layers: "znieff2",
-		attribution: "INPN"
+		layers: "PROTECTEDAREAS.ZNIEFF2",
+		attribution: "IGN-Geoportail"
 	},
 	{
 		name: "Arrêtés de Protection de Biotope (APPB)",
 		url: "/api/wms/inpn",
-		layers: "APB_S",
-		attribution: "INPN"
+		layers: "PROTECTEDAREAS.BIOTOPE",
+		attribution: "IGN-Geoportail"
 	},
 	{
 		name: "Parcs Nationaux",
 		url: "/api/wms/inpn",
-		layers: "PN_S",
-		attribution: "INPN"
+		layers: "PROTECTEDAREAS.PN",
+		attribution: "IGN-Geoportail"
 	},
 	{
 		name: "Réserves Naturelles Nationales",
 		url: "/api/wms/inpn",
-		layers: "RNN_S",
-		attribution: "INPN"
+		layers: "PROTECTEDAREAS.RNN",
+		attribution: "IGN-Geoportail"
 	}
 ];
 // =================================================================
-// FIN DE LA SECTION CORRIGÉE
+// FIN DE LA SECTION
 // =================================================================
 
 
