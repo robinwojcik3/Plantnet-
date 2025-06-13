@@ -87,7 +87,8 @@ const APICARTO_LAYERS = {
         endpoint: 'https://apicarto.ign.fr/api/nature/rn',
         style: { color: "#6A1B9A", weight: 2, opacity: 0.9, fillOpacity: 0.2 },
     },
-    // Nouvelles couches environnementales
+    // Couches supplémentaires pour le contexte environnemental
+    // (Réserves nationales et régionales, APPB et ENS)
     'Réserves Naturelles Nationales': {
         endpoint: 'https://apicarto.ign.fr/api/nature/rnn',
         style: { color: "#7B1FA2", weight: 2, opacity: 0.9, fillOpacity: 0.2 },

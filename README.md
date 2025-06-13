@@ -123,4 +123,8 @@ Follow the official Cloud Run documentation for detailed steps.
   suggestions of up to **five** morphologically similar species from the same
   genus using the Gemini API. This button now sits directly under the results
   table with enhanced styling for better visibility.
+- The "Contexte environnemental" tab displays several geographic overlays
+  retrieved from the IGN API Carto. It now includes layers for **Réserves
+  Naturelles Nationales et Régionales**, **Arrêtés Préfectoraux de Protection de
+  Biotope** and **Espaces Naturels Sensibles**.
 
