@@ -986,6 +986,11 @@ with tab_syntaxo:
 with tab_pca:
     st.title("Analyse en Composantes Principales des Habitats")
 
+    # ------------------------------------------------------------
+    # Étape 2 : Chargement des données (fichier utilisateur ou
+    #            données par défaut) et affichage d'un aperçu
+    # ------------------------------------------------------------
+
     uploaded_file = st.file_uploader(
         "Téléverser un fichier CSV pour l'analyse",
         type="csv",
@@ -998,8 +1003,11 @@ with tab_pca:
         default_path = os.path.join(os.path.dirname(__file__), "data_ecologie_espece.csv")
         df_pca = core.read_reference(default_path)
 
+    st.markdown("### Données analysées")
     with st.expander("Aperçu des données utilisées"):
         st.dataframe(df_pca, use_container_width=True)
+
+    st.markdown("---")
 
     # ------------------------------------------------------------
     # Étape 3 : Exécution de l'analyse et affichage des résultats
@@ -1012,6 +1020,7 @@ with tab_pca:
     else:
         coords_df = pd.DataFrame()
 
+    st.markdown("### Variance expliquée")
     var_ratio = getattr(pca_obj, "explained_variance_ratio_", None)
     if var_ratio is not None and len(var_ratio) >= 2:
         col_pc1, col_pc2 = st.columns(2)
@@ -1020,9 +1029,21 @@ with tab_pca:
     else:
         st.info("Variance expliquée par la PCA non disponible.")
 
+    st.markdown("---")
+
     if not coords_df.empty:
         coords_df["Espece"] = df_pca["Espece"].iloc[:len(coords_df)]
-        fig_proj = px.scatter(coords_df, x="PC1", y="PC2", text="Espece", hover_name="Espece", template="plotly_white")
+        # ------------------------------------------------------------
+        # Étape 4 : Projection des espèces sur le plan factoriel
+        # ------------------------------------------------------------
+        fig_proj = px.scatter(
+            coords_df,
+            x="PC1",
+            y="PC2",
+            text="Espece",
+            hover_name="Espece",
+            template="plotly_white",
+        )
         fig_proj.update_traces(marker=dict(size=8, opacity=0.8))
         fig_proj.update_layout(
             title="Projection des espèces (PC1 vs PC2)",
@@ -1032,6 +1053,9 @@ with tab_pca:
         )
 
         fig_corr = None
+        # ------------------------------------------------------------
+        # Étape 5 : Construction du cercle de corrélation
+        # ------------------------------------------------------------
         if hasattr(pca_obj, "components_") and pca_obj.components_.shape[0] >= 2:
             try:
                 loadings = pca_obj.components_.T * np.sqrt(getattr(pca_obj, "explained_variance_", np.ones(pca_obj.components_.shape[0])))
@@ -1076,11 +1100,17 @@ with tab_pca:
 
         col1, col2 = st.columns(2)
         with col1:
+            st.subheader("Projection des espèces")
             st.plotly_chart(fig_proj, use_container_width=True)
         with col2:
+            st.subheader("Cercle de corrélation")
             if fig_corr is not None:
                 st.plotly_chart(fig_corr, use_container_width=True)
             else:
                 st.info("Données insuffisantes pour le cercle de corrélation.")
+
+        # ------------------------------------------------------------
+        # Étape 6 : Finalisation - mise en page et vérifications
+        # ------------------------------------------------------------
     else:
         st.info("Résultats PCA insuffisants pour la projection des espèces.")
