@@ -1,65 +1,128 @@
-// Frontend logic for PCA Habitat module
+// Frontend logic for PCA Habitat module - connects to the FastAPI backend
 
 document.addEventListener('DOMContentLoaded', () => {
-  const select = document.getElementById('species-select');
-  const runBtn = document.getElementById('run-pca-button');
-  const circleDiv = document.getElementById('pca-correlation-circle-plot');
-  const indDiv = document.getElementById('pca-individuals-plot');
-  const tableDiv = document.getElementById('pca-results-table');
+    const form = document.getElementById('pca-form');
+    if (form) {
+        form.addEventListener('submit', handleAnalysis);
+    }
+});
 
-  // Populate species list
-  fetch('/api/species')
-    .then(r => r.json())
-    .then(list => {
-      list.forEach(name => {
-        const opt = document.createElement('option');
-        opt.value = name;
-        opt.textContent = name;
-        select.appendChild(opt);
-      });
-    })
-    .catch(() => {
-      console.error('Impossible de charger la liste des espèces');
+async function handleAnalysis(event) {
+    event.preventDefault();
+
+    const userFileInput = document.getElementById('user_file');
+    const refFileInput = document.getElementById('ref_file');
+    const plotContainer = document.getElementById('pca-plot-container');
+    const tableContainer = document.getElementById('cooccurrence-table-container');
+
+    if (!userFileInput.files[0] || !refFileInput.files[0]) {
+        plotContainer.innerHTML = '<p style="color: red;">Veuillez sélectionner les deux fichiers CSV.</p>';
+        return;
+    }
+
+    plotContainer.innerHTML = '<p>Analyse en cours, veuillez patienter...</p>';
+    tableContainer.innerHTML = '';
+
+    const formData = new FormData();
+    formData.append('user_file', userFileInput.files[0]);
+    formData.append('ref_file', refFileInput.files[0]);
+
+    // **REMPLACEZ PAR L'URL DE VOTRE API DÉPLOYÉE**
+    const API_URL = 'https://VOTRE-API-URL.a.run.app/analyse/';
+
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Erreur du serveur');
+        }
+
+        const results = await response.json();
+        displayPcaPlot(results);
+        displayCooccurrenceTable(results);
+
+    } catch (error) {
+        plotContainer.innerHTML = `<p style="color: red;">Erreur: ${error.message}</p>`;
+    }
+}
+
+function displayPcaPlot(results) {
+    const plotContainer = document.getElementById('pca-plot-container');
+    const traces = [];
+    const clusterLabels = [...new Set(results.cluster_labels)]; // Labels uniques [1, 2, 3...]
+
+    clusterLabels.forEach(label => {
+        const x_coords = [];
+        const y_coords = [];
+        const texts = [];
+        results.pca_coordinates.forEach((coord, i) => {
+            if (results.cluster_labels[i] === label) {
+                x_coords.push(coord[0]);
+                y_coords.push(coord[1]);
+                texts.push(results.species_names[i]);
+            }
+        });
+
+        traces.push({
+            x: x_coords,
+            y: y_coords,
+            mode: 'markers',
+            type: 'scatter',
+            name: `Cluster ${label}`,
+            text: texts,
+            hoverinfo: 'text'
+        });
     });
 
-  runBtn.addEventListener('click', () => {
-    const selected = Array.from(select.selectedOptions).map(o => o.value);
-    fetch('/api/run_pca', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ species: selected })
-    })
-      .then(r => r.json())
-      .then(data => {
-        circleDiv.innerHTML = `<img src="${data.circle_plot}" alt="Cercle de corrélation">`;
-        indDiv.innerHTML = `<img src="${data.individuals_plot}" alt="Projection des individus">`;
+    const layout = {
+        title: 'Projection des relevés et des syntaxons de référence',
+        xaxis: { title: 'Composante Principale 1' },
+        yaxis: { title: 'Composante Principale 2' },
+    };
 
-        const tbl = document.createElement('table');
-        const header = document.createElement('tr');
-        ['Nom', 'Contrib. PC1', 'Contrib. PC2'].forEach(t => {
-          const th = document.createElement('th');
-          th.textContent = t;
-          header.appendChild(th);
+    Plotly.newPlot(plotContainer, traces, layout);
+}
+
+function displayCooccurrenceTable(results) {
+    const tableContainer = document.getElementById('cooccurrence-table-container');
+    const tableData = results.cooccurrence_table;
+
+    if (!tableData || tableData.length === 0) {
+        tableContainer.innerHTML = '<p>Aucune donnée de co-occurrence à afficher.</p>';
+        return;
+    }
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    const tbody = document.createElement('tbody');
+
+    // Créer l'en-tête
+    const headers = Object.keys(tableData[0]);
+    const headerRow = document.createElement('tr');
+    headers.forEach(headerText => {
+        const th = document.createElement('th');
+        th.textContent = headerText;
+        headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+
+    // Créer le corps du tableau
+    tableData.forEach(rowData => {
+        const row = document.createElement('tr');
+        headers.forEach(header => {
+            const td = document.createElement('td');
+            td.textContent = rowData[header];
+            row.appendChild(td);
         });
-        tbl.appendChild(header);
-        (data.variable_contrib || []).forEach(row => {
-          const tr = document.createElement('tr');
-          const nameTd = document.createElement('td');
-          nameTd.textContent = row.name;
-          const c1 = document.createElement('td');
-          c1.textContent = row.pc1.toFixed(2);
-          const c2 = document.createElement('td');
-          c2.textContent = row.pc2.toFixed(2);
-          tr.appendChild(nameTd);
-          tr.appendChild(c1);
-          tr.appendChild(c2);
-          tbl.appendChild(tr);
-        });
-        tableDiv.innerHTML = '';
-        tableDiv.appendChild(tbl);
-      })
-      .catch(() => {
-        console.error('Erreur lors de l\'analyse PCA');
-      });
-  });
-});
+        tbody.appendChild(row);
+    });
+
+    table.appendChild(thead);
+    table.appendChild(tbody);
+    tableContainer.innerHTML = '<h2>Tableau des co-occurrences</h2>';
+    tableContainer.appendChild(table);
+}
