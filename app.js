@@ -464,8 +464,8 @@ async function handleComparisonClick() {
         </div>
         <hr style="border: none; border-top: 1px solid var(--border, #e0e0e0); margin: 1rem 0;">
         <div id="comparison-text-content"><p>${intro}</p>${tableHtml}</div>
-        ${mapUrl ? `<div style="margin:1.5rem calc(50% - 50vw);">
-            <iframe loading="lazy" src="${mapUrl}" title="Carte OpenObs" style="width:100vw;height:80vh;border:none;"></iframe>
+        ${mapUrl ? `<div style="margin-top:1.5rem;">
+            <iframe loading="lazy" src="${mapUrl}" title="Carte OpenObs" style="width:100%;height:80vh;border:none;"></iframe>
         </div>` : ''}
     `;
 
