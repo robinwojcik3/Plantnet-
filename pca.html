@@ -7,6 +7,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon-192.png">
   <script defer src="ui.js"></script>
+  <script defer src="pca.js"></script>
   <script defer src="sw-register.js"></script>
   <style>
     :root{ --primary:#388e3c; --bg:#f6f9fb; --card:#ffffff; --border:#e0e0e0; --text:#202124; }
@@ -37,7 +38,21 @@
 
   <div class="main-content">
     <h1>Analyse PCA Habitat</h1>
-    <p>Cette page servira d'interface pour l'onglet PCA Habitat.</p>
+    <p>Sélectionnez un fichier CSV ou utilisez l'exemple interne pour générer l'analyse en composantes principales.</p>
+    <input type="file" id="csv-input" accept=".csv">
+    <button id="demo-data" class="action-button">Charger l'exemple interne</button>
+    <div id="data-preview" style="margin-top:1rem;"></div>
+    <div style="display:flex; flex-wrap:wrap; gap:1rem; justify-content:center; margin-top:1rem;">
+      <div>
+        <h3>Variance expliquée</h3>
+        <p>PC1: <span id="var-pc1">-</span></p>
+        <p>PC2: <span id="var-pc2">-</span></p>
+      </div>
+    </div>
+    <div style="display:flex; flex-wrap:wrap; gap:2rem; justify-content:center; margin-top:1rem;">
+      <div id="scatter"></div>
+      <div id="correlation"></div>
+    </div>
   </div>
 </body>
 </html>
