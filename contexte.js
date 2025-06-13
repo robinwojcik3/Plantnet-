@@ -355,17 +355,7 @@ async function fetchAndDisplayApiLayer(name, config, lat, lon) {
         if (geojsonData && geojsonData.features && geojsonData.features.length > 0) {
             const geoJsonLayer = L.geoJSON(geojsonData, {
                 style: config.style,
-                onEachFeature: (feature, layer) => {
-                    let popupContent = `<h4>${name}</h4>`;
-                    if (feature.properties) {
-                        popupContent += '<ul style="padding-left: 15px; margin: 0;">';
-                        for (const key in feature.properties) {
-                            popupContent += `<li><strong>${key}:</strong> ${feature.properties[key]}</li>`;
-                        }
-                        popupContent += '</ul>';
-                    }
-                    layer.bindPopup(popupContent);
-                }
+                onEachFeature: addDynamicPopup
             });
             // Ajoute la couche au contrôleur
             layerControl.addOverlay(geoJsonLayer, name);
@@ -373,8 +363,53 @@ async function fetchAndDisplayApiLayer(name, config, lat, lon) {
             console.log(`Aucune donnée de type "${name}" trouvée pour ce point.`);
         }
     } catch (error) {
+
         console.error(`Erreur lors du chargement de la couche ${name}:`, error);
     }
+}
+
+// Extrait un nom lisible à partir des propriétés d'une entité
+function getZoneName(props) {
+    if (!props) return 'Zonage';
+    const candidates = ['zone_name', 'nom', 'name', 'libelle', 'NOM', 'NOM_SITE', 'nom_zone'];
+    for (const key of candidates) {
+        if (props[key]) return props[key];
+        if (props[key && key.toUpperCase()]) return props[key.toUpperCase()];
+    }
+    // Fallback: premier champ texte rencontré
+    for (const k in props) {
+        if (typeof props[k] === 'string' && props[k]) return props[k];
+    }
+    return 'Zonage';
+}
+
+// Ajoute une pop-up interactive sur chaque entité
+function addDynamicPopup(feature, layer) {
+    const props = feature.properties || {};
+    const zoneName = getZoneName(props);
+    const url = props.url;
+
+    const content = `<strong>${zoneName}</strong><br><button class="zone-info-btn">Cliquer ici pour plus d\'informations</button>`;
+    const popup = L.popup().setContent(content);
+
+    layer.on('click', (e) => {
+        const existing = layer.getPopup();
+        if (existing && existing.isOpen()) {
+            if (url) window.open(url, '_blank');
+        } else {
+            layer.bindPopup(popup).openPopup(e.latlng);
+            const element = layer.getPopup().getElement();
+            if (element) {
+                const btn = element.querySelector('.zone-info-btn');
+                if (btn) {
+                    btn.addEventListener('click', (ev) => {
+                        ev.stopPropagation();
+                        if (url) window.open(url, '_blank');
+                    });
+                }
+            }
+        }
+    });
 }
 
 // Fonction de notification générique
