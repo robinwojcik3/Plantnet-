@@ -104,10 +104,12 @@
         }
 
         // Validation plus souple de l'URL
-        // On accepte les liens de publication du type `/pub?...output=csv` qui
-        // peuvent contenir d'autres paramètres (gid, single, etc.).
-        if (!(url.includes('/pub') && url.includes('output=csv'))) {
-            const errorMsg = "URL invalide. Assurez-vous d'utiliser l'URL de publication contenant '/pub' et le paramètre 'output=csv'.";
+        // Accepte les liens de publication ou d'export au format CSV
+        // Exemple : `/pub?gid=0&single=true&output=csv` ou `/export?format=csv`
+        const validCsvUrl =
+            /\/pub|\/export/i.test(url) && /(output=csv|format=csv|out=csv|out:csv)/i.test(url);
+        if (!validCsvUrl) {
+            const errorMsg = "URL invalide. Assurez-vous d'utiliser l'URL de publication ou d'export contenant 'output=csv' ou 'format=csv'.";
             window.showNotification(errorMsg, 'error');
             container.innerHTML = `<p style="color:red;">${errorMsg}</p>`;
             window.toggleSpinner(false);
