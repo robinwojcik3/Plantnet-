@@ -1024,7 +1024,52 @@ with tab_pca:
         coords_df["Espece"] = df_pca["Espece"].iloc[:len(coords_df)]
         fig_proj = px.scatter(coords_df, x="PC1", y="PC2", text="Espece", hover_name="Espece", template="plotly_white")
         fig_proj.update_traces(marker=dict(size=8, opacity=0.8))
-        fig_proj.update_layout(title="Projection des espèces (PC1 vs PC2)", title_x=0.5, xaxis_title="PC1", yaxis_title="PC2")
-        st.plotly_chart(fig_proj, use_container_width=True)
+        fig_proj.update_layout(
+            title="Projection des espèces (PC1 vs PC2)",
+            title_x=0.5,
+            xaxis_title="PC1",
+            yaxis_title="PC2",
+        )
+
+        fig_corr = None
+        if hasattr(pca_obj, "components_") and pca_obj.components_.shape[0] >= 2:
+            try:
+                loadings = pca_obj.components_.T * np.sqrt(getattr(pca_obj, "explained_variance_", np.ones(pca_obj.components_.shape[0])))
+                loadings_df = pd.DataFrame(loadings[:, :2], columns=["PC1", "PC2"], index=df_pca.columns[1:])
+
+                theta = np.linspace(0, 2*np.pi, 100)
+                circle_x = np.cos(theta)
+                circle_y = np.sin(theta)
+
+                fig_corr = go.Figure()
+                fig_corr.add_trace(go.Scatter(x=circle_x, y=circle_y, mode="lines", name="Cercle", showlegend=False))
+                fig_corr.add_shape(type="circle", x0=-1, y0=-1, x1=1, y1=1, line=dict(color="black", dash="dot"))
+                fig_corr.update_xaxes(range=[-1.1, 1.1], zeroline=True)
+                fig_corr.update_yaxes(range=[-1.1, 1.1], zeroline=True)
+
+                for var_name, row in loadings_df.iterrows():
+                    x, y = row["PC1"], row["PC2"]
+                    fig_corr.add_trace(go.Scatter(x=[0, x], y=[0, y], mode="lines", showlegend=False))
+                    fig_corr.add_annotation(x=x, y=y, ax=0, ay=0, text=var_name)
+
+                fig_corr.update_layout(
+                    title="Cercle de corrélation",
+                    title_x=0.5,
+                    xaxis_title="PC1",
+                    yaxis_title="PC2",
+                    template="plotly_white",
+                )
+            except Exception as e:
+                print(f"Erreur lors de la génération du cercle de corrélation : {e}")
+                fig_corr = None
+
+        col1, col2 = st.columns(2)
+        with col1:
+            st.plotly_chart(fig_proj, use_container_width=True)
+        with col2:
+            if fig_corr is not None:
+                st.plotly_chart(fig_corr, use_container_width=True)
+            else:
+                st.info("Données insuffisantes pour le cercle de corrélation.")
     else:
         st.info("Résultats PCA insuffisants pour la projection des espèces.")
