@@ -1,153 +1,150 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Contexte environnemental - Plantouille express</title>
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script defer src="ui.js"></script>
-  <script defer src="contexte.js"></script>
-  <script defer src="sw-register.js"></script>
-  <style>
-    :root{ --primary:#388e3c; --bg:#f6f9fb; --card:#ffffff; --border:#e0e0e0; --text:#202124; }
-    html[data-theme="dark"]{ --bg:#181a1b; --card:#262b2f; --border:#333; --text:#ececec; }
-    *{box-sizing:border-box;}
-    body{ background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; margin:0; padding:0; display:flex; flex-direction:column; min-height:100vh; }
-    
-    /* Navigation par onglets */
-    .tabs-container { background: var(--card); box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; display:flex; align-items:center; justify-content:space-between; }
-    .tabs { display: flex; border-bottom: 2px solid var(--border); flex-grow:1; }
-    .tab { flex: 1; padding: 1rem; text-align: center; cursor: pointer; background: none; border: none; font-size: 1rem; color: var(--text); transition: all 0.3s; position: relative; }
-    .tab:hover { background: rgba(56, 142, 60, 0.1); }
-    .tab.active { color: var(--primary); font-weight: 600; }
-    .tab.active::after { content: ''; position: absolute; bottom: -2px; left: 0; right: 0; height: 2px; background: var(--primary); }
-    
-    /* Contenu principal */
-    .main-content { flex: 1; padding: 1.5rem; max-width: 900px; margin: 0 auto; width: 100%; }
-    h1 { color: var(--primary); margin: 0 0 1.5rem; font-size: 1.6rem; text-align: center; }
-    
-    /* Options de localisation */
-    .location-options { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem; }
-    .location-card { background: var(--card); border-radius: 8px; padding: 1.5rem; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-    .location-card h2 { font-size: 1.2rem; color: var(--primary); margin: 0 0 1rem; }
-    
-    .action-button { padding: 12px 20px; background: var(--primary); color: white; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; transition: all 0.3s; width: 100%; }
-    .action-button:hover { background: #2e7d32; transform: scale(1.02); }
-    .action-button:disabled { background: #ccc; cursor: not-allowed; transform: none; }
-    
-    /* Carte interactive */
-    #map-container { display: none; margin-top: 1rem; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-    #map { height: 400px; width: 100%; }
-    
-    /* Coordonnées sélectionnées */
-    .coordinates-display { display: none; margin-top: 1rem; padding: 1rem; background: rgba(56, 142, 60, 0.1); border-radius: 6px; text-align: center; }
-    .coordinates-display span { font-weight: 600; color: var(--primary); }
-    
-    /* Résultats */
-    .results-section { display: none; margin-top: 2rem; }
-    .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-top: 1rem; }
-    .result-card { background: var(--card); border-radius: 8px; padding: 1rem; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-    .result-card h3 { color: var(--primary); margin: 0 0 0.5rem; font-size: 1.1rem; }
-    .result-card a { display: inline-block; margin-top: 0.5rem; color: var(--primary); text-decoration: none; }
-    .result-card a:hover { text-decoration: underline; }
-    
-    /* Chargement */
-    .loading { display: none; text-align: center; margin: 2rem 0; }
-    .loading::after { content: ''; display: inline-block; width: 30px; height: 30px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    
-    /* Message d'instruction sur la carte */
-    .map-instruction { display: none; position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.7); color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px; z-index: 1000; pointer-events: none; }
-    
-    @media (prefers-color-scheme:dark) {
-      :root{--bg:#181a1b;--card:#262b2f;--border:#333;--text:#ececec}
-      .coordinates-display { background: rgba(56, 142, 60, 0.2); }
-      .map-instruction { background: rgba(255, 255, 255, 0.15); }
-    }
-    #theme-toggle{background:none;border:none;cursor:pointer;font-size:1.2rem;color:var(--text);padding:0 1rem;}
-    #theme-toggle:hover{transform:scale(1.1);}
-
-    /* NOUVEAU : Styles pour les popups Leaflet */
-    .leaflet-popup-content-wrapper { border-radius: 8px; }
-    .leaflet-popup-content { font-size: 14px; }
-    .leaflet-popup-content h4 { margin: 0 0 10px 0; padding-bottom: 5px; border-bottom: 1px solid var(--border); color: var(--primary); font-size: 16px; }
-    .leaflet-popup-content h5 { margin: 15px 0 5px 0; font-size: 14px; color: var(--text); }
-    .popup-item { margin-bottom: 8px; }
-    .popup-item .site-name { font-weight: bold; margin: 0 0 5px 0; color: var(--primary); }
-    .popup-item .site-link { color: var(--primary); }
-    .popup-item .no-link { font-style: italic; color: #888; }
-
-  </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Contexte environnemental - Plantouille express</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script defer src="ui.js"></script>
+  <script defer src="contexte.js"></script>
+  <script defer src="sw-register.js"></script>
+  <style>
+    :root{ --primary:#388e3c; --bg:#f6f9fb; --card:#ffffff; --border:#e0e0e0; --text:#202124; }
+    html[data-theme="dark"]{ --bg:#181a1b; --card:#262b2f; --border:#333; --text:#ececec; }
+    *{box-sizing:border-box;}
+    body{ background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; margin:0; padding:0; display:flex; flex-direction:column; min-height:100vh; }
+    
+    /* Navigation par onglets */
+    .tabs-container { background: var(--card); box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; display:flex; align-items:center; justify-content:space-between; }
+    .tabs { display: flex; border-bottom: 2px solid var(--border); flex-grow:1; }
+    .tab { flex: 1; padding: 1rem; text-align: center; cursor: pointer; background: none; border: none; font-size: 1rem; color: var(--text); transition: all 0.3s; position: relative; }
+    .tab:hover { background: rgba(56, 142, 60, 0.1); }
+    .tab.active { color: var(--primary); font-weight: 600; }
+    .tab.active::after { content: ''; position: absolute; bottom: -2px; left: 0; right: 0; height: 2px; background: var(--primary); }
+    
+    /* Contenu principal */
+    .main-content { flex: 1; padding: 1.5rem; max-width: 900px; margin: 0 auto; width: 100%; }
+    h1 { color: var(--primary); margin: 0 0 1.5rem; font-size: 1.6rem; text-align: center; }
+    
+    /* Options de localisation */
+    .location-options { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem; }
+    .location-card { background: var(--card); border-radius: 8px; padding: 1.5rem; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    .location-card h2 { font-size: 1.2rem; color: var(--primary); margin: 0 0 1rem; }
+    
+    .action-button { padding: 12px 20px; background: var(--primary); color: white; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; transition: all 0.3s; width: 100%; }
+    .action-button:hover { background: #2e7d32; transform: scale(1.02); }
+    .action-button:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+    
+    /* Carte interactive */
+    #map-container { display: none; margin-top: 1rem; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    #map { height: 400px; width: 100%; }
+    
+    /* Coordonnées sélectionnées */
+    .coordinates-display { display: none; margin-top: 1rem; padding: 1rem; background: rgba(56, 142, 60, 0.1); border-radius: 6px; text-align: center; }
+    .coordinates-display span { font-weight: 600; color: var(--primary); }
+    
+    /* Résultats */
+    .results-section { display: none; margin-top: 2rem; }
+    .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-top: 1rem; }
+    .result-card { background: var(--card); border-radius: 8px; padding: 1rem; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    .result-card h3 { color: var(--primary); margin: 0 0 0.5rem; font-size: 1.1rem; }
+    .result-card a { display: inline-block; margin-top: 0.5rem; color: var(--primary); text-decoration: none; }
+    .result-card a:hover { text-decoration: underline; }
+    
+    /* Chargement */
+    .loading { display: none; text-align: center; margin: 2rem 0; }
+    .loading::after { content: ''; display: inline-block; width: 30px; height: 30px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    /* Message d'instruction sur la carte */
+    .map-instruction { display: none; position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.7); color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px; z-index: 1000; pointer-events: none; }
+    
+    @media (prefers-color-scheme:dark) {
+      :root{--bg:#181a1b;--card:#262b2f;--border:#333;--text:#ececec}
+      .coordinates-display { background: rgba(56, 142, 60, 0.2); }
+      .map-instruction { background: rgba(255, 255, 255, 0.15); }
+    }
+    #theme-toggle{background:none;border:none;cursor:pointer;font-size:1.2rem;color:var(--text);padding:0 1rem;}
+    #theme-toggle:hover{transform:scale(1.1);}
+  </style>
 </head>
 <body>
-   <nav class="tabs-container">
-    <div class="tabs">
-      <button class="tab" onclick="window.location.href='index.html'">Identification</button>
-      <button class="tab active">Contexte environnemental</button>
-      <button class="tab" onclick="window.location.href='sheets.html'">Google Sheets</button>
-      <button class="tab" onclick="window.location.href='pca.html'">PCA Habitat</button>
-    </div>
-    <button id="theme-toggle" title="Basculer le thème">🌙</button>
-  </nav>
-  
-  <div class="main-content">
-    <h1>Contexte environnemental</h1>
-    
-    <div class="location-options">
-           <div class="location-card">
-        <h2>📍 Utiliser ma position actuelle</h2>
-        <button class="action-button" id="use-geolocation">
-          Utiliser ma localisation
-        </button>
-      </div>
-      
-           <div class="location-card">
-        <h2>🗺️ Choisir un endroit sur la carte</h2>
-        <button class="action-button" id="choose-on-map">
-          Ouvrir la carte
-        </button>
-        
-        <div id="map-container">
-          <div class="map-instruction" id="map-instruction">
-            Cliquez longuement pour sélectionner un point
-          </div>
-          <div id="map"></div>
-        </div>
-        
-       <div class="coordinates-display" id="coordinates-display">
-        Coordonnées sélectionnées :
-        <span id="selected-coords">--</span>
-       </div>
+  <!-- Navigation par onglets -->
+  <nav class="tabs-container">
+    <div class="tabs">
+      <button class="tab" onclick="window.location.href='index.html'">Identification</button>
+      <button class="tab active">Contexte environnemental</button>
+      <button class="tab" onclick="window.location.href='sheets.html'">Google Sheets</button>
+      <button class="tab" onclick="window.location.href='pca.html'">PCA Habitat</button>
+    </div>
+    <button id="theme-toggle" title="Basculer le thème">🌙</button>
+  </nav>
 
-       <button class="action-button" id="validate-location" style="display:none; margin-top:1rem;">
-        Valider cette localisation
-       </button>
-      </div>
+  <div class="main-content">
+    <h1>Contexte environnemental</h1>
+    
+    <div class="location-options">
+      <!-- Option 1: Géolocalisation -->
+      <div class="location-card">
+        <h2>📍 Utiliser ma position actuelle</h2>
+        <button class="action-button" id="use-geolocation">
+          Utiliser ma localisation
+        </button>
+      </div>
+      
+      <!-- Option 2: Sélection sur carte -->
+      <div class="location-card">
+        <h2>🗺️ Choisir un endroit sur la carte</h2>
+        <button class="action-button" id="choose-on-map">
+          Ouvrir la carte
+        </button>
+        
+        <div id="map-container">
+          <div class="map-instruction" id="map-instruction">
+            Cliquez longuement pour sélectionner un point
+          </div>
+          <div id="map"></div>
+        </div>
+        
+      <div class="coordinates-display" id="coordinates-display">
+        Coordonnées sélectionnées :
+        <span id="selected-coords">--</span>
+      </div>
 
-           <div class="location-card">
-        <h2>🔎 Rechercher une adresse</h2>
-        <input type="text" id="address-input" placeholder="Saisissez une adresse"
-               style="padding:8px;border:1px solid var(--border);border-radius:4px;width:100%;margin-bottom:.5rem;">
-        <button class="action-button" id="search-address">Rechercher</button>
-      </div>
-    </div>
-    
-       <div class="loading" id="loading"></div>
-    
-       <div class="results-section" id="results-section">
-      <h2>Ressources environnementales</h2>
-      <p style="margin-bottom: 1rem; color: #666;">
-        Cliquez sur les liens ci-dessous pour explorer le contexte de la zone, ou cliquez sur la carte pour obtenir le détail des zonages.
-      </p>
-      <div class="results-grid" id="results-grid">
-             </div>
-           <h2 style="margin-top:2rem;">Carte interactive</h2>
-      <div id="layer-controls" style="margin-bottom:0.5rem;"></div>
-      <div id="env-map" style="height:400px;width:100%;display:none; border-radius: 8px;"></div>
-    </div>
-  </div>
+      <button class="action-button" id="validate-location" style="display:none; margin-top:1rem;">
+        Valider cette localisation
+      </button>
+      </div>
+
+      <!-- Option 3: Recherche par adresse -->
+      <div class="location-card">
+        <h2>🔎 Rechercher une adresse</h2>
+        <input type="text" id="address-input" placeholder="Saisissez une adresse"
+               style="padding:8px;border:1px solid var(--border);border-radius:4px;width:100%;margin-bottom:.5rem;">
+        <button class="action-button" id="search-address">Rechercher</button>
+      </div>
+    </div>
+    
+    <!-- Indicateur de chargement -->
+    <div class="loading" id="loading"></div>
+    
+    <!-- Section des résultats -->
+    <div class="results-section" id="results-section">
+      <h2>Ressources environnementales</h2>
+      <p style="margin-bottom: 1rem; color: #666;">
+        Cliquez sur les liens ci-dessous pour explorer le contexte environnemental de la zone sélectionnée :
+      </p>
+      <div class="results-grid" id="results-grid">
+        <!-- Les cartes de résultats seront ajoutées ici dynamiquement -->
+      </div>
+      <!-- Nouvelle carte avec couches WMS -->
+      <h2 style="margin-top:2rem;">Carte interactive</h2>
+      <div id="layer-controls" style="margin-bottom:0.5rem;"></div>
+      <div id="env-map" style="height:400px;width:100%;display:none;"></div>
+    </div>
+  </div>
 </body>
 </html>
