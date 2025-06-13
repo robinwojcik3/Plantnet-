@@ -67,43 +67,43 @@ const ENV_WMS_LAYERS = [
     {
         name: "Natura 2000 (SIC/ZSC)",
         url: "/api/wms/inpn",
-        layers: "PROTECTEDAREAS.SIC:sic",
+        layers: "Patrinat_SIC_France",
         attribution: "INPN"
     },
     {
         name: "Natura 2000 (ZPS)",
         url: "/api/wms/inpn",
-        layers: "PROTECTEDAREAS.ZPS:zps",
+        layers: "Patrinat_ZPS_France",
         attribution: "INPN"
     },
     {
         name: "ZNIEFF type I",
         url: "/api/wms/inpn",
-        layers: "PROTECTEDAREAS.ZNIEFF1:znieff1",
+        layers: "Patrinat_ZNIEFF1_France",
         attribution: "INPN"
     },
     {
         name: "ZNIEFF type II",
         url: "/api/wms/inpn",
-        layers: "PROTECTEDAREAS.ZNIEFF2:znieff2",
+        layers: "Patrinat_ZNIEFF2_France",
         attribution: "INPN"
     },
     {
         name: "Arrêtés de Protection de Biotope (APPB)",
         url: "/api/wms/inpn",
-        layers: "PROTECTEDAREAS.APB:apb",
+        layers: "Patrinat_APB_France",
         attribution: "INPN"
     },
     {
         name: "Parcs Nationaux",
         url: "/api/wms/inpn",
-        layers: "PROTECTEDAREAS.PN:pn",
+        layers: "Patrinat_Parc_national",
         attribution: "INPN"
     },
     {
         name: "Réserves Naturelles Nationales",
         url: "/api/wms/inpn",
-        layers: "PROTECTEDAREAS.RNN:rnn",
+        layers: "Patrinat_RNN_France",
         attribution: "INPN"
     }
 ];
