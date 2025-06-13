@@ -126,5 +126,5 @@ Follow the official Cloud Run documentation for detailed steps.
 - The "Contexte environnemental" tab displays several geographic overlays
   retrieved from the IGN API Carto. It now includes layers for **Réserves
   Naturelles Nationales et Régionales**, **Arrêtés Préfectoraux de Protection de
-  Biotope** and **Espaces Naturels Sensibles**.
+  Biotope**, **Espaces Naturels Sensibles** and **Zones humides**.
 
