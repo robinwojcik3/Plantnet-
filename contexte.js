@@ -104,6 +104,10 @@ const APICARTO_LAYERS = {
     'Espaces Naturels Sensibles': {
         endpoint: 'https://apicarto.ign.fr/api/nature/ens',
         style: { color: "#004D40", weight: 2, opacity: 0.9, fillOpacity: 0.2 },
+    },
+    'Zones humides': {
+        endpoint: 'https://apicarto.ign.fr/api/nature/zones_humides',
+        style: { color: "#1565C0", weight: 2, opacity: 0.9, fillOpacity: 0.2 },
     }
 };
 
