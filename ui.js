@@ -151,4 +151,113 @@
         });
     };
 
+    // ===== NOUVELLES FONCTIONS POUR GOOGLE SHEETS =====
+
+    window.loadGoogleSheetAsCsv = async function() {
+        window.toggleSpinner(true);
+        const urlInput = document.getElementById('sheet-csv-url');
+        const container = document.getElementById('gs-container');
+        const speciesListContainer = document.getElementById('species-list-container');
+        const getSpeciesBtn = document.getElementById('get-unique-species-btn');
+
+        if (getSpeciesBtn) getSpeciesBtn.style.display = 'none';
+        if (speciesListContainer) speciesListContainer.innerHTML = '';
+        container.innerHTML = '';
+
+        const url = urlInput ? urlInput.value.trim() : '';
+        if (!url) {
+            window.showNotification("Veuillez entrer l'URL du fichier .csv.", 'error');
+            window.toggleSpinner(false);
+            return;
+        }
+
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`Erreur de réseau ou de CORS: ${response.statusText}`);
+            }
+            const csvData = await response.text();
+            
+            // Simple parseur CSV qui gère les sauts de ligne dans les cellules citées
+            const rows = csvData.split('\n').map(row => row.split(','));
+
+            if (rows.length === 0 || (rows.length === 1 && rows[0].length === 1 && rows[0][0] === '')) {
+                container.innerHTML = '<p>Le fichier CSV est vide ou invalide.</p>';
+                throw new Error("CSV vide");
+            }
+
+            let table = '<table class="gs-table">';
+            table += '<thead><tr>';
+            rows[0].forEach(header => {
+                table += `<th>${header.trim()}</th>`;
+            });
+            table += '</tr></thead>';
+
+            table += '<tbody>';
+            for (let i = 1; i < rows.length; i++) {
+                if (rows[i].join('').trim() === '') continue;
+                table += '<tr>';
+                rows[i].forEach(cell => {
+                    table += `<td>${cell.trim()}</td>`;
+                });
+                table += '</tr>';
+            }
+            table += '</tbody></table>';
+
+            container.innerHTML = table;
+            if (getSpeciesBtn) getSpeciesBtn.style.display = 'block';
+
+        } catch (error) {
+            console.error('Erreur lors du chargement de la Google Sheet:', error);
+            window.showNotification(`Erreur de chargement : ${error.message}`, 'error');
+            container.innerHTML = `<p style="color:red;">Impossible de charger les données. Vérifiez l'URL et assurez-vous que le fichier est bien publié au format CSV.</p>`;
+        } finally {
+            window.toggleSpinner(false);
+        }
+    };
+
+    window.getUniqueSpeciesFromTable = function() {
+        const table = document.querySelector('#gs-container table');
+        if (!table) {
+            console.error("Tableau de données non trouvé.");
+            return [];
+        }
+        const species = new Set();
+        const rows = table.querySelectorAll('tbody tr'); // Only scan body rows
+
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            cells.forEach(cell => {
+                const speciesName = cell.textContent.trim();
+                if (speciesName) { // Add only non-empty strings
+                    species.add(speciesName);
+                }
+            });
+        });
+        
+        return Array.from(species).sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+    };
+
+    window.displayUniqueSpeciesList = function() {
+        const speciesList = window.getUniqueSpeciesFromTable();
+        const container = document.getElementById('species-list-container');
+        if (!container) return;
+
+        container.innerHTML = ''; // Clear previous results
+
+        if (speciesList.length === 0) {
+            container.innerHTML = '<p>Aucune espèce trouvée dans les données.</p>';
+            return;
+        }
+
+        let listHtml = `<h3>Liste des espèces uniques (${speciesList.length})</h3><ul>`;
+        speciesList.forEach(species => {
+            listHtml += `<li>${species}</li>`;
+        });
+        listHtml += '</ul>';
+
+        container.innerHTML = listHtml;
+        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
 })();
