@@ -806,9 +806,27 @@ const performNameSearch = async () => {
     }
   }
   if (found.length) {
-    sessionStorage.setItem("speciesQueryNames", JSON.stringify(found));
-    ["photoData", "identificationResults"].forEach(k => sessionStorage.removeItem(k));
-    location.href = "organ.html";
+    const organChoiceBox = document.getElementById("organ-choice");
+    const onResults = location.pathname.endsWith("organ.html") && organChoiceBox && organChoiceBox.style.display === "none";
+    if (onResults) {
+      found.forEach(n => {
+        if (!displayedItems.some(it => it.species.scientificNameWithoutAuthor === n)) {
+          displayedItems.push({ score: 1.0, species: { scientificNameWithoutAuthor: n }, autoCheck: false });
+        }
+      });
+      buildTable(displayedItems);
+      buildCards(displayedItems);
+      const area = document.getElementById('similar-btn-area');
+      if (displayedItems.length === 1) {
+        showSimilarSpeciesButton(displayedItems[0].species.scientificNameWithoutAuthor);
+      } else if (area) {
+        area.innerHTML = '';
+      }
+    } else {
+      sessionStorage.setItem("speciesQueryNames", JSON.stringify(found));
+      ["photoData", "identificationResults"].forEach(k => sessionStorage.removeItem(k));
+      location.href = "organ.html";
+    }
   }
 };
 if (nameSearchButton) nameSearchButton.addEventListener("click", performNameSearch);
