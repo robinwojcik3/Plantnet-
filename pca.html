@@ -37,22 +37,15 @@
   </nav>
 
   <div class="main-content">
-    <h1>Analyse PCA Habitat</h1>
-    <p>Sélectionnez un fichier CSV ou utilisez l'exemple interne pour générer l'analyse en composantes principales.</p>
-    <input type="file" id="csv-input" accept=".csv">
-    <button id="demo-data" class="action-button">Charger l'exemple interne</button>
-    <div id="data-preview" style="margin-top:1rem;"></div>
-    <div style="display:flex; flex-wrap:wrap; gap:1rem; justify-content:center; margin-top:1rem;">
-      <div>
-        <h3>Variance expliquée</h3>
-        <p>PC1: <span id="var-pc1">-</span></p>
-        <p>PC2: <span id="var-pc2">-</span></p>
-      </div>
+    <h1>Analyse d'Habitat (ACP)</h1>
+    <p>Sélectionnez une ou plusieurs espèces puis lancez l'analyse.</p>
+    <select id="species-select" multiple style="min-width:250px; max-width:100%;"></select>
+    <div style="margin-top:1rem;">
+      <button id="run-pca-button" class="action-button">Lancer l'analyse</button>
     </div>
-    <div style="display:flex; flex-wrap:wrap; gap:2rem; justify-content:center; margin-top:1rem;">
-      <div id="scatter"></div>
-      <div id="correlation"></div>
-    </div>
+    <div id="pca-correlation-circle-plot" style="margin-top:2rem;"></div>
+    <div id="pca-individuals-plot" style="margin-top:2rem;"></div>
+    <div id="pca-results-table" style="margin-top:2rem;"></div>
   </div>
 </body>
 </html>

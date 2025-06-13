@@ -9,6 +9,13 @@ from collections import defaultdict  # Ajouté pour l'analyse de co-occurrence
 import re  # Ajouté pour parser les comptes dans les chaînes de caractères
 from sklearn.preprocessing import StandardScaler  # Conservé au cas où, mais la logique principale utilisera les communalités PCA
 import os
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+import io
+import base64
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 # Définition de MockCoreModule améliorée pour simuler une ACP plus complète
 class MockCoreModule:
@@ -1117,3 +1124,92 @@ with tab_pca:
                 st.info("Données insuffisantes pour le cercle de corrélation.")
     else:
         st.info("Résultats PCA insuffisants pour la projection des espèces.")
+
+# ---------------------------------------------------------------------------
+# Flask API for client-side PCA module
+# ---------------------------------------------------------------------------
+app = Flask(__name__)
+CORS(app)
+
+DATA_DIR = os.path.dirname(__file__)
+
+
+def _species_list():
+    path = os.path.join(DATA_DIR, "data_ecologie_espece.csv")
+    df = pd.read_csv(path, sep=";", header=None)
+    return df.iloc[:, 0].dropna().unique().tolist()
+
+
+@app.route("/api/species", methods=["GET"])
+def api_species():
+    """Return all unique species names."""
+    return jsonify(_species_list())
+
+
+@app.route("/api/run_pca", methods=["POST"])
+def api_run_pca():
+    data = request.get_json(force=True)
+    selected = data.get("species", [])
+
+    ref_path = os.path.join(DATA_DIR, "data_ref.csv")
+    df = read_reference(ref_path)
+    if selected:
+        df = df[df[df.columns[0]].str.strip().isin(selected)]
+
+    labels, pca_obj, coords, _ = analyse(df)
+    comps = pca_obj.components_
+    eigvals = pca_obj.explained_variance_
+
+    var_names = df.columns[1:]
+    var_contrib = []
+    if comps.shape[0] >= 2:
+        for name, c1, c2 in zip(var_names, comps[0], comps[1]):
+            contrib1 = 100 * (c1 ** 2) / np.sum(comps[0] ** 2)
+            contrib2 = 100 * (c2 ** 2) / np.sum(comps[1] ** 2)
+            var_contrib.append({"name": name, "pc1": contrib1, "pc2": contrib2})
+
+    circle_buf = io.BytesIO()
+    ind_buf = io.BytesIO()
+
+    if comps.shape[0] >= 2:
+        # correlation circle
+        plt.figure()
+        plt.axhline(0, color="grey", lw=0.5)
+        plt.axvline(0, color="grey", lw=0.5)
+        theta = np.linspace(0, 2 * np.pi, 200)
+        plt.plot(np.cos(theta), np.sin(theta), color="lightgrey")
+        for name, c1, c2 in zip(var_names, comps[0], comps[1]):
+            plt.arrow(0, 0, c1 * np.sqrt(eigvals[0]), c2 * np.sqrt(eigvals[1]), head_width=0.02, color="b")
+            plt.text(c1 * np.sqrt(eigvals[0]), c2 * np.sqrt(eigvals[1]), name, fontsize=8)
+        plt.xlim(-1.1, 1.1)
+        plt.ylim(-1.1, 1.1)
+        plt.savefig(circle_buf, format="png", bbox_inches="tight")
+        plt.close()
+
+        # individuals projection
+        plt.figure()
+        plt.axhline(0, color="grey", lw=0.5)
+        plt.axvline(0, color="grey", lw=0.5)
+        plt.scatter(coords[:, 0], coords[:, 1], color="green")
+        for sp, x, y in zip(df.iloc[:, 0], coords[:, 0], coords[:, 1]):
+            plt.text(x, y, sp, fontsize=6)
+        plt.xlabel("PC1")
+        plt.ylabel("PC2")
+        plt.savefig(ind_buf, format="png", bbox_inches="tight")
+        plt.close()
+
+    circle_buf.seek(0)
+    ind_buf.seek(0)
+
+    circle_b64 = "data:image/png;base64," + base64.b64encode(circle_buf.getvalue()).decode("utf-8")
+    ind_b64 = "data:image/png;base64," + base64.b64encode(ind_buf.getvalue()).decode("utf-8")
+
+    return jsonify({
+        "circle_plot": circle_b64,
+        "individuals_plot": ind_b64,
+        "variable_contrib": var_contrib,
+    })
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
