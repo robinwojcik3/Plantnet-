@@ -3,7 +3,7 @@
    ================================================================ */
 
 // Changez ce nom de version à chaque fois que vous mettez à jour les fichiers de l'application
-const CACHE_NAME = "plantid-v17";
+const CACHE_NAME = "plantid-v18";
 
 // Fichiers essentiels pour le fonctionnement de base de l'application
 const CORE_ASSETS = [
@@ -12,6 +12,10 @@ const CORE_ASSETS = [
   "./organ.html",
   "./viewer.html",
   "./pca.html",
+  "./pca.js",
+  "./libs/papaparse.min.js",
+  "./libs/svd-js.min.js",
+  "./libs/plotly.min.js",
   "./contexte.html",                // NOUVEAU : page contexte environnemental
   "./app.js",
   "./contexte.js",                   // NOUVEAU : script contexte environnemental

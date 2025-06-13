@@ -8,20 +8,29 @@
   <link rel="icon" href="icons/icon-192.png">
   <script defer src="ui.js"></script>
   <script defer src="sw-register.js"></script>
+  <script src="libs/papaparse.min.js"></script>
+  <script src="libs/svd-js.min.js"></script>
+  <script src="libs/plotly.min.js"></script>
+  <script defer src="pca.js"></script>
   <style>
     :root{ --primary:#388e3c; --bg:#f6f9fb; --card:#ffffff; --border:#e0e0e0; --text:#202124; }
     html[data-theme="dark"]{ --bg:#181a1b; --card:#262b2f; --border:#333; --text:#ececec; }
     *{box-sizing:border-box;}
     body{ background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; margin:0; padding:0; display:flex; flex-direction:column; min-height:100vh; }
-    .tabs-container { background: var(--card); box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; display:flex; align-items:center; justify-content:space-between; }
-    .tabs { display: flex; border-bottom: 2px solid var(--border); flex-grow:1; }
-    .tab { flex: 1; padding: 1rem; text-align: center; cursor: pointer; background: none; border: none; font-size: 1rem; color: var(--text); transition: all 0.3s; position: relative; }
-    .tab:hover { background: rgba(56, 142, 60, 0.1); }
-    .tab.active { color: var(--primary); font-weight: 600; }
-    .tab.active::after { content: ''; position: absolute; bottom: -2px; left: 0; right: 0; height: 2px; background: var(--primary); }
+    .tabs-container{ background:var(--card); box-shadow:0 2px 4px rgba(0,0,0,0.1); position:sticky; top:0; z-index:100; display:flex; align-items:center; justify-content:space-between; }
+    .tabs{ display:flex; border-bottom:2px solid var(--border); flex-grow:1; }
+    .tab{ flex:1; padding:1rem; text-align:center; cursor:pointer; background:none; border:none; font-size:1rem; color:var(--text); transition:all 0.3s; position:relative; }
+    .tab:hover{ background:rgba(56,142,60,0.1); }
+    .tab.active{ color:var(--primary); font-weight:600; }
+    .tab.active::after{ content:''; position:absolute; bottom:-2px; left:0; right:0; height:2px; background:var(--primary); }
     #theme-toggle{ background:none; border:none; cursor:pointer; font-size:1.2rem; color:var(--text); padding:0 1rem; }
     #theme-toggle:hover{ transform:scale(1.1); }
-    .main-content{ flex:1; padding:1.5rem; max-width:900px; width:100%; margin:0 auto; text-align:center; }
+    .main-content{ flex:1; padding:1.5rem; max-width:900px; width:100%; margin:0 auto; }
+    .uploader{ margin-bottom:1rem; }
+    #variance{ display:flex; gap:1rem; margin:1rem 0; }
+    .metric{ background:var(--card); padding:0.5rem 1rem; border-radius:6px; box-shadow:0 1px 2px rgba(0,0,0,0.1); }
+    .plots{ display:flex; flex-wrap:wrap; gap:1rem; }
+    .plot{ flex:1 1 400px; min-height:400px; }
   </style>
 </head>
 <body>
@@ -37,7 +46,18 @@
 
   <div class="main-content">
     <h1>Analyse PCA Habitat</h1>
-    <p>Cette page servira d'interface pour l'onglet PCA Habitat.</p>
+    <div class="uploader">
+      <input type="file" id="csvInput" accept=".csv" />
+    </div>
+    <div id="dataPreview"></div>
+    <div id="variance">
+      <div class="metric">Variance PC1 : <span id="varPc1">--</span></div>
+      <div class="metric">Variance PC2 : <span id="varPc2">--</span></div>
+    </div>
+    <div class="plots">
+      <div id="scatter" class="plot"></div>
+      <div id="corr" class="plot"></div>
+    </div>
   </div>
 </body>
 </html>
