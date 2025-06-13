@@ -86,6 +86,23 @@ const APICARTO_LAYERS = {
     'Réserves Naturelles': {
         endpoint: 'https://apicarto.ign.fr/api/nature/rn',
         style: { color: "#6A1B9A", weight: 2, opacity: 0.9, fillOpacity: 0.2 },
+    },
+    // Nouvelles couches environnementales
+    'Réserves Naturelles Nationales': {
+        endpoint: 'https://apicarto.ign.fr/api/nature/rnn',
+        style: { color: "#7B1FA2", weight: 2, opacity: 0.9, fillOpacity: 0.2 },
+    },
+    'Réserves Naturelles Régionales': {
+        endpoint: 'https://apicarto.ign.fr/api/nature/rnr',
+        style: { color: "#9C27B0", weight: 2, opacity: 0.9, fillOpacity: 0.2 },
+    },
+    'Arrêtés de Protection de Biotope': {
+        endpoint: 'https://apicarto.ign.fr/api/nature/appb',
+        style: { color: "#1B5E20", weight: 2, opacity: 0.9, fillOpacity: 0.2 },
+    },
+    'Espaces Naturels Sensibles': {
+        endpoint: 'https://apicarto.ign.fr/api/nature/ens',
+        style: { color: "#004D40", weight: 2, opacity: 0.9, fillOpacity: 0.2 },
     }
 };
 
