@@ -8,9 +8,6 @@ exports.handler = async function(event, context) {
 
     // --- Mode 1: Proxy pour les requêtes WMS vers le Géoportail IGN ---
     if (params.service && params.service.toUpperCase() === 'WMS') {
-        // NOUVELLE URL CIBLE : Service WMS du Géoportail de l'IGN.
-        // La clé 'decouverte' est une clé publique pour des usages non-commerciaux.
-        // Pour une application en production, il est recommandé de générer une clé personnelle.
         const TARGET_URL = 'https://wxs.ign.fr/decouverte/geoportail/r/wms';
         const fullUrl = `${TARGET_URL}?${event.rawQuery}`;
 
@@ -85,7 +82,6 @@ exports.handler = async function(event, context) {
         }
     }
 
-    // --- Cas par défaut: la requête est invalide ---
     return { 
         statusCode: 400, 
         body: 'Paramètres de requête invalides. Le paramètre "service=WMS" ou "type" est manquant.' 
