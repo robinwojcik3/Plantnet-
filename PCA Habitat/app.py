@@ -4,6 +4,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from scipy.spatial import ConvexHull
 import numpy as np
+import os
 import textwrap # Importé pour la mise en forme du texte de survol
 from collections import defaultdict # Ajouté pour l'analyse de co-occurrence
 import re # Ajouté pour parser les comptes dans les chaînes de caractères
@@ -983,4 +984,14 @@ with tab_syntaxo:
         st.warning("Données des syntaxons non chargées/vides. Analyse de co-occurrence impossible.")
 
 with tab_pca:
-    st.write("Fonctionnalité PCA Habitat à venir.")
+    st.title("Analyse en Composantes Principales des Habitats")
+
+    uploaded_file = st.file_uploader("Téléverser un fichier CSV", type="csv")
+    if uploaded_file is not None:
+        df_pca = core.read_reference(uploaded_file)
+    else:
+        default_path = os.path.join(os.path.dirname(__file__), "data_ecologie_espece.csv")
+        df_pca = core.read_reference(default_path)
+
+    with st.expander("Aperçu des données chargées"):
+        st.dataframe(df_pca)
