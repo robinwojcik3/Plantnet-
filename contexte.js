@@ -424,8 +424,6 @@ function displayEnvMap() {
 
   controlDiv.innerHTML = '';
   ENV_WMS_LAYERS.forEach(def => {
-    // Note: la logique de suppression de couche précédente a été simplifiée
-    // car on reconstruit les contrôles à chaque fois.
     def.layer = L.tileLayer.wms(def.url, {
       layers: def.layers,
       format: 'image/png',
