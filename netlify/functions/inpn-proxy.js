@@ -3,33 +3,39 @@
 const fetch = require('node-fetch');
 
 exports.handler = async function(event, context) {
-  // L'URL cible du service WMS de l'INPN (version "fxx_inpn")
-  const TARGET_URL = 'https://inpn.mnhn.fr/webgeoservice/WMS/fxx_inpn';
+  console.log('--- Fonction Proxy INPN Déclenchée ---');
 
-  // Construit l'URL complète en ajoutant les paramètres de la requête originale
-  // event.rawQuery contient tous les paramètres comme "service=WMS&request=GetTile..."
+  const TARGET_URL = 'https://inpn.mnhn.fr/webgeoservice/WMS/fxx_inpn';
   const fullUrl = `${TARGET_URL}?${event.rawQuery}`;
+  
+  console.log(`URL cible construite : ${fullUrl}`);
 
   try {
     const response = await fetch(fullUrl);
-    const data = await response.buffer(); // Les tuiles WMS sont des images, on utilise buffer()
+    console.log(`Réponse de l'INPN - Statut : ${response.status}`);
+    
+    if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Erreur de l'INPN : ${errorText}`);
+        return { statusCode: response.status, body: errorText };
+    }
 
-    // Important : On doit retourner la réponse avec les bons en-têtes (headers)
-    // pour que le navigateur comprenne qu'il reçoit une image.
+    const contentType = response.headers.get('content-type');
+    console.log(`Type de contenu reçu : ${contentType}`);
+    
+    const data = await response.buffer();
+
     return {
-      statusCode: response.status,
-      headers: {
-        'Content-Type': response.headers.get('Content-Type'),
-        'Content-Length': data.length.toString(),
-      },
-      body: data.toString('base64'), // Le corps de la réponse doit être encodé en base64
+      statusCode: 200,
+      headers: { 'Content-Type': contentType },
+      body: data.toString('base64'),
       isBase64Encoded: true,
     };
   } catch (error) {
-    console.error('Erreur dans la fonction proxy:', error);
+    console.error('Erreur majeure dans la fonction proxy:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Erreur lors de la communication avec le service INPN.' }),
+      body: JSON.stringify({ error: 'Erreur interne du proxy.' }),
     };
   }
 };
