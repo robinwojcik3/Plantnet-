@@ -60,52 +60,51 @@ const SERVICES = {
 };
 
 // =================================================================
-// SECTION CORRIGÉE : Couches WMS utilisant le proxy local
-// L'URL pointe vers le proxy Netlify (/wms/inpn) pour contourner les problèmes de CORS.
-// Les noms des couches sont ceux de l'ancien service WMS (fxx_inpn).
+// SECTION CORRIGÉE : Couches WMS utilisant la nouvelle route du proxy
+// L'URL pointe vers la route '/api/wms/inpn' définie dans netlify.toml
 // =================================================================
 const ENV_WMS_LAYERS = [
     {
         name: "Natura 2000 (SIC/ZSC)",
-        url: "/wms/inpn",
+        url: "/api/wms/inpn",
         layers: "PROTECTEDAREAS.SIC:sic",
-        attribution: "INPN via Proxy"
+        attribution: "INPN"
     },
     {
         name: "Natura 2000 (ZPS)",
-        url: "/wms/inpn",
+        url: "/api/wms/inpn",
         layers: "PROTECTEDAREAS.ZPS:zps",
-        attribution: "INPN via Proxy"
+        attribution: "INPN"
     },
     {
         name: "ZNIEFF type I",
-        url: "/wms/inpn",
+        url: "/api/wms/inpn",
         layers: "PROTECTEDAREAS.ZNIEFF1:znieff1",
-        attribution: "INPN via Proxy"
+        attribution: "INPN"
     },
     {
         name: "ZNIEFF type II",
-        url: "/wms/inpn",
+        url: "/api/wms/inpn",
         layers: "PROTECTEDAREAS.ZNIEFF2:znieff2",
-        attribution: "INPN via Proxy"
+        attribution: "INPN"
     },
     {
         name: "Arrêtés de Protection de Biotope (APPB)",
-        url: "/wms/inpn",
+        url: "/api/wms/inpn",
         layers: "PROTECTEDAREAS.APB:apb",
-        attribution: "INPN via Proxy"
+        attribution: "INPN"
     },
     {
         name: "Parcs Nationaux",
-        url: "/wms/inpn",
+        url: "/api/wms/inpn",
         layers: "PROTECTEDAREAS.PN:pn",
-        attribution: "INPN via Proxy"
+        attribution: "INPN"
     },
     {
         name: "Réserves Naturelles Nationales",
-        url: "/wms/inpn",
+        url: "/api/wms/inpn",
         layers: "PROTECTEDAREAS.RNN:rnn",
-        attribution: "INPN via Proxy"
+        attribution: "INPN"
     }
 ];
 // =================================================================
