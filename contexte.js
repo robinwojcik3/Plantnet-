@@ -312,6 +312,7 @@ async function handleMapClick(e) {
                     finalContent += `<div class="popup-item">`;
                     if(info.name) finalContent += `<p class="site-name">${info.name}</p>`;
                     if(inpnUrl) finalContent += `<a href="${inpnUrl}" target="_blank" class="site-link">Voulez-vous ouvrir la page ?</a>`;
+                    else finalContent += `<p class="no-link">Pas de page de détail disponible.</p>`;
                     finalContent += `</div>`;
                 });
             }
