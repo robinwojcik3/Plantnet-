@@ -103,9 +103,10 @@
             return;
         }
 
-        // Validation plus stricte de l'URL
-        if (!url.includes('/pub?output=csv')) {
-            const errorMsg = "URL invalide. Assurez-vous d'utiliser l'URL de publication se terminant par '.../pub?output=csv'.";
+        // Validation de l'URL: on autorise des paramètres supplémentaires
+        const csvUrlRegex = /\/pub\?.*output=csv/i;
+        if (!csvUrlRegex.test(url)) {
+            const errorMsg = "URL invalide. Assurez-vous d'utiliser l'URL de publication incluant 'output=csv'.";
             window.showNotification(errorMsg, 'error');
             container.innerHTML = `<p style="color:red;">${errorMsg}</p>`;
             window.toggleSpinner(false);
