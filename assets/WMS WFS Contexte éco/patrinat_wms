@@ -1,0 +1,1039 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<WMS_Capabilities version="1.3.0" updateSequence="6981" xmlns="http://www.opengis.net/wms" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wms https://data.geopf.fr/wms-v/schemas/wms/1.3.0/capabilities_1_3_0.xsd">
+  <Service>
+    <Name>WMS</Name>
+    <Title>Service WMS Vecteur public de la Géoplateforme</Title>
+    <Abstract>Ce service diffuse les données WMS Vecteur publiques de la Géoplateforme</Abstract>
+    <KeywordList>
+      <Keyword>WMS</Keyword>
+      <Keyword>Géoplateforme</Keyword>
+      <Keyword>Public</Keyword>
+    </KeywordList>
+    <OnlineResource xlink:type="simple" xlink:href="https://cartes.gouv.fr"/>
+    <ContactInformation>
+      <ContactPersonPrimary>
+        <ContactPerson/>
+        <ContactOrganization>IGN</ContactOrganization>
+      </ContactPersonPrimary>
+      <ContactPosition>custodian</ContactPosition>
+      <ContactAddress>
+        <AddressType/>
+        <Address>73 avenue de Paris</Address>
+        <City>SAINT-MANDÉ Cedex</City>
+        <StateOrProvince/>
+        <PostCode>94165</PostCode>
+        <Country>France</Country>
+      </ContactAddress>
+      <ContactVoiceTelephone>01 43 98 80 00</ContactVoiceTelephone>
+      <ContactFacsimileTelephone/>
+      <ContactElectronicMailAddress>geoplateforme@ign.fr</ContactElectronicMailAddress>
+    </ContactInformation>
+    <Fees>none</Fees>
+    <AccessConstraints>Conditions Générales d'Utilisation disponibles ici : https://geoservices.ign.fr/cgu-licences</AccessConstraints>
+  </Service>
+  <Capability>
+    <Request>
+      <GetCapabilities>
+        <Format>text/xml</Format>
+        <DCPType>
+          <HTTP>
+            <Get>
+              <OnlineResource xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?SERVICE=WMS&amp;"/>
+            </Get>
+            <Post>
+              <OnlineResource xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?SERVICE=WMS&amp;"/>
+            </Post>
+          </HTTP>
+        </DCPType>
+      </GetCapabilities>
+      <GetMap>
+        <Format>image/png</Format>
+        <Format>application/atom+xml</Format>
+        <Format>application/json;type=utfgrid</Format>
+        <Format>application/pdf</Format>
+        <Format>application/rss+xml</Format>
+        <Format>application/vnd.google-earth.kml+xml</Format>
+        <Format>application/vnd.google-earth.kml+xml;mode=networklink</Format>
+        <Format>application/vnd.google-earth.kmz</Format>
+        <Format>image/geotiff</Format>
+        <Format>image/geotiff8</Format>
+        <Format>image/gif</Format>
+        <Format>image/jpeg</Format>
+        <Format>image/png; mode=8bit</Format>
+        <Format>image/svg+xml</Format>
+        <Format>image/tiff</Format>
+        <Format>image/tiff8</Format>
+        <Format>image/vnd.jpeg-png</Format>
+        <Format>image/vnd.jpeg-png8</Format>
+        <Format>text/html; subtype=openlayers</Format>
+        <Format>text/html; subtype=openlayers2</Format>
+        <Format>text/html; subtype=openlayers3</Format>
+        <DCPType>
+          <HTTP>
+            <Get>
+              <OnlineResource xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?SERVICE=WMS&amp;"/>
+            </Get>
+          </HTTP>
+        </DCPType>
+      </GetMap>
+      <GetFeatureInfo>
+        <Format>text/plain</Format>
+        <Format>application/vnd.ogc.gml</Format>
+        <Format>text/xml</Format>
+        <Format>application/vnd.ogc.gml/3.1.1</Format>
+        <Format>text/xml; subtype=gml/3.1.1</Format>
+        <Format>text/html</Format>
+        <Format>application/json</Format>
+        <DCPType>
+          <HTTP>
+            <Get>
+              <OnlineResource xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?SERVICE=WMS&amp;"/>
+            </Get>
+          </HTTP>
+        </DCPType>
+      </GetFeatureInfo>
+    </Request>
+    <Exception>
+      <Format>XML</Format>
+      <Format>INIMAGE</Format>
+      <Format>BLANK</Format>
+      <Format>JSON</Format>
+    </Exception>
+    <Layer>
+      <Title>WMS layers</Title>
+      <Abstract>WMS layers</Abstract>
+      <!--Limited list of EPSG projections:-->
+      <CRS>EPSG:5490</CRS>
+      <CRS>EPSG:4967</CRS>
+      <CRS>EPSG:2056</CRS>
+      <CRS>EPSG:2154</CRS>
+      <CRS>EPSG:21781</CRS>
+      <CRS>EPSG:23030</CRS>
+      <CRS>EPSG:23031</CRS>
+      <CRS>EPSG:23032</CRS>
+      <CRS>EPSG:27561</CRS>
+      <CRS>EPSG:27562</CRS>
+      <CRS>EPSG:27563</CRS>
+      <CRS>EPSG:27564</CRS>
+      <CRS>EPSG:27571</CRS>
+      <CRS>EPSG:27572</CRS>
+      <CRS>EPSG:27573</CRS>
+      <CRS>EPSG:27574</CRS>
+      <CRS>EPSG:27581</CRS>
+      <CRS>EPSG:27582</CRS>
+      <CRS>EPSG:27583</CRS>
+      <CRS>EPSG:27584</CRS>
+      <CRS>EPSG:27591</CRS>
+      <CRS>EPSG:27592</CRS>
+      <CRS>EPSG:27593</CRS>
+      <CRS>EPSG:27594</CRS>
+      <CRS>EPSG:2969</CRS>
+      <CRS>EPSG:2970</CRS>
+      <CRS>EPSG:2971</CRS>
+      <CRS>EPSG:2972</CRS>
+      <CRS>EPSG:2973</CRS>
+      <CRS>EPSG:2975</CRS>
+      <CRS>EPSG:2976</CRS>
+      <CRS>EPSG:2977</CRS>
+      <CRS>EPSG:2978</CRS>
+      <CRS>EPSG:2980</CRS>
+      <CRS>EPSG:2981</CRS>
+      <CRS>EPSG:2987</CRS>
+      <CRS>EPSG:2988</CRS>
+      <CRS>EPSG:2989</CRS>
+      <CRS>EPSG:2990</CRS>
+      <CRS>EPSG:3034</CRS>
+      <CRS>EPSG:3035</CRS>
+      <CRS>EPSG:3042</CRS>
+      <CRS>EPSG:3043</CRS>
+      <CRS>EPSG:3044</CRS>
+      <CRS>EPSG:3170</CRS>
+      <CRS>EPSG:3171</CRS>
+      <CRS>EPSG:3172</CRS>
+      <CRS>EPSG:32620</CRS>
+      <CRS>EPSG:32621</CRS>
+      <CRS>EPSG:32622</CRS>
+      <CRS>EPSG:32630</CRS>
+      <CRS>EPSG:32631</CRS>
+      <CRS>EPSG:32632</CRS>
+      <CRS>EPSG:32701</CRS>
+      <CRS>EPSG:32705</CRS>
+      <CRS>EPSG:32706</CRS>
+      <CRS>EPSG:32707</CRS>
+      <CRS>EPSG:32738</CRS>
+      <CRS>EPSG:32739</CRS>
+      <CRS>EPSG:32740</CRS>
+      <CRS>EPSG:3296</CRS>
+      <CRS>EPSG:3297</CRS>
+      <CRS>EPSG:3298</CRS>
+      <CRS>EPSG:3302</CRS>
+      <CRS>EPSG:3303</CRS>
+      <CRS>EPSG:3304</CRS>
+      <CRS>EPSG:3305</CRS>
+      <CRS>EPSG:3306</CRS>
+      <CRS>EPSG:3727</CRS>
+      <CRS>EPSG:3857</CRS>
+      <CRS>EPSG:3942</CRS>
+      <CRS>EPSG:3943</CRS>
+      <CRS>EPSG:3944</CRS>
+      <CRS>EPSG:3945</CRS>
+      <CRS>EPSG:3946</CRS>
+      <CRS>EPSG:3947</CRS>
+      <CRS>EPSG:3948</CRS>
+      <CRS>EPSG:3949</CRS>
+      <CRS>EPSG:3950</CRS>
+      <CRS>EPSG:4171</CRS>
+      <CRS>EPSG:4258</CRS>
+      <CRS>EPSG:4275</CRS>
+      <CRS>EPSG:4326</CRS>
+      <CRS>EPSG:4463</CRS>
+      <CRS>EPSG:4467</CRS>
+      <CRS>EPSG:4470</CRS>
+      <CRS>EPSG:4471</CRS>
+      <CRS>EPSG:4558</CRS>
+      <CRS>EPSG:4559</CRS>
+      <CRS>EPSG:4621</CRS>
+      <CRS>EPSG:4622</CRS>
+      <CRS>EPSG:4623</CRS>
+      <CRS>EPSG:4624</CRS>
+      <CRS>EPSG:4625</CRS>
+      <CRS>EPSG:4626</CRS>
+      <CRS>EPSG:4627</CRS>
+      <CRS>EPSG:4628</CRS>
+      <CRS>EPSG:4629</CRS>
+      <CRS>EPSG:4630</CRS>
+      <CRS>EPSG:4632</CRS>
+      <CRS>EPSG:4633</CRS>
+      <CRS>EPSG:4636</CRS>
+      <CRS>EPSG:4637</CRS>
+      <CRS>EPSG:4638</CRS>
+      <CRS>EPSG:4639</CRS>
+      <CRS>EPSG:4641</CRS>
+      <CRS>EPSG:4642</CRS>
+      <CRS>EPSG:4643</CRS>
+      <CRS>EPSG:4644</CRS>
+      <CRS>EPSG:4687</CRS>
+      <CRS>EPSG:4688</CRS>
+      <CRS>EPSG:4689</CRS>
+      <CRS>EPSG:4690</CRS>
+      <CRS>EPSG:4691</CRS>
+      <CRS>EPSG:4692</CRS>
+      <CRS>EPSG:4749</CRS>
+      <CRS>EPSG:4807</CRS>
+      <CRS>CRS:84</CRS>
+      <EX_GeographicBoundingBox>
+        <westBoundLongitude>-180.0</westBoundLongitude>
+        <eastBoundLongitude>180.0</eastBoundLongitude>
+        <southBoundLatitude>-89.9</southBoundLatitude>
+        <northBoundLatitude>89.9</northBoundLatitude>
+      </EX_GeographicBoundingBox>
+      <BoundingBox CRS="CRS:84" minx="-180.0" miny="-89.9" maxx="180.0" maxy="89.9"/>
+       <Layer queryable="1">
+        <Name>Patrinat_APB_France</Name>
+        <Title>Patrinat_APB_France</Title>
+        <Abstract>APB</Abstract>
+        <KeywordList>
+          <Keyword>APB</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>-109.51171875</westBoundLongitude>
+          <eastBoundLongitude>55.72265625</eastBoundLongitude>
+          <southBoundLatitude>-21.597265625</southBoundLatitude>
+          <northBoundLatitude>51.16890625</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="-109.51171875" miny="-21.597265625" maxx="55.72265625" maxy="51.16890625"/>
+        <BoundingBox CRS="EPSG:4326" minx="-21.597265625" miny="-109.51171875" maxx="51.16890625" maxy="55.72265625"/>
+        <Style>
+          <Name>default-style-Patrinat_APB_France</Name>
+          <Title>Patrinat_APB_France style</Title>
+          <Abstract>Default style for Patrinat_APB_France layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_APB_France"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1">
+        <Name>Patrinat_APG_France</Name>
+        <Title>Patrinat_APG_France</Title>
+        <Abstract>APG</Abstract>
+        <KeywordList>
+          <Keyword>APG</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>-2.565307617</westBoundLongitude>
+          <eastBoundLongitude>4.614257812</eastBoundLongitude>
+          <southBoundLatitude>43.916170654</southBoundLatitude>
+          <northBoundLatitude>49.959251709</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="-2.565307617" miny="43.916170654" maxx="4.614257812" maxy="49.959251709"/>
+        <BoundingBox CRS="EPSG:4326" minx="43.916170654" miny="-2.565307617" maxx="49.959251709" maxy="4.614257812"/>
+        <Style>
+          <Name>default-style-Patrinat_APG_France</Name>
+          <Title>Patrinat_APG_France style</Title>
+          <Abstract>Default style for Patrinat_APG_France layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_APG_France"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1">
+        <Name>Patrinat_APHN_France</Name>
+        <Title>Patrinat_APHN_France</Title>
+        <Abstract>Aire_protection_habitat_naturel</Abstract>
+        <KeywordList>
+          <Keyword>APHN</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>-1.691894531</westBoundLongitude>
+          <eastBoundLongitude>6.899414062</eastBoundLongitude>
+          <southBoundLatitude>44.180944824</southBoundLatitude>
+          <northBoundLatitude>50.255175781</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="-1.691894531" miny="44.180944824" maxx="6.899414062" maxy="50.255175781"/>
+        <BoundingBox CRS="EPSG:4326" minx="44.180944824" miny="-1.691894531" maxx="50.255175781" maxy="6.899414062"/>
+        <Style>
+          <Name>default-style-Patrinat_APHN_France</Name>
+          <Title>Patrinat_APHN_France style</Title>
+          <Abstract>Default style for Patrinat_APHN_France layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_APHN_France"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1">
+        <Name>Patrinat_APLG_France</Name>
+        <Title>Patrinat_APLG_France</Title>
+        <Abstract>APLG</Abstract>
+        <KeywordList>
+          <Keyword>APLG</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>-5.141601562</westBoundLongitude>
+          <eastBoundLongitude>9.459228516</eastBoundLongitude>
+          <southBoundLatitude>41.673377686</southBoundLatitude>
+          <northBoundLatitude>50.10461792</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="-5.141601562" miny="41.673377686" maxx="9.459228516" maxy="50.10461792"/>
+        <BoundingBox CRS="EPSG:4326" minx="41.673377686" miny="-5.141601562" maxx="50.10461792" maxy="9.459228516"/>
+        <Style>
+          <Name>default-style-Patrinat_APLG_France</Name>
+          <Title>Patrinat_APLG_France style</Title>
+          <Abstract>Default style for Patrinat_APLG_France layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_APLG_France"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1">
+        <Name>Patrinat_BPM_France</Name>
+        <Title>Patrinat_BPM_France</Title>
+        <Abstract>Bien_patrimoine_mondial_UNESCO</Abstract>
+        <KeywordList>
+          <Keyword>BPM</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>-151.5234375</westBoundLongitude>
+          <eastBoundLongitude>78.3984375</eastBoundLongitude>
+          <southBoundLatitude>-52.165703125</southBoundLatitude>
+          <northBoundLatitude>49.1753125</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="-151.5234375" miny="-52.165703125" maxx="78.3984375" maxy="49.1753125"/>
+        <BoundingBox CRS="EPSG:4326" minx="-52.165703125" miny="-151.5234375" maxx="49.1753125" maxy="78.3984375"/>
+        <Style>
+          <Name>default-style-Patrinat_BPM_France</Name>
+          <Title>Patrinat_BPM_France style</Title>
+          <Abstract>Default style for Patrinat_BPM_France layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_BPM_France"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1">
+        <Name>Patrinat_CEN_France</Name>
+        <Title>Patrinat_CEN_France</Title>
+        <Abstract>CEN</Abstract>
+        <KeywordList>
+          <Keyword>CEN</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>-2.4609375</westBoundLongitude>
+          <eastBoundLongitude>8.7890625</eastBoundLongitude>
+          <southBoundLatitude>41.86546875</southBoundLatitude>
+          <northBoundLatitude>51.16890625</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="-2.4609375" miny="41.86546875" maxx="8.7890625" maxy="51.16890625"/>
+        <BoundingBox CRS="EPSG:4326" minx="41.86546875" miny="-2.4609375" maxx="51.16890625" maxy="8.7890625"/>
+        <Style>
+          <Name>default-style-Patrinat_CEN_France</Name>
+          <Title>Patrinat_CEN_France style</Title>
+          <Abstract>Default style for Patrinat_CEN_France layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_CEN_France"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1">
+        <Name>Patrinat_Conservatoire_littoral</Name>
+        <Title>Patrinat_CDL_France</Title>
+        <Abstract>Conservatoire_littoral</Abstract>
+        <KeywordList>
+          <Keyword>CDL</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>-63.193359375</westBoundLongitude>
+          <eastBoundLongitude>55.8984375</eastBoundLongitude>
+          <southBoundLatitude>-21.431132812</southBoundLatitude>
+          <northBoundLatitude>51.16890625</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="-63.193359375" miny="-21.431132812" maxx="55.8984375" maxy="51.16890625"/>
+        <BoundingBox CRS="EPSG:4326" minx="-21.431132812" miny="-63.193359375" maxx="51.16890625" maxy="55.8984375"/>
+        <Style>
+          <Name>default-style-Patrinat_Conservatoire_littoral</Name>
+          <Title>Patrinat_Conservatoire_littoral style</Title>
+          <Abstract>Default style for Patrinat_Conservatoire_littoral layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_Conservatoire_littoral"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1">
+        <Name>Patrinat_GP_France</Name>
+        <Title>Patrinat_GP_France</Title>
+        <Abstract>GP</Abstract>
+        <KeywordList>
+          <Keyword>GP</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>-4.658203125</westBoundLongitude>
+          <eastBoundLongitude>6.899414062</eastBoundLongitude>
+          <southBoundLatitude>43.609863281</southBoundLatitude>
+          <northBoundLatitude>48.759980469</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="-4.658203125" miny="43.609863281" maxx="6.899414062" maxy="48.759980469"/>
+        <BoundingBox CRS="EPSG:4326" minx="43.609863281" miny="-4.658203125" maxx="48.759980469" maxy="6.899414062"/>
+        <Style>
+          <Name>default-style-Patrinat_GP_France</Name>
+          <Title>Patrinat_GP_France style</Title>
+          <Abstract>Default style for Patrinat_GP_France layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_GP_France"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1">
+        <Name>Patrinat_GSF_France</Name>
+        <Title>Patrinat_GSF_France</Title>
+        <Abstract>GSF</Abstract>
+        <KeywordList>
+          <Keyword>GSF</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>-4.74609375</westBoundLongitude>
+          <eastBoundLongitude>9.448242188</eastBoundLongitude>
+          <southBoundLatitude>41.86546875</southBoundLatitude>
+          <northBoundLatitude>51.16890625</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="-4.74609375" miny="41.86546875" maxx="9.448242188" maxy="51.16890625"/>
+        <BoundingBox CRS="EPSG:4326" minx="41.86546875" miny="-4.74609375" maxx="51.16890625" maxy="9.448242188"/>
+        <Style>
+          <Name>default-style-Patrinat_GSF_France</Name>
+          <Title>Patrinat_GSF_France style</Title>
+          <Abstract>Default style for Patrinat_GSF_France layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_GSF_France"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1">
+        <Name>Patrinat_INPG_France</Name>
+        <Title>Patrinat_INPG_France</Title>
+        <Abstract>INPG</Abstract>
+        <KeywordList>
+          <Keyword>INPG</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>-61.875</westBoundLongitude>
+          <eastBoundLongitude>55.8984375</eastBoundLongitude>
+          <southBoundLatitude>-21.597265625</southBoundLatitude>
+          <northBoundLatitude>51.16890625</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="-61.875" miny="-21.597265625" maxx="55.8984375" maxy="51.16890625"/>
+        <BoundingBox CRS="EPSG:4326" minx="-21.597265625" miny="-61.875" maxx="51.16890625" maxy="55.8984375"/>
+        <Style>
+          <Name>default-style-Patrinat_INPG_France</Name>
+          <Title>Patrinat_INPG_France style</Title>
+          <Abstract>Default style for Patrinat_INPG_France layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_INPG_France"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1">
+        <Name>Patrinat_OSPAR_France</Name>
+        <Title>Patrinat_OSPAR_France</Title>
+        <Abstract>OSPAR</Abstract>
+        <KeywordList>
+          <Keyword>OSPAR</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>-5.537109375</westBoundLongitude>
+          <eastBoundLongitude>2.548828125</eastBoundLongitude>
+          <southBoundLatitude>43.360664062</southBoundLatitude>
+          <northBoundLatitude>51.335039062</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="-5.537109375" miny="43.360664062" maxx="2.548828125" maxy="51.335039062"/>
+        <BoundingBox CRS="EPSG:4326" minx="43.360664062" miny="-5.537109375" maxx="51.335039062" maxy="2.548828125"/>
+        <Style>
+          <Name>default-style-Patrinat_OSPAR_France</Name>
+          <Title>Patrinat_OSPAR_France style</Title>
+          <Abstract>Default style for Patrinat_OSPAR_France layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_OSPAR_France"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1">
+        <Name>Patrinat_PGSF_France</Name>
+        <Title>Patrinat_PGSF_France</Title>
+        <Abstract>PGSF</Abstract>
+        <KeywordList>
+          <Keyword>PGSF</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>-1.955566406</westBoundLongitude>
+          <eastBoundLongitude>6.987304688</eastBoundLongitude>
+          <southBoundLatitude>42.779199219</southBoundLatitude>
+          <northBoundLatitude>51.127373047</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="-1.955566406" miny="42.779199219" maxx="6.987304688" maxy="51.127373047"/>
+        <BoundingBox CRS="EPSG:4326" minx="42.779199219" miny="-1.955566406" maxx="51.127373047" maxy="6.987304688"/>
+        <Style>
+          <Name>default-style-Patrinat_PGSF_France</Name>
+          <Title>Patrinat_PGSF_France style</Title>
+          <Abstract>Default style for Patrinat_PGSF_France layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_PGSF_France"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1">
+        <Name>Patrinat_PNM_France</Name>
+        <Title>Patrinat_PNM_France</Title>
+        <Abstract>PNM</Abstract>
+        <KeywordList>
+          <Keyword>PNM</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>-62.9296875</westBoundLongitude>
+          <eastBoundLongitude>46.7578125</eastBoundLongitude>
+          <southBoundLatitude>-14.6196875</southBoundLatitude>
+          <northBoundLatitude>50.836640625</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="-62.9296875" miny="-14.6196875" maxx="46.7578125" maxy="50.836640625"/>
+        <BoundingBox CRS="EPSG:4326" minx="-14.6196875" miny="-62.9296875" maxx="50.836640625" maxy="46.7578125"/>
+        <Style>
+          <Name>default-style-Patrinat_PNM_France</Name>
+          <Title>Patrinat_PNM_France style</Title>
+          <Abstract>Default style for Patrinat_PNM_France layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_PNM_France"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1">
+        <Name>Patrinat_PNR_France</Name>
+        <Title>Patrinat_PNR_France</Title>
+        <Abstract>PNR</Abstract>
+        <KeywordList>
+          <Keyword>PNR</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>-61.34765625</westBoundLongitude>
+          <eastBoundLongitude>9.4921875</eastBoundLongitude>
+          <southBoundLatitude>3.654921875</southBoundLatitude>
+          <northBoundLatitude>51.16890625</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="-61.34765625" miny="3.654921875" maxx="9.4921875" maxy="51.16890625"/>
+        <BoundingBox CRS="EPSG:4326" minx="3.654921875" miny="-61.34765625" maxx="51.16890625" maxy="9.4921875"/>
+        <Style>
+          <Name>default-style-Patrinat_PNR_France</Name>
+          <Title>Patrinat_PNR_France style</Title>
+          <Abstract>Default style for Patrinat_PNR_France layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_PNR_France"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1">
+        <Name>Patrinat_PPRNN_France</Name>
+        <Title>Patrinat_PPRNN_France</Title>
+        <Abstract>PPRNN</Abstract>
+        <KeywordList>
+          <Keyword>PPRNN</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>-60.842285156</westBoundLongitude>
+          <eastBoundLongitude>6.6796875</eastBoundLongitude>
+          <southBoundLatitude>14.370488281</southBoundLatitude>
+          <northBoundLatitude>50.296708984</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="-60.842285156" miny="14.370488281" maxx="6.6796875" maxy="50.296708984"/>
+        <BoundingBox CRS="EPSG:4326" minx="14.370488281" miny="-60.842285156" maxx="50.296708984" maxy="6.6796875"/>
+        <Style>
+          <Name>default-style-Patrinat_PPRNN_France</Name>
+          <Title>Patrinat_PPRNN_France style</Title>
+          <Abstract>Default style for Patrinat_PPRNN_France layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_PPRNN_France"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1">
+        <Name>Patrinat_Parc_national</Name>
+        <Title>Patrinat_PN_France</Title>
+        <Abstract>Parc_national</Abstract>
+        <KeywordList>
+          <Keyword>PN</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>-62.05078125</westBoundLongitude>
+          <eastBoundLongitude>55.8984375</eastBoundLongitude>
+          <southBoundLatitude>-21.431132812</southBoundLatitude>
+          <northBoundLatitude>48.178515625</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="-62.05078125" miny="-21.431132812" maxx="55.8984375" maxy="48.178515625"/>
+        <BoundingBox CRS="EPSG:4326" minx="-21.431132812" miny="-62.05078125" maxx="48.178515625" maxy="55.8984375"/>
+        <Style>
+          <Name>default-style-Patrinat_Parc_national</Name>
+          <Title>Patrinat_Parc_national style</Title>
+          <Abstract>Default style for Patrinat_Parc_national layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_Parc_national"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1">
+        <Name>Patrinat_RAMSAR_France</Name>
+        <Title>Patrinat_RAMSAR_France</Title>
+        <Abstract>RAMSAR</Abstract>
+        <KeywordList>
+          <Keyword>RAMSAR</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>-149.94140625</westBoundLongitude>
+          <eastBoundLongitude>167.080078125</eastBoundLongitude>
+          <southBoundLatitude>-49.83984375</southBoundLatitude>
+          <northBoundLatitude>51.002773438</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="-149.94140625" miny="-49.83984375" maxx="167.080078125" maxy="51.002773438"/>
+        <BoundingBox CRS="EPSG:4326" minx="-49.83984375" miny="-149.94140625" maxx="51.002773438" maxy="167.080078125"/>
+        <Style>
+          <Name>default-style-Patrinat_RAMSAR_France</Name>
+          <Title>Patrinat_RAMSAR_France style</Title>
+          <Abstract>Default style for Patrinat_RAMSAR_France layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_RAMSAR_France"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1">
+        <Name>Patrinat_RBIOS_France</Name>
+        <Title>Patrinat_RBIOS_France</Title>
+        <Abstract>rbios</Abstract>
+        <KeywordList>
+          <Keyword>A</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>-146.6015625</westBoundLongitude>
+          <eastBoundLongitude>8.96484375</eastBoundLongitude>
+          <southBoundLatitude>-16.779414063</southBoundLatitude>
+          <northBoundLatitude>51.002773438</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="-146.6015625" miny="-16.779414063" maxx="8.96484375" maxy="51.002773438"/>
+        <BoundingBox CRS="EPSG:4326" minx="-16.779414063" miny="-146.6015625" maxx="51.002773438" maxy="8.96484375"/>
+        <Style>
+          <Name>default-style-Patrinat_RBIOS_France</Name>
+          <Title>Patrinat_RBIOS_France style</Title>
+          <Abstract>Default style for Patrinat_RBIOS_France layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_RBIOS_France"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1">
+        <Name>Patrinat_RIPN_France</Name>
+        <Title>Patrinat_RIPN_France</Title>
+        <Abstract>ripn</Abstract>
+        <KeywordList>
+          <Keyword>RIPN</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>4.938354492</westBoundLongitude>
+          <eastBoundLongitude>6.817016602</eastBoundLongitude>
+          <southBoundLatitude>42.986865234</southBoundLatitude>
+          <northBoundLatitude>48.033149414</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="4.938354492" miny="42.986865234" maxx="6.817016602" maxy="48.033149414"/>
+        <BoundingBox CRS="EPSG:4326" minx="42.986865234" miny="4.938354492" maxx="48.033149414" maxy="6.817016602"/>
+        <Style>
+          <Name>default-style-Patrinat_RIPN_France</Name>
+          <Title>Patrinat_RIPN_France style</Title>
+          <Abstract>Default style for Patrinat_RIPN_France layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_RIPN_France"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1">
+        <Name>Patrinat_RNCFS_France</Name>
+        <Title>Patrinat_RNCFS_France</Title>
+        <Abstract>rncfs</Abstract>
+        <KeywordList>
+          <Keyword>RNCFS</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>-2.911376953</westBoundLongitude>
+          <eastBoundLongitude>8.239746094</eastBoundLongitude>
+          <southBoundLatitude>42.592299805</southBoundLatitude>
+          <northBoundLatitude>48.967646484</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="-2.911376953" miny="42.592299805" maxx="8.239746094" maxy="48.967646484"/>
+        <BoundingBox CRS="EPSG:4326" minx="42.592299805" miny="-2.911376953" maxx="48.967646484" maxy="8.239746094"/>
+        <Style>
+          <Name>default-style-Patrinat_RNCFS_France</Name>
+          <Title>Patrinat_RNCFS_France style</Title>
+          <Abstract>Default style for Patrinat_RNCFS_France layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_RNCFS_France"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1">
+        <Name>Patrinat_RNC_France</Name>
+        <Title>Patrinat_RNC_France</Title>
+        <Abstract>RNC</Abstract>
+        <KeywordList>
+          <Keyword>RNC</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>8.525390625</westBoundLongitude>
+          <eastBoundLongitude>9.525146484</eastBoundLongitude>
+          <southBoundLatitude>41.284003906</southBoundLatitude>
+          <northBoundLatitude>43.028398438</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="8.525390625" miny="41.284003906" maxx="9.525146484" maxy="43.028398438"/>
+        <BoundingBox CRS="EPSG:4326" minx="41.284003906" miny="8.525390625" maxx="43.028398438" maxy="9.525146484"/>
+        <Style>
+          <Name>default-style-Patrinat_RNC_France</Name>
+          <Title>Patrinat_RNC_France style</Title>
+          <Abstract>Default style for Patrinat_RNC_France layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_RNC_France"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1">
+        <Name>Patrinat_RNN_France</Name>
+        <Title>Patrinat_RNN_France</Title>
+        <Abstract>RNN</Abstract>
+        <KeywordList>
+          <Keyword>RNN</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>-63.28125</westBoundLongitude>
+          <eastBoundLongitude>82.265625</eastBoundLongitude>
+          <southBoundLatitude>-53.82703125</southBoundLatitude>
+          <northBoundLatitude>51.16890625</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="-63.28125" miny="-53.82703125" maxx="82.265625" maxy="51.16890625"/>
+        <BoundingBox CRS="EPSG:4326" minx="-53.82703125" miny="-63.28125" maxx="51.16890625" maxy="82.265625"/>
+        <Style>
+          <Name>default-style-Patrinat_RNN_France</Name>
+          <Title>Patrinat_RNN_France style</Title>
+          <Abstract>Default style for Patrinat_RNN_France layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_RNN_France"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1">
+        <Name>Patrinat_RNR_France</Name>
+        <Title>Patrinat_RNR_France</Title>
+        <Abstract>RNR</Abstract>
+        <KeywordList>
+          <Keyword>RNR</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>-61.237792969</westBoundLongitude>
+          <eastBoundLongitude>7.690429688</eastBoundLongitude>
+          <southBoundLatitude>4.527119141</southBoundLatitude>
+          <northBoundLatitude>51.044306641</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="-61.237792969" miny="4.527119141" maxx="7.690429688" maxy="51.044306641"/>
+        <BoundingBox CRS="EPSG:4326" minx="4.527119141" miny="-61.237792969" maxx="51.044306641" maxy="7.690429688"/>
+        <Style>
+          <Name>default-style-Patrinat_RNR_France</Name>
+          <Title>Patrinat_RNR_France style</Title>
+          <Abstract>Default style for Patrinat_RNR_France layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_RNR_France"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1">
+        <Name>Patrinat_Reserve_biologique</Name>
+        <Title>Patrinat_RB_France</Title>
+        <Abstract>Reserve_biologique</Abstract>
+        <KeywordList>
+          <Keyword>RB</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>-61.5234375</westBoundLongitude>
+          <eastBoundLongitude>55.810546875</eastBoundLongitude>
+          <southBoundLatitude>-21.389599609</southBoundLatitude>
+          <northBoundLatitude>50.795107422</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="-61.5234375" miny="-21.389599609" maxx="55.810546875" maxy="50.795107422"/>
+        <BoundingBox CRS="EPSG:4326" minx="-21.389599609" miny="-61.5234375" maxx="50.795107422" maxy="55.810546875"/>
+        <Style>
+          <Name>default-style-Patrinat_Reserve_biologique</Name>
+          <Title>Patrinat_Reserve_biologique style</Title>
+          <Abstract>Default style for Patrinat_Reserve_biologique layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_Reserve_biologique"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1">
+        <Name>Patrinat_SC_France</Name>
+        <Title>Patrinat_SC_France</Title>
+        <Abstract>SC</Abstract>
+        <KeywordList>
+          <Keyword>SC</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>-61.875</westBoundLongitude>
+          <eastBoundLongitude>55.8984375</eastBoundLongitude>
+          <southBoundLatitude>-21.265</southBoundLatitude>
+          <northBoundLatitude>51.16890625</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="-61.875" miny="-21.265" maxx="55.8984375" maxy="51.16890625"/>
+        <BoundingBox CRS="EPSG:4326" minx="-21.265" miny="-61.875" maxx="51.16890625" maxy="55.8984375"/>
+        <Style>
+          <Name>default-style-Patrinat_SC_France</Name>
+          <Title>Patrinat_SC_France style</Title>
+          <Abstract>Default style for Patrinat_SC_France layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_SC_France"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1">
+        <Name>Patrinat_SIC_France</Name>
+        <Title>Patrinat_SIC_France</Title>
+        <Abstract>SIC</Abstract>
+        <KeywordList>
+          <Keyword>SIC</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>-10.1953125</westBoundLongitude>
+          <eastBoundLongitude>9.84375</eastBoundLongitude>
+          <southBoundLatitude>41.2009375</southBoundLatitude>
+          <northBoundLatitude>51.501171875</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="-10.1953125" miny="41.2009375" maxx="9.84375" maxy="51.501171875"/>
+        <BoundingBox CRS="EPSG:4326" minx="41.2009375" miny="-10.1953125" maxx="51.501171875" maxy="9.84375"/>
+        <Style>
+          <Name>default-style-Patrinat_SIC_France</Name>
+          <Title>Patrinat_SIC_France style</Title>
+          <Abstract>Default style for Patrinat_SIC_France layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_SIC_France"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1">
+        <Name>Patrinat_ZNIEFF1_France</Name>
+        <Title>Patrinat_ZNIEFF1_France</Title>
+        <Abstract>ZNIEFF1</Abstract>
+        <KeywordList>
+          <Keyword>ZNIEFF1</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>-63.28125</westBoundLongitude>
+          <eastBoundLongitude>55.8984375</eastBoundLongitude>
+          <southBoundLatitude>-21.597265625</southBoundLatitude>
+          <northBoundLatitude>51.16890625</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="-63.28125" miny="-21.597265625" maxx="55.8984375" maxy="51.16890625"/>
+        <BoundingBox CRS="EPSG:4326" minx="-21.597265625" miny="-63.28125" maxx="51.16890625" maxy="55.8984375"/>
+        <Style>
+          <Name>default-style-Patrinat_ZNIEFF1_France</Name>
+          <Title>Patrinat_ZNIEFF1_France style</Title>
+          <Abstract>Default style for Patrinat_ZNIEFF1_France layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_ZNIEFF1_France"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1">
+        <Name>Patrinat_ZNIEFF1_MER_France</Name>
+        <Title>Patrinat_ZNIEFF1_MER_France</Title>
+        <Abstract>ZNIEFF1_MER</Abstract>
+        <KeywordList>
+          <Keyword>ZNIEFF1_MER</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>-61.831054688</westBoundLongitude>
+          <eastBoundLongitude>55.854492188</eastBoundLongitude>
+          <southBoundLatitude>-21.431132812</southBoundLatitude>
+          <northBoundLatitude>51.002773438</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="-61.831054688" miny="-21.431132812" maxx="55.854492188" maxy="51.002773438"/>
+        <BoundingBox CRS="EPSG:4326" minx="-21.431132812" miny="-61.831054688" maxx="51.002773438" maxy="55.854492188"/>
+        <Style>
+          <Name>default-style-Patrinat_ZNIEFF1_MER_France</Name>
+          <Title>Patrinat_ZNIEFF1_MER_France style</Title>
+          <Abstract>Default style for Patrinat_ZNIEFF1_MER_France layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_ZNIEFF1_MER_France"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1">
+        <Name>Patrinat_ZNIEFF2_France</Name>
+        <Title>Patrinat_ZNIEFF2_France</Title>
+        <Abstract>ZNIEFF2</Abstract>
+        <KeywordList>
+          <Keyword>ZNIEFF2</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>-61.875</westBoundLongitude>
+          <eastBoundLongitude>55.8984375</eastBoundLongitude>
+          <southBoundLatitude>-21.597265625</southBoundLatitude>
+          <northBoundLatitude>51.16890625</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="-61.875" miny="-21.597265625" maxx="55.8984375" maxy="51.16890625"/>
+        <BoundingBox CRS="EPSG:4326" minx="-21.597265625" miny="-61.875" maxx="51.16890625" maxy="55.8984375"/>
+        <Style>
+          <Name>default-style-Patrinat_ZNIEFF2_France</Name>
+          <Title>Patrinat_ZNIEFF2_France style</Title>
+          <Abstract>Default style for Patrinat_ZNIEFF2_France layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_ZNIEFF2_France"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1">
+        <Name>Patrinat_ZNIEFF2_MER_France</Name>
+        <Title>Patrinat_ZNIEFF2_MER_France</Title>
+        <Abstract>ZNIEFF2_MER</Abstract>
+        <KeywordList>
+          <Keyword>ZNIEFF2_MER</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>-54.052734375</westBoundLongitude>
+          <eastBoundLongitude>55.8984375</eastBoundLongitude>
+          <southBoundLatitude>-21.431132812</southBoundLatitude>
+          <northBoundLatitude>50.338242188</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="-54.052734375" miny="-21.431132812" maxx="55.8984375" maxy="50.338242188"/>
+        <BoundingBox CRS="EPSG:4326" minx="-21.431132812" miny="-54.052734375" maxx="50.338242188" maxy="55.8984375"/>
+        <Style>
+          <Name>default-style-Patrinat_ZNIEFF2_MER_France</Name>
+          <Title>Patrinat_ZNIEFF2_MER_France style</Title>
+          <Abstract>Default style for Patrinat_ZNIEFF2_MER_France layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_ZNIEFF2_MER_France"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1">
+        <Name>Patrinat_ZPS_France</Name>
+        <Title>Patrinat_ZPS_France</Title>
+        <Abstract>ZPS</Abstract>
+        <KeywordList>
+          <Keyword>ZPS</Keyword>
+        </KeywordList>
+        <CRS>EPSG:4326</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>-10.1953125</westBoundLongitude>
+          <eastBoundLongitude>9.84375</eastBoundLongitude>
+          <southBoundLatitude>41.2009375</southBoundLatitude>
+          <northBoundLatitude>51.501171875</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84" minx="-10.1953125" miny="41.2009375" maxx="9.84375" maxy="51.501171875"/>
+        <BoundingBox CRS="EPSG:4326" minx="41.2009375" miny="-10.1953125" maxx="51.501171875" maxy="9.84375"/>
+        <Style>
+          <Name>default-style-Patrinat_ZPS_France</Name>
+          <Title>Patrinat_ZPS_France style</Title>
+          <Abstract>Default style for Patrinat_ZPS_France layer</Abstract>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://data.geopf.fr/wms-v/ows?service=WMS&amp;version=1.3.0&amp;request=GetLegendGraphic&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=Patrinat_ZPS_France"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      </Layer>
+  </Capability>
+</WMS_Capabilities>

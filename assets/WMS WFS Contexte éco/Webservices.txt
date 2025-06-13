@@ -1,0 +1,4 @@
+ Webservices
+Toutes les données SIG concernant les espaces protégés, les inventaires d'espaces naturels et Natura 2000 sont accessibles par web-services.
+WMS	WFS
+https://inpn.mnhn.fr/webgeoservice/WMS/fxx_inpn	https://inpn.mnhn.fr/webgeoservice/WFS/fxx_inpn
