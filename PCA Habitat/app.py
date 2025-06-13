@@ -983,8 +983,18 @@ with tab_syntaxo:
         st.markdown("---"); st.subheader("Étape 4: Analyse des Co-occurrences d'Espèces")
         st.warning("Données des syntaxons non chargées/vides. Analyse de co-occurrence impossible.")
 
+# Bloc de fonctionnalités dédié à l'onglet PCA Habitat
 with tab_pca:
     st.title("Analyse en Composantes Principales des Habitats")
+
+    # ------------------------------------------------------------
+    # Étape 1 : Chargement des données
+    # ------------------------------------------------------------
+    st.markdown("### Étape 1 : Chargement des données")
+    st.write(
+        "Téléversez un fichier CSV ou utilisez l'exemple interne pour "
+        "découvrir la démarche."
+    )
 
     uploaded_file = st.file_uploader(
         "Téléverser un fichier CSV pour l'analyse",
@@ -1002,6 +1012,15 @@ with tab_pca:
         st.dataframe(df_pca, use_container_width=True)
 
     # ------------------------------------------------------------
+    # Étape 2 : Exécution de l'analyse et affichage des résultats
+    # ------------------------------------------------------------
+    st.markdown("### Étape 2 : Résultats de l'analyse")
+    st.write(
+        "L'analyse en composantes principales synthétise les variables "
+        "écologiques pour mettre en évidence les gradients majeurs."
+    )
+
+    # ------------------------------------------------------------
     # Étape 3 : Exécution de l'analyse et affichage des résultats
     # de base conformément au PLAN.md
     # ------------------------------------------------------------
@@ -1014,6 +1033,10 @@ with tab_pca:
 
     var_ratio = getattr(pca_obj, "explained_variance_ratio_", None)
     if var_ratio is not None and len(var_ratio) >= 2:
+        st.markdown(
+            "Les deux premières composantes principales expliquent la part de "
+            "variance indiquée ci-dessous."
+        )
         col_pc1, col_pc2 = st.columns(2)
         col_pc1.metric("Variance PC1", f"{var_ratio[0]*100:.2f}%")
         col_pc2.metric("Variance PC2", f"{var_ratio[1]*100:.2f}%")
@@ -1022,6 +1045,11 @@ with tab_pca:
 
     if not coords_df.empty:
         coords_df["Espece"] = df_pca["Espece"].iloc[:len(coords_df)]
+        st.markdown("#### Projection sur le plan factoriel")
+        st.write(
+            "Chaque point représente une espèce positionnée selon les deux "
+            "premières composantes principales."
+        )
         fig_proj = px.scatter(coords_df, x="PC1", y="PC2", text="Espece", hover_name="Espece", template="plotly_white")
         fig_proj.update_traces(marker=dict(size=8, opacity=0.8))
         fig_proj.update_layout(
@@ -1063,6 +1091,11 @@ with tab_pca:
                     )
                     fig_corr.add_annotation(x=x, y=y, ax=0, ay=0, text=var_name, showarrow=True, arrowhead=2)
 
+                st.markdown("#### Cercle de corrélation")
+                st.write(
+                    "Les variables sont projetées dans l'espace des composantes "
+                    "principales pour évaluer leurs contributions."
+                )
                 fig_corr.update_layout(
                     title="Cercle de corrélation",
                     title_x=0.5,
