@@ -1,34 +1,4 @@
-const fs = require('fs');
-const vm = require('vm');
-
-// Utility to load app.js into a sandboxed context
-function loadApp(extraCtx = {}) {
-  const code = fs.readFileSync('app.js', 'utf-8');
-  // default fetch used during module initialisation to load local data
-  const defaultFetch = jest.fn().mockResolvedValue({
-    ok: true,
-    json: () => Promise.resolve({}),
-    text: () => Promise.resolve('')
-  });
-  const dummyDocument = {
-    getElementById: () => null,
-    querySelector: () => null,
-    querySelectorAll: () => []
-  };
-  const ctx = {
-    console,
-    fetch: defaultFetch,
-    toggleSpinner: jest.fn(),
-    showNotification: jest.fn(),
-    window: {},
-    document: dummyDocument,
-    ...extraCtx
-  };
-  ctx.window.document = dummyDocument;
-  vm.createContext(ctx);
-  vm.runInContext(code, ctx);
-  return ctx;
-}
+const { loadApp } = require('../test-utils');
 
 describe('utility functions', () => {
   test('norm removes accents and spaces', () => {
