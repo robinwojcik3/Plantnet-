@@ -123,4 +123,6 @@ Follow the official Cloud Run documentation for detailed steps.
   suggestions of up to **five** morphologically similar species from the same
   genus using the Gemini API. This button now sits directly under the results
   table with enhanced styling for better visibility.
+- The environmental context tab features an interactive map showing protected
+  area overlays from IGN. It now includes the **Zones humides** layer.
 
