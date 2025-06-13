@@ -428,6 +428,7 @@ function displayEnvMap() {
 			layers: def.layers,
 			format: 'image/png',
 			transparent: true,
+			version: '1.3.0', // Ajout de la version pour fiabiliser la requête
 			attribution: def.attribution || 'INPN'
 		});
 
