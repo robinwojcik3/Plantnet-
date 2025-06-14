@@ -122,20 +122,13 @@ function latLonToWebMercator(lat, lon) {
 
 // Initialisation au chargement de la page
 document.addEventListener('DOMContentLoaded', () => {
-        document.getElementById('use-geolocation').addEventListener('click', useGeolocation);
-        document.getElementById('choose-on-map').addEventListener('click', toggleMap);
-        document.getElementById('validate-location').addEventListener('click', validateLocation);
-        document.getElementById('search-address').addEventListener('click', searchAddress);
-        document.getElementById('address-input').addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') searchAddress();
-        });
-        const openBtn = document.getElementById('open-env-map');
-        const closeBtn = document.getElementById('env-map-close');
-        if (openBtn && closeBtn) {
-                openBtn.addEventListener('click', openEnvMap);
-                closeBtn.addEventListener('click', closeEnvMap);
-                window.addEventListener('popstate', handleBack); 
-        }
+	document.getElementById('use-geolocation').addEventListener('click', useGeolocation);
+	document.getElementById('choose-on-map').addEventListener('click', toggleMap);
+	document.getElementById('validate-location').addEventListener('click', validateLocation);
+	document.getElementById('search-address').addEventListener('click', searchAddress);
+	document.getElementById('address-input').addEventListener('keydown', (e) => {
+		if (e.key === 'Enter') searchAddress();
+	});
 });
 
 // Fonction pour utiliser la géolocalisation
@@ -289,10 +282,10 @@ async function searchAddress() {
 
 // Fonction principale pour afficher les résultats
 function showResults() {
-        if (!selectedLat || !selectedLon) {
-                showNotification('Aucune localisation sélectionnée', 'error');
-                return;
-        }
+	if (!selectedLat || !selectedLon) {
+		showNotification('Aucune localisation sélectionnée', 'error');
+		return;
+	}
 	
 	const loading = document.getElementById('loading');
 	loading.style.display = 'block';
@@ -305,41 +298,18 @@ function showResults() {
 		const resultsGrid = document.getElementById('results-grid');
 		resultsGrid.innerHTML = '';
 		
-                Object.keys(SERVICES).forEach(serviceKey => {
-                        const service = SERVICES[serviceKey];
-                        const url = service.buildUrl(selectedLat, selectedLon);
-                        const card = document.createElement('div');
-                        card.className = 'result-card';
-                        card.innerHTML = `<h3>${service.name}</h3><p>${service.description}</p><a href="${url}" target="_blank" rel="noopener noreferrer">Ouvrir dans un nouvel onglet →</a>`;
-                        resultsGrid.appendChild(card);
-                });
-                resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 500);
-}
+		Object.keys(SERVICES).forEach(serviceKey => {
+			const service = SERVICES[serviceKey];
+			const url = service.buildUrl(selectedLat, selectedLon);
+			const card = document.createElement('div');
+			card.className = 'result-card';
+			card.innerHTML = `<h3>${service.name}</h3><p>${service.description}</p><a href="${url}" target="_blank" rel="noopener noreferrer">Ouvrir dans un nouvel onglet →</a>`;
+			resultsGrid.appendChild(card);
+		});
 
-function openEnvMap() {
-        const overlay = document.getElementById('env-map-overlay');
-        if (!overlay) return;
-        overlay.style.display = 'block';
-        displayInteractiveEnvMap();
-        setTimeout(() => { if (envMap) envMap.invalidateSize(); }, 100);
-        history.pushState({ envMap: true }, '');
-}
-
-function closeEnvMap() {
-        const overlay = document.getElementById('env-map-overlay');
-        if (!overlay) return;
-        overlay.style.display = 'none';
-        if (history.state && history.state.envMap) {
-                history.back();
-        }
-}
-
-function handleBack(event) {
-        const overlay = document.getElementById('env-map-overlay');
-        if (overlay && overlay.style.display === 'block') {
-                overlay.style.display = 'none';
-        }
+		displayInteractiveEnvMap();
+		resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}, 500);
 }
 
 /**
@@ -347,15 +317,16 @@ function handleBack(event) {
  * récupérées depuis l'API Carto de l'IGN.
  */
 async function displayInteractiveEnvMap() {
-    const mapDiv = document.getElementById('env-map-full');
-    if (!mapDiv) return;
+    const mapDiv = document.getElementById('env-map');
+    mapDiv.style.display = 'block';
+    document.getElementById('layer-controls').style.display = 'none'; // On n'utilise plus les contrôles manuels
 
     // Initialisation ou réinitialisation de la carte
     if (!envMap) {
-        envMap = L.map('env-map-full').setView([selectedLat, selectedLon], 11);
-        L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenTopoMap (CC-BY-SA)',
-            maxZoom: 17
+        envMap = L.map('env-map').setView([selectedLat, selectedLon], 11);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
         }).addTo(envMap);
     } else {
         envMap.setView([selectedLat, selectedLon], 11);
