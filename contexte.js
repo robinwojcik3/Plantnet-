@@ -44,20 +44,6 @@ const SERVICES = {
 			const radius = 5; // km
 			return `https://www.inaturalist.org/observations?lat=${lat.toFixed(8)}&lng=${lon.toFixed(8)}&radius=${radius}&subview=map&threatened&iconic_taxa=Plantae`;
 		}
-	},
-	topographic: {
-		name: "Carte topographique",
-		description: "Visualisez le relief et l'altitude de la zone",
-		buildUrl: (lat, lon) => {
-			return `https://fr-fr.topographic-map.com/map-v1qmt/?center=${lat.toFixed(6)}%2C${lon.toFixed(6)}&zoom=15`;
-		}
-	},
-	inpn: {
-		name: "INPN - Espaces protégés",
-		description: "Accédez à la cartographie des espaces protégés",
-		buildUrl: () => {
-			return "https://inpn.mnhn.fr/viewer-carto/espaces/";
-		}
 	}
 };
 
