@@ -6,6 +6,7 @@
 // Variables globales
 let map = null; // Carte pour la sélection du point
 let envMap = null; // Carte pour l'affichage des résultats
+let baseLayer = null; // Fond de carte (OpenTopoMap par défaut)
 let layerControl = null; // Contrôleur de couches pour la carte de résultats
 let envMarker = null; // Marqueur du point analysé
 let marker = null;
@@ -317,6 +318,26 @@ function showResults() {
 	}, 500);
 }
 
+function createBaseLayer() {
+    baseLayer = L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)",
+        maxZoom: 17
+    });
+    function fallback() {
+        if (!envMap) return;
+        envMap.removeLayer(baseLayer);
+        baseLayer.off("tileerror", fallback);
+        baseLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: "© OpenStreetMap contributors",
+            maxZoom: 19
+        }).addTo(envMap);
+    }
+    baseLayer.on("tileerror", fallback);
+    baseLayer.addTo(envMap);
+}
+
+
+
 /**
  * NOUVELLE FONCTION : Affiche la carte interactive avec les couches GeoJSON
  * récupérées depuis l'API Carto de l'IGN.
@@ -328,10 +349,7 @@ async function displayInteractiveEnvMap() {
     // Initialisation ou réinitialisation de la carte
     if (!envMap) {
         envMap = L.map('env-map').setView([selectedLat, selectedLon], 11);
-        L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)',
-            maxZoom: 17
-        }).addTo(envMap);
+        createBaseLayer();
     } else {
         envMap.setView([selectedLat, selectedLon], 11);
         if (layerControl) envMap.removeControl(layerControl); // Supprime l'ancien contrôle de couches
@@ -439,14 +457,14 @@ function addDynamicPopup(feature, layer) {
 }
 
 function openEnvMap() {
-    displayInteractiveEnvMap();
-    const overlay = document.getElementById('env-map-overlay');
+    const overlay = document.getElementById("env-map-overlay");
     if (overlay) {
-        overlay.style.display = 'flex';
-        history.pushState({envMap:true}, '');
+        overlay.style.display = "flex";
+        history.pushState({envMap:true}, "");
+        displayInteractiveEnvMap();
+        setTimeout(() => envMap && envMap.invalidateSize(), 100);
     }
 }
-
 function closeEnvMap() {
     const overlay = document.getElementById('env-map-overlay');
     if (overlay) {
