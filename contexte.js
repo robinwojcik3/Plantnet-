@@ -388,8 +388,8 @@ async function fetchAndDisplayApiLayer(name, config, lat, lon) {
             const geoJsonLayer = L.geoJSON(geojsonData, {
                 style: config.style,
                 onEachFeature: addDynamicPopup
-            });
-            // Ajoute la couche au contrôleur
+            }).addTo(envMap);
+            // Ajoute la couche au contrôleur et l'affiche par défaut
             layerControl.addOverlay(geoJsonLayer, name);
         } else {
             console.log(`Aucune donnée de type "${name}" trouvée pour ce point.`);
