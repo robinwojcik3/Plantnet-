@@ -37,14 +37,10 @@
     .action-button { padding: 12px 20px; background: var(--primary); color: white; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; transition: all 0.3s; width: 100%; }
     .action-button:hover { background: #2e7d32; transform: scale(1.02); }
     .action-button:disabled { background: #ccc; cursor: not-allowed; transform: none; }
-
+    
     /* Carte interactive */
     #map-container { display: none; margin-top: 1rem; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
     #map { height: 400px; width: 100%; }
-
-    .env-map-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--bg); z-index:2000; display:none; flex-direction:column; }
-    .env-map-close { position: absolute; top:10px; left:10px; font-size:2rem; background:none; border:none; color:var(--text); cursor:pointer; z-index:2100; }
-    #env-map { width:100%; height:100%; }
     
     /* Coordonnées sélectionnées */
     .coordinates-display { display: none; margin-top: 1rem; padding: 1rem; background: rgba(56, 142, 60, 0.1); border-radius: 6px; text-align: center; }
@@ -144,14 +140,10 @@
       <div class="results-grid" id="results-grid">
         <!-- Les cartes de résultats seront ajoutées ici dynamiquement -->
       </div>
-      <button class="action-button" id="open-env-map" style="margin-top:1rem;">
-        Contexte écologique - Zonage
-      </button>
-    </div>
-    <div id="env-map-overlay" class="env-map-overlay" style="display:none;">
-      <button id="env-map-close" class="env-map-close" title="Fermer">&times;</button>
-      <div id="layer-controls" style="margin:0 0 0.5rem 0;"></div>
-      <div id="env-map" style="flex:1;"></div>
+      <!-- Nouvelle carte avec couches WMS -->
+      <h2 style="margin-top:2rem;">Carte interactive</h2>
+      <div id="layer-controls" style="margin-bottom:0.5rem;"></div>
+      <div id="env-map" style="height:800px;width:100%;display:none;"></div>
     </div>
   </div>
 </body>
