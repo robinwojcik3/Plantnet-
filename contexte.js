@@ -48,8 +48,6 @@ const SERVICES = {
 };
 
 // NOUVEAU : Configuration des couches via l'API Carto de l'IGN
-// L'ordre des propriétés ci-dessous détermine l'ordre de chargement
-// et d'affichage dans la carte interactive.
 const APICARTO_LAYERS = {
     'Natura 2000 (Habitats)': {
         endpoint: 'https://apicarto.ign.fr/api/nature/natura-habitat',
@@ -337,11 +335,12 @@ async function displayInteractiveEnvMap() {
     loading.style.display = 'block';
     loading.textContent = 'Chargement des couches environnementales...';
     
-    // Charge chaque couche séquentiellement pour garantir l'ordre d'affichage
-    for (const [name, config] of Object.entries(APICARTO_LAYERS)) {
-        await fetchAndDisplayApiLayer(name, config, selectedLat, selectedLon);
-    }
+    // Lance tous les appels API en parallèle
+    const promises = Object.entries(APICARTO_LAYERS).map(([name, config]) => 
+        fetchAndDisplayApiLayer(name, config, selectedLat, selectedLon)
+    );
 
+    await Promise.all(promises);
     loading.style.display = 'none';
 }
 
