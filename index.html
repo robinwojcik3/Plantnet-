@@ -65,6 +65,7 @@
     .home-actions .upload-btn,.home-actions .search-inline{width:90vw;max-width:450px;}
     .search-inline{display:flex;gap:.5rem;align-items:center;}
     .search-inline input[type="search"]{flex-grow:1;padding:10px;border:1px solid var(--border);border-radius:6px;font-size:1rem;margin:0;background-color:#fff;}
+    .search-tip{font-size:0.9rem;color:var(--text);margin-top:0.3rem;}
     #multi-image-list-area .image-organ-item { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem; padding: 0.6rem; border: 1px solid var(--border); border-radius: 4px; background-color: var(--card); font-size: 0.9rem; }
     #multi-image-list-area .file-info { flex-grow: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 10px; }
     #multi-image-list-area .file-info .file-index { font-weight: bold; margin-right: 5px; }
@@ -165,6 +166,7 @@
                 <datalist id="species-suggestions"></datalist>
                 <button type="button" id="name-search-button" class="action-button">Rechercher</button>
             </div>
+            <p class="search-tip">Tapez les trois premières lettres du genre et de l'espèce pour filtrer plus rapidement (ex : "Lam pur" → Lamium purpureum).</p>
         </div>
         <div id="multi-image-section" class="option-container" style="display:none;">
             <h2>Images sélectionnées</h2>
