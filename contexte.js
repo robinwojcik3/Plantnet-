@@ -48,6 +48,8 @@ const SERVICES = {
 };
 
 // NOUVEAU : Configuration des couches via l'API Carto de l'IGN
+// L'ordre des propriétés ci-dessous détermine l'ordre de chargement
+// et d'affichage dans la carte interactive.
 const APICARTO_LAYERS = {
     'Natura 2000 (Habitats)': {
         endpoint: 'https://apicarto.ign.fr/api/nature/natura-habitat',
@@ -335,23 +337,31 @@ async function displayInteractiveEnvMap() {
     loading.style.display = 'block';
     loading.textContent = 'Chargement des couches environnementales...';
     
-    // Lance tous les appels API en parallèle
-    const promises = Object.entries(APICARTO_LAYERS).map(([name, config]) => 
-        fetchAndDisplayApiLayer(name, config, selectedLat, selectedLon)
+    // Récupère toutes les couches en parallèle puis les ajoute dans l'ordre
+    const promises = Object.entries(APICARTO_LAYERS).map(([name, config]) =>
+        fetchLayerData(name, config, selectedLat, selectedLon)
     );
 
-    await Promise.all(promises);
+    const layers = await Promise.all(promises);
+    for (const { name, layer } of layers) {
+        if (layer) {
+            layerControl.addOverlay(layer, name);
+        }
+    }
+
     loading.style.display = 'none';
 }
 
 /**
- * NOUVELLE FONCTION : Récupère une couche de données depuis l'API Carto et l'ajoute à la carte.
+ * NOUVELLE FONCTION : Récupère une couche de données depuis l'API Carto.
+ * Renvoie un objet { name, layer } où "layer" peut être null si aucune donnée
+ * n'est disponible.
  * @param {string} name - Nom de la couche pour l'affichage.
  * @param {object} config - Configuration de la couche (endpoint, style).
  * @param {number} lat - Latitude du point d'interrogation.
  * @param {number} lon - Longitude du point d'interrogation.
  */
-async function fetchAndDisplayApiLayer(name, config, lat, lon) {
+async function fetchLayerData(name, config, lat, lon) {
     try {
         const url = `${config.endpoint}?lon=${lon}&lat=${lat}`;
         const response = await fetch(url);
@@ -365,15 +375,14 @@ async function fetchAndDisplayApiLayer(name, config, lat, lon) {
                 style: config.style,
                 onEachFeature: addDynamicPopup
             });
-            // Ajoute la couche au contrôleur
-            layerControl.addOverlay(geoJsonLayer, name);
-        } else {
-            console.log(`Aucune donnée de type "${name}" trouvée pour ce point.`);
+            return { name, layer: geoJsonLayer };
         }
+        console.log(`Aucune donnée de type "${name}" trouvée pour ce point.`);
     } catch (error) {
-
         console.error(`Erreur lors du chargement de la couche ${name}:`, error);
     }
+
+    return { name, layer: null };
 }
 
 // Extrait un nom lisible à partir des propriétés d'une entité
