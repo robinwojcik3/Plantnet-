@@ -110,13 +110,17 @@ function latLonToWebMercator(lat, lon) {
 
 // Initialisation au chargement de la page
 document.addEventListener('DOMContentLoaded', () => {
-	document.getElementById('use-geolocation').addEventListener('click', useGeolocation);
-	document.getElementById('choose-on-map').addEventListener('click', toggleMap);
-	document.getElementById('validate-location').addEventListener('click', validateLocation);
-	document.getElementById('search-address').addEventListener('click', searchAddress);
-	document.getElementById('address-input').addEventListener('keydown', (e) => {
-		if (e.key === 'Enter') searchAddress();
-	});
+        document.getElementById('use-geolocation').addEventListener('click', useGeolocation);
+        document.getElementById('choose-on-map').addEventListener('click', toggleMap);
+        document.getElementById('validate-location').addEventListener('click', validateLocation);
+        document.getElementById('search-address').addEventListener('click', searchAddress);
+        document.getElementById('address-input').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') searchAddress();
+        });
+        initializeMap();
+        const instruction = document.getElementById('map-instruction');
+        instruction.style.display = 'block';
+        setTimeout(() => { instruction.style.display = 'none'; }, 3000);
 });
 
 // Fonction pour utiliser la géolocalisation
