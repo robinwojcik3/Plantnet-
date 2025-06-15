@@ -12,6 +12,9 @@ let marker = null;
 let selectedLat = null;
 let selectedLon = null;
 
+// Délai avant d'ouvrir Google Maps (ms)
+const GOOGLE_MAPS_LONG_PRESS_MS = 2000;
+
 // Configuration des services externes (liens)
 const SERVICES = {
 	arcgis: {
@@ -100,10 +103,40 @@ const APICARTO_LAYERS = {
 
 // Utilitaires de conversion
 function latLonToWebMercator(lat, lon) {
-	const R = 6378137.0;
-	const x = R * (lon * Math.PI / 180);
-	const y = R * Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI / 180) / 2));
-	return { x, y };
+        const R = 6378137.0;
+        const x = R * (lon * Math.PI / 180);
+        const y = R * Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI / 180) / 2));
+        return { x, y };
+}
+
+// Active un appui long ouvrant Google Maps
+function addGoogleMapsLongPress(mapInstance) {
+        let timer = null;
+        let startLatLng = null;
+
+        const clear = () => {
+                if (timer) {
+                        clearTimeout(timer);
+                        timer = null;
+                }
+        };
+
+        const show = () => {
+                if (!startLatLng) return;
+                const url = `https://www.google.com/maps?q=${startLatLng.lat},${startLatLng.lng}`;
+                L.popup()
+                        .setLatLng(startLatLng)
+                        .setContent(`<a href="${url}" target="_blank" rel="noopener noreferrer">Google Maps</a>`)
+                        .openOn(mapInstance);
+        };
+
+        mapInstance.on('mousedown touchstart', e => {
+                startLatLng = e.latlng;
+                clear();
+                timer = setTimeout(show, GOOGLE_MAPS_LONG_PRESS_MS);
+        });
+        mapInstance.on('mousemove touchmove dragstart zoomstart', clear);
+        mapInstance.on('mouseup touchend', clear);
 }
 
 // Initialisation au chargement de la page
@@ -314,6 +347,7 @@ async function displayInteractiveEnvMap() {
             attribution: '© OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)',
             maxZoom: 17
         }).addTo(envMap);
+        addGoogleMapsLongPress(envMap);
     } else {
         envMap.setView([selectedLat, selectedLon], 11);
         if (layerControl) envMap.removeControl(layerControl); // Supprime l'ancien contrôle de couches
