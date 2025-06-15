@@ -12,6 +12,7 @@ let marker = null;
 let selectedLat = null;
 let selectedLon = null;
 let googleMapsListenerAdded = false; // Gestionnaire de pression longue
+const GOOGLE_MAPS_LONG_PRESS_MS = 2000; // Durée en ms avant d'afficher Google Maps
 
 // Configuration des services externes (liens)
 const SERVICES = {
@@ -426,7 +427,7 @@ function addDynamicPopup(feature, layer) {
     });
 }
 
-// Ajoute une fenêtre Google Maps après un appui long de 3 secondes
+// Ajoute une fenêtre Google Maps après un appui long
 function addGoogleMapsLongPress(map) {
     let pressTimer = null;
 
@@ -439,17 +440,26 @@ function addGoogleMapsLongPress(map) {
               .setLatLng(e.latlng)
               .setContent(`<a href="${url}" target="_blank" rel="noopener noreferrer">Google Maps</a>`)
               .openOn(map);
-        }, 3000);
+        }, GOOGLE_MAPS_LONG_PRESS_MS);
     };
 
-    const cancel = () => { if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } };
+    const cancel = () => {
+        if (pressTimer) {
+            clearTimeout(pressTimer);
+            pressTimer = null;
+        }
+    };
+
+    const cancelDrag = () => {
+        cancel();
+    };
 
     map.on('mousedown', start);
     map.on('touchstart', start);
     map.on('mouseup', cancel);
     map.on('touchend', cancel);
-    map.on('mousemove', cancel);
-    map.on('touchmove', cancel);
+    map.on('dragstart', cancelDrag);
+    map.on('mouseout', cancel);
 }
 
 // Fonction de notification générique
