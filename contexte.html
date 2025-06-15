@@ -32,14 +32,15 @@
     /* Options de localisation */
     .location-options { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem; }
     .location-card { background: var(--card); border-radius: 8px; padding: 1.5rem; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-    .location-card h2 { font-size: 1.2rem; color: var(--primary); margin: 0 0 1rem; }
+    .location-card h2 { font-size: 1.2rem; color: var(--primary); margin: 0 0 1rem; display:flex; align-items:center; }
+    .location-card .icon { font-size: 1.8rem; margin-right: 0.5rem; }
     
     .action-button { padding: 12px 20px; background: var(--primary); color: white; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; transition: all 0.3s; width: 100%; }
     .action-button:hover { background: #2e7d32; transform: scale(1.02); }
     .action-button:disabled { background: #ccc; cursor: not-allowed; transform: none; }
     
     /* Carte interactive */
-    #map-container { display: none; margin-top: 1rem; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    #map-container { display: block; margin-top: 1rem; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
     #map { height: 400px; width: 100%; }
     
     /* Coordonnées sélectionnées */
@@ -89,7 +90,7 @@
     <div class="location-options">
       <!-- Option 1: Géolocalisation -->
       <div class="location-card">
-        <h2>📍 Utiliser ma position actuelle</h2>
+        <h2><span class="icon">📍</span>Utiliser ma position actuelle</h2>
         <button class="action-button" id="use-geolocation">
           Utiliser ma localisation
         </button>
@@ -97,9 +98,9 @@
       
       <!-- Option 2: Sélection sur carte -->
       <div class="location-card">
-        <h2>🗺️ Choisir un endroit sur la carte</h2>
+        <h2><span class="icon">🗺️</span>Choisir un endroit sur la carte</h2>
         <button class="action-button" id="choose-on-map">
-          Ouvrir la carte
+          Fermer la carte
         </button>
         
         <div id="map-container">
@@ -121,7 +122,7 @@
 
       <!-- Option 3: Recherche par adresse -->
       <div class="location-card">
-        <h2>🔎 Rechercher une adresse</h2>
+        <h2><span class="icon">🔎</span>Rechercher une adresse</h2>
         <input type="text" id="address-input" placeholder="Saisissez une adresse"
                style="padding:8px;border:1px solid var(--border);border-radius:4px;width:100%;margin-bottom:.5rem;">
         <button class="action-button" id="search-address">Rechercher</button>
