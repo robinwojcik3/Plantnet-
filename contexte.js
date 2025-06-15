@@ -372,16 +372,27 @@ async function displayInteractiveEnvMap() {
     layerControl = L.control.layers(null, overlayMaps, { collapsed: false }).addTo(envMap);
 
     const loading = document.getElementById('loading');
-    loading.style.display = 'block';
-    loading.textContent = 'Chargement des couches environnementales...';
-    
-    // Lance tous les appels API en parallèle
-    const promises = Object.entries(APICARTO_LAYERS).map(([name, config]) => 
-        fetchAndDisplayApiLayer(name, config, selectedLat, selectedLon)
-    );
+    const total = Object.keys(APICARTO_LAYERS).length;
+    let loaded = 0;
 
-    await Promise.all(promises);
-    loading.style.display = 'none';
+    const updateLoading = () => {
+        loading.textContent = `Chargement des couches ${loaded}/${total}...`;
+        if (loaded === total) {
+            loading.style.display = 'none';
+        }
+    };
+
+    loading.style.display = 'block';
+    updateLoading();
+
+    Object.entries(APICARTO_LAYERS).forEach(([name, config]) => {
+        fetchAndDisplayApiLayer(name, config, selectedLat, selectedLon)
+            .catch((err) => console.error(err))
+            .finally(() => {
+                loaded += 1;
+                updateLoading();
+            });
+    });
 }
 
 /**
