@@ -11,8 +11,6 @@ let envMarker = null; // Marqueur du point analysé
 let marker = null;
 let selectedLat = null;
 let selectedLon = null;
-let longPressTimer = null;
-let longPressHandlersAdded = false;
 
 // Configuration des services externes (liens)
 const SERVICES = {
@@ -323,7 +321,6 @@ async function displayInteractiveEnvMap() {
             if (layer instanceof L.GeoJSON) envMap.removeLayer(layer);
         });
     }
-    addLongPressHandlers();
 
     // Ajoute un marqueur pour le point analysé
     if (envMarker) envMap.removeLayer(envMarker);
@@ -421,37 +418,6 @@ function addDynamicPopup(feature, layer) {
             }
         }
     });
-
-// Gère l'appui long sur la carte des résultats
-function addLongPressHandlers() {
-    if (longPressHandlersAdded) return;
-    longPressHandlersAdded = true;
-
-    const start = (e) => {
-        longPressTimer = setTimeout(() => {
-            showGoogleMapsPopup(e.latlng);
-        }, 3000);
-    };
-    const cancel = () => {
-        if (longPressTimer) {
-            clearTimeout(longPressTimer);
-            longPressTimer = null;
-        }
-    };
-
-    envMap.on("mousedown", start);
-    envMap.on("mouseup", cancel);
-    envMap.on("mousemove", cancel);
-    envMap.on("touchstart", start);
-    envMap.on("touchend", cancel);
-    envMap.on("touchmove", cancel);
-}
-
-function showGoogleMapsPopup(latlng) {
-    const url = `https://www.google.com/maps?q=${latlng.lat},${latlng.lng}`;
-    L.popup().setLatLng(latlng)
-      .setContent(`<a href="${url}" target="_blank" rel="noopener noreferrer">Google Maps →</a>`)
-      .openOn(envMap);
 }
 
 // Fonction de notification générique
