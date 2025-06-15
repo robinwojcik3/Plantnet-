@@ -12,6 +12,8 @@ let marker = null;
 let selectedLat = null;
 let selectedLon = null;
 
+const GOOGLE_MAPS_LONG_PRESS_MS = 2000;
+
 // Configuration des services externes (liens)
 const SERVICES = {
 	arcgis: {
@@ -294,8 +296,43 @@ function showResults() {
 		});
 
 		displayInteractiveEnvMap();
-		resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-	}, 500);
+        resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 500);
+}
+
+/**
+ * Active un appui long pour ouvrir Google Maps sur la carte fournie.
+ * @param {L.Map} targetMap
+ */
+function enableGoogleMapsLongPress(targetMap) {
+    let timer;
+    let startLatLng;
+
+    const start = (e) => {
+        startLatLng = e.latlng;
+        timer = setTimeout(() => {
+            const lat = startLatLng.lat.toFixed(6);
+            const lon = startLatLng.lng.toFixed(6);
+            L.popup()
+                .setLatLng(startLatLng)
+                .setContent(`<a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank" rel="noopener noreferrer">Google Maps</a>`)
+                .openOn(targetMap);
+        }, GOOGLE_MAPS_LONG_PRESS_MS);
+    };
+
+    const cancel = () => {
+        clearTimeout(timer);
+        timer = null;
+    };
+
+    targetMap.on('mousedown', start);
+    targetMap.on('touchstart', start);
+    targetMap.on('mouseup', cancel);
+    targetMap.on('touchend', cancel);
+    targetMap.on('mousemove', cancel);
+    targetMap.on('touchmove', cancel);
+    targetMap.on('dragstart', cancel);
+    targetMap.on('zoomstart', cancel);
 }
 
 /**
@@ -314,6 +351,7 @@ async function displayInteractiveEnvMap() {
             attribution: '© OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)',
             maxZoom: 17
         }).addTo(envMap);
+        enableGoogleMapsLongPress(envMap);
     } else {
         envMap.setView([selectedLat, selectedLon], 11);
         if (layerControl) envMap.removeControl(layerControl); // Supprime l'ancien contrôle de couches
