@@ -135,7 +135,7 @@ function addGoogleMapsLongPress(mapInstance) {
                 clear();
                 timer = setTimeout(show, GOOGLE_MAPS_LONG_PRESS_MS);
         });
-        mapInstance.on('mousemove touchmove dragstart zoomstart', clear);
+        mapInstance.on('dragstart zoomstart', clear);
         mapInstance.on('mouseup touchend', clear);
 }
 
