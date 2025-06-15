@@ -127,7 +127,4 @@ Follow the official Cloud Run documentation for detailed steps.
   retrieved from the IGN API Carto. It now includes layers for **Réserves
   Naturelles Nationales et Régionales**, **Arrêtés Préfectoraux de Protection de
   Biotope**, **Espaces Naturels Sensibles** and **Zones humides**.
-- A long press (~2&nbsp;s) on the environmental context map shows a pop‑up with
-  a "Google Maps" link to the pressed coordinates. Moving the map cancels the
-  timer.
 
