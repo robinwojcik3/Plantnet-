@@ -337,53 +337,43 @@ async function displayInteractiveEnvMap() {
     loading.style.display = 'block';
     loading.textContent = 'Chargement des couches environnementales...';
     
-    const layerEntries = Object.entries(APICARTO_LAYERS);
-
-    // Lance toutes les requêtes en parallèle pour accélérer le chargement
-    const fetchPromises = layerEntries.map(([name, config]) =>
-        fetchApiLayerData(name, config, selectedLat, selectedLon)
-    );
-
-    const results = await Promise.all(fetchPromises);
-
-    // Ajoute les couches dans l'ordre défini par APICARTO_LAYERS
-    for (let i = 0; i < layerEntries.length; i++) {
-        const [name, config] = layerEntries[i];
-        const data = results[i];
-        if (data && data.features && data.features.length > 0) {
-            const geoJsonLayer = L.geoJSON(data, {
-                style: config.style,
-                onEachFeature: addDynamicPopup
-            });
-            layerControl.addOverlay(geoJsonLayer, name);
-        } else {
-            console.log(`Aucune donnée de type "${name}" trouvée pour ce point.`);
-        }
+    // Charge chaque couche séquentiellement pour garantir l'ordre d'affichage
+    for (const [name, config] of Object.entries(APICARTO_LAYERS)) {
+        await fetchAndDisplayApiLayer(name, config, selectedLat, selectedLon);
     }
 
     loading.style.display = 'none';
 }
 
 /**
- * NOUVELLE FONCTION : Récupère une couche de données depuis l'API Carto
- * et renvoie le GeoJSON. L'ajout sur la carte est géré séparément.
+ * NOUVELLE FONCTION : Récupère une couche de données depuis l'API Carto et l'ajoute à la carte.
  * @param {string} name - Nom de la couche pour l'affichage.
  * @param {object} config - Configuration de la couche (endpoint, style).
  * @param {number} lat - Latitude du point d'interrogation.
  * @param {number} lon - Longitude du point d'interrogation.
- * @returns {object|null} GeoJSON ou null en cas d'erreur
  */
-async function fetchApiLayerData(name, config, lat, lon) {
+async function fetchAndDisplayApiLayer(name, config, lat, lon) {
     try {
         const url = `${config.endpoint}?lon=${lon}&lat=${lat}`;
         const response = await fetch(url);
         if (!response.ok) {
             throw new Error(`Réponse réseau non OK: ${response.statusText}`);
         }
-        return await response.json();
+        const geojsonData = await response.json();
+
+        if (geojsonData && geojsonData.features && geojsonData.features.length > 0) {
+            const geoJsonLayer = L.geoJSON(geojsonData, {
+                style: config.style,
+                onEachFeature: addDynamicPopup
+            });
+            // Ajoute la couche au contrôleur
+            layerControl.addOverlay(geoJsonLayer, name);
+        } else {
+            console.log(`Aucune donnée de type "${name}" trouvée pour ce point.`);
+        }
     } catch (error) {
+
         console.error(`Erreur lors du chargement de la couche ${name}:`, error);
-        return null;
     }
 }
 
