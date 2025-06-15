@@ -3,7 +3,7 @@
    ================================================================ */
 
 // Changez ce nom de version à chaque fois que vous mettez à jour les fichiers de l'application
-const CACHE_NAME = "plantid-v17";
+const CACHE_NAME = "plantid-v18";
 
 // Fichiers essentiels pour le fonctionnement de base de l'application
 const CORE_ASSETS = [
@@ -91,8 +91,9 @@ self.addEventListener("fetch", event => {
     }
 
     // Gérer les ressources externes (Leaflet, OpenStreetMap)
-    if (request.url.includes("unpkg.com") || 
-        request.url.includes("tile.openstreetmap.org")) {
+    if (request.url.includes("unpkg.com") ||
+        request.url.includes("tile.openstreetmap.org") ||
+        request.url.includes("tile.opentopomap.org")) {
         event.respondWith(
             caches.match(request)
                 .then(cachedResponse => {

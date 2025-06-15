@@ -312,9 +312,9 @@ async function displayInteractiveEnvMap() {
     // Initialisation ou réinitialisation de la carte
     if (!envMap) {
         envMap = L.map('env-map').setView([selectedLat, selectedLon], 11);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors',
-            maxZoom: 19
+        L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)',
+            maxZoom: 17
         }).addTo(envMap);
     } else {
         envMap.setView([selectedLat, selectedLon], 11);
