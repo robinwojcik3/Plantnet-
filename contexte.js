@@ -11,7 +11,6 @@ let envMarker = null; // Marqueur du point analysé
 let marker = null;
 let selectedLat = null;
 let selectedLon = null;
-let googleMapsListenerAdded = false; // Gestionnaire de pression longue
 
 // Configuration des services externes (liens)
 const SERVICES = {
@@ -328,11 +327,6 @@ async function displayInteractiveEnvMap() {
     envMarker = L.marker([selectedLat, selectedLon]).addTo(envMap)
       .bindPopup("Point d'analyse").openPopup();
 
-    if (!googleMapsListenerAdded) {
-        addGoogleMapsLongPress(envMap);
-        googleMapsListenerAdded = true;
-    }
-
     // Initialise le nouveau contrôle de couches
     const overlayMaps = {};
     layerControl = L.control.layers(null, overlayMaps, { collapsed: false }).addTo(envMap);
@@ -424,32 +418,6 @@ function addDynamicPopup(feature, layer) {
             }
         }
     });
-}
-
-// Ajoute une fenêtre Google Maps après un appui long de 3 secondes
-function addGoogleMapsLongPress(map) {
-    let pressTimer = null;
-
-    const start = (e) => {
-        pressTimer = setTimeout(() => {
-            const lat = e.latlng.lat.toFixed(6);
-            const lon = e.latlng.lng.toFixed(6);
-            const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
-            L.popup()
-              .setLatLng(e.latlng)
-              .setContent(`<a href="${url}" target="_blank" rel="noopener noreferrer">Google Maps</a>`)
-              .openOn(map);
-        }, 3000);
-    };
-
-    const cancel = () => { if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } };
-
-    map.on('mousedown', start);
-    map.on('touchstart', start);
-    map.on('mouseup', cancel);
-    map.on('touchend', cancel);
-    map.on('mousemove', cancel);
-    map.on('touchmove', cancel);
 }
 
 // Fonction de notification générique
