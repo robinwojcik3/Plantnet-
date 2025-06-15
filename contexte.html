@@ -26,12 +26,12 @@
     .tab.active::after { content: ''; position: absolute; bottom: -2px; left: 0; right: 0; height: 2px; background: var(--primary); }
     
     /* Contenu principal */
-    .main-content { flex: 1; padding: 1.5rem; max-width: 900px; margin: 0 auto; width: 100%; }
+    .main-content { flex: 1; padding: 1rem; max-width: 800px; margin: 0 auto; width: 100%; }
     h1 { color: var(--primary); margin: 0 0 1.5rem; font-size: 1.6rem; text-align: center; }
     
     /* Options de localisation */
-    .location-options { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem; }
-    .location-card { background: var(--card); border-radius: 8px; padding: 1.5rem; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    .location-options { display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 1.5rem; }
+    .location-card { background: var(--card); border-radius: 8px; padding: 1rem; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
     .location-card h2 { font-size: 1.2rem; color: var(--primary); margin: 0 0 1rem; display:flex; align-items:center; }
     .location-card .icon { font-size: 1.8rem; margin-right: 0.5rem; }
     
@@ -42,6 +42,7 @@
     /* Carte interactive */
     #map-container { display: block; margin-top: 1rem; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
     #map { height: 400px; width: 100%; }
+    .map-fullwidth{margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);width:100vw;}
     
     /* Coordonnées sélectionnées */
     .coordinates-display { display: none; margin-top: 1rem; padding: 1rem; background: rgba(56, 142, 60, 0.1); border-radius: 6px; text-align: center; }
@@ -137,7 +138,7 @@
       <!-- Carte interactive avant les ressources -->
       <h2 style="margin-top:2rem;">Carte interactive</h2>
       <div id="layer-controls" style="margin-bottom:0.5rem;"></div>
-      <div id="env-map" style="height:800px;width:100%;display:none;"></div>
+      <div id="env-map" class="map-fullwidth" style="height:800px;display:none;"></div>
 
       <h2>Ressources environnementales</h2>
       <p style="margin-bottom: 1rem; color: #666;">
