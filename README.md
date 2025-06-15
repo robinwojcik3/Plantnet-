@@ -127,4 +127,6 @@ Follow the official Cloud Run documentation for detailed steps.
   retrieved from the IGN API Carto. It now includes layers for **Réserves
   Naturelles Nationales et Régionales**, **Arrêtés Préfectoraux de Protection de
   Biotope**, **Espaces Naturels Sensibles** and **Zones humides**.
+- Long pressing for three seconds on the interactive map opens a pop‑up linking
+  to Google Maps at the pressed location.
 
